@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(git -C \"C:/Golden/Andersen/1c-mcp-server\" log --oneline -20)",
-      "Bash(git -C \"C:/Golden/Andersen/1c-mcp-server\" diff --stat)"
+      "Bash(git -C \"C:/Golden/Andersen/1c-mcp-server\" diff --stat)",
+      "Bash(git -C C:/Golden/Andersen/1c-mcp-server diff --stat)"
     ]
   }
 }
