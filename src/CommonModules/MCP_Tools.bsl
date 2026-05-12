@@ -184,6 +184,7 @@
 	Props.Вставить("query", _Схема("string", , "Текст read-only запроса 1С."));
 	Props.Вставить("parameters", _СхемаОбъект());
 	Props.Вставить("limit", _СхемаInt(1, 1000, 100));
+	Props.Вставить("cursor", _Схема("string", , "Offset cursor для следующей страницы строк."));
 	Props.Вставить("timeout_seconds", _СхемаInt(1, 60, 15));
 	Props.Вставить("validate_before_run", _Схема("boolean"));
 	Props.Вставить("return_format", _СхемаЕnum(СписокСтрок("rows,table")));
@@ -215,6 +216,7 @@
 	Props.Вставить("include_tabular_sections", _Схема("boolean"));
 	Props.Вставить("tabular_sections", _Схема("array"));
 	Props.Вставить("tabular_section_row_limit", _СхемаInt(1, 1000, 100));
+	Props.Вставить("tabular_section_cursor", _Схема("string", , "Offset cursor строк табличных частей."));
 	Props.Вставить("include_navigation_url", _Схема("boolean"));
 	Возврат _Tool("get_object_by_ref",
 		"Получить объект по типу и UUID ссылки",
@@ -228,6 +230,7 @@
 	Props.Вставить("types", _Схема("array"));
 	Props.Вставить("kinds", _Схема("array"));
 	Props.Вставить("limit", _СхемаInt(1, 100, 10));
+	Props.Вставить("cursor", _Схема("string", , "Offset cursor по проверяемым типам."));
 	Props.Вставить("include_deleted", _Схема("boolean"));
 	Возврат _Tool("find_object_by_id",
 		"Найти объект по UUID без знания типа",
@@ -245,6 +248,7 @@
 	Props.Вставить("date_from", _Схема("string"));
 	Props.Вставить("date_to", _Схема("string"));
 	Props.Вставить("limit", _СхемаInt(1, 100, 20));
+	Props.Вставить("cursor", _Схема("string", , "Offset cursor по найденным объектам."));
 	Props.Вставить("include_deleted", _Схема("boolean"));
 	Props.Вставить("include_fields", _Схема("array"));
 	Props.Вставить("match_mode", _СхемаЕnum(СписокСтрок("auto,exact,prefix,contains")));
@@ -284,6 +288,7 @@
 	Props.Вставить("period_to", _Схема("string"));
 	Props.Вставить("limit_per_type", _СхемаInt(1, 100, 20));
 	Props.Вставить("max_types", _СхемаInt(1, 200, 50));
+	Props.Вставить("cursor", _Схема("string", , "Offset cursor по группам ссылок."));
 	Props.Вставить("include_counts", _Схема("boolean"));
 	Props.Вставить("include_samples", _Схема("boolean"));
 	Возврат _Tool("find_references_to_object",
@@ -297,6 +302,8 @@
 	Props.Вставить("type", _Схема("string"));
 	Props.Вставить("include_order", _Схема("boolean"));
 	Props.Вставить("include_empty", _Схема("boolean"));
+	Props.Вставить("limit", _СхемаInt(1, 1000, 1000));
+	Props.Вставить("cursor", _Схема("string", , "Offset cursor значений перечисления."));
 	Возврат _Tool("get_enum_values",
 		"Получить значения перечисления",
 		"Возвращает значения Перечисление.*",
@@ -317,6 +324,7 @@
 	Props.Вставить("attributes", _Схема("array"));
 	Props.Вставить("order_by", _Схема("array"));
 	Props.Вставить("limit", _СхемаInt(1, 1000, 100));
+	Props.Вставить("cursor", _Схема("string", , "Offset cursor записей регистра."));
 	Возврат _Tool("get_register_records",
 		"Получить записи, срезы, остатки и обороты регистров",
 		"Универсальный tool для чтения регистров любого вида.",
@@ -331,6 +339,8 @@
 	Props.Вставить("include_empty_registers", _Схема("boolean"));
 	Props.Вставить("include_totals_effect", _Схема("boolean"));
 	Props.Вставить("row_limit_per_register", _СхемаInt(1, 1000, 200));
+	Props.Вставить("cursor", _Схема("string", , "Offset cursor списка регистров."));
+	Props.Вставить("row_cursor", _Схема("string", , "Offset cursor строк в каждом регистре."));
 	Возврат _Tool("get_document_movements",
 		"Получить движения документа по регистрам",
 		"Записи регистров, сформированные документом-регистратором.",
@@ -370,6 +380,7 @@
 	Props.Вставить("parameters", _СхемаОбъект());
 	Props.Вставить("output_format", _СхемаЕnum(СписокСтрок("table,json,text")));
 	Props.Вставить("limit", _СхемаInt(1, 5000, 1000));
+	Props.Вставить("cursor", _Схема("string", , "Offset cursor строк отчёта."));
 	Props.Вставить("timeout_seconds", _СхемаInt(1, 180, 60));
 	Props.Вставить("include_totals", _Схема("boolean"));
 	Возврат _Tool("run_1c_report",
@@ -394,6 +405,7 @@
 	Props.Вставить("period_to", _Схема("string"));
 	Props.Вставить("include_diff", _Схема("boolean"));
 	Props.Вставить("limit", _СхемаInt(1, 500, 100));
+	Props.Вставить("cursor", _Схема("string", , "Offset cursor событий истории."));
 	Возврат _Tool("get_object_history",
 		"Получить историю объекта, версии или события журнала",
 		"Версии объекта, журнал регистрации, регистры истории статусов.",
