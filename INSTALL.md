@@ -5,6 +5,7 @@
 - 1С:Предприятие 8.3.18 и выше.
 - Опубликованная база на веб-сервере (IIS или Apache).
 - Возможность создания HTTP-сервиса и общих модулей в конфигурации или расширении.
+- Для Claude web/custom connector сервер должен быть доступен из публичного интернета по HTTPS.
 
 ## Шаги установки
 
@@ -48,6 +49,8 @@
   - `rpc` → `/rpc`
 - Методы шаблона `rpc`:
   - `POST_rpc` (HTTP-метод: POST)
+  - `GET_rpc` (HTTP-метод: GET, возвращает 405 если SSE-канал не используется)
+  - `DELETE_rpc` (HTTP-метод: DELETE, возвращает 405 для stateless endpoint)
   - `OPTIONS_rpc` (HTTP-метод: OPTIONS, для CORS preflight, опционально)
 
 В модуль HTTP-сервиса скопируйте содержимое `src/HTTPServices/MCP_HTTPService.bsl`.
@@ -87,8 +90,10 @@ http(s)://<сервер>/<база>/hs/mcp/rpc
 ```bash
 curl -X POST https://<server>/<base>/hs/mcp/rpc \
   -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "MCP-Protocol-Version: 2025-11-25" \
   -u "mcp_service:<password>" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}'
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"curl","version":"1.0.0"}}}'
 ```
 
 Ожидаемый ответ:
@@ -110,24 +115,47 @@ curl -X POST https://<server>/<base>/hs/mcp/rpc \
 ```bash
 curl -X POST https://<server>/<base>/hs/mcp/rpc \
   -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "MCP-Protocol-Version: 2025-11-25" \
   -u "mcp_service:<password>" \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
 ```
 
+Проверка Streamable HTTP GET без SSE:
+
+```bash
+curl -i -X GET https://<server>/<base>/hs/mcp/rpc \
+  -H "Accept: text/event-stream" \
+  -H "MCP-Protocol-Version: 2025-11-25"
+```
+
+Ожидаемый статус: `405 Method Not Allowed`.
+
 ### 8. Подключите MCP-клиента
 
-В клиенте (Claude Desktop, Cursor, custom-агент) добавьте сервер в конфигурацию:
+Claude web/custom connector:
 
-```json
-{
-  "mcpServers": {
-    "1c-erp": {
-      "transport": "http",
-      "url": "https://<server>/<base>/hs/mcp/rpc",
-      "auth": { "type": "basic", "username": "mcp_service", "password": "..." }
-    }
-  }
-}
+1. Откройте `Customize → Connectors`.
+2. Добавьте custom connector типа Web.
+3. Укажите URL:
+
+```text
+https://<server>/<base>/hs/mcp/rpc
+```
+
+Codex:
+
+```bash
+codex mcp add 1c --url https://<server>/<base>/hs/mcp/rpc
+```
+
+Или через `config.toml`:
+
+```toml
+[mcp_servers."1c"]
+url = "https://<server>/<base>/hs/mcp/rpc"
+startup_timeout_sec = 20
+tool_timeout_sec = 120
 ```
 
 ## Безопасность

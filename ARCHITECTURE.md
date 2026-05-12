@@ -5,9 +5,9 @@
 ```
         +-------------------------+
         |       MCP Client        |
-        | (Claude / Cursor / ...) |
+        | (Claude / Codex / ...) |
         +-----------+-------------+
-                    | HTTPS + JSON-RPC 2.0
+                    | HTTPS + MCP Streamable HTTP
                     v
         +-------------------------+
         |   HTTP-сервис MCP        |  <- src/HTTPServices/MCP_HTTPService.bsl
@@ -43,7 +43,7 @@
 ## Модули
 
 ### `MCP_HTTPService`
-Точка входа. Принимает POST, парсит JSON, передаёт в `MCP_JSONRPC.ОбработатьЗапрос`, сериализует ответ.
+Точка входа Streamable HTTP. Принимает POST с JSON-RPC, передаёт тело в `MCP_JSONRPC.ОбработатьЗапрос`, возвращает JSON для request-вызовов и `202 Accepted` без тела для notifications/responses. GET и DELETE возвращают `405 Method Not Allowed`, потому что сервер stateless и не открывает отдельный SSE-канал.
 
 ### `MCP_JSONRPC`
 Реализует JSON-RPC 2.0 и MCP-методы:
@@ -121,7 +121,7 @@ Dispatcher `Выполнить(ИмяТула, Аргументы, Контек�
 ## Поток выполнения tools/call
 
 ```
-1. HTTP-сервис принимает POST.
+1. HTTP-сервис принимает POST на `/hs/mcp/rpc`.
 2. JSON-RPC dispatcher разбирает request.
 3. Проверка auth.
 4. tools/call → MCP_Tools.Выполнить:

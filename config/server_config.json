@@ -8,6 +8,11 @@
     "read_only": true
   },
 
+  "http": {
+    "_comment": "allowed_origins пустой = не ограничивать Origin; укажите список Origin для строгой проверки браузерных клиентов.",
+    "allowed_origins": []
+  },
+
   "limits": {
     "default_limit": 50,
     "max_limit": 1000,

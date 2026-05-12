@@ -12,7 +12,7 @@
 - Лимиты строк, времени и размера результата.
 - Аудит всех вызовов с correlation_id.
 - Универсальный — не зависит от конкретной конфигурации (УТ, ERP, БП и т.п.).
-- Поддержка JSON-RPC 2.0 поверх HTTP.
+- Поддержка MCP Streamable HTTP: один endpoint `/rpc`, JSON-RPC 2.0, `202 Accepted` для notifications, `405` для GET/SSE при stateless-режиме.
 
 ## Реализованные tools
 
@@ -67,16 +67,26 @@
 
 ## Транспорт
 
-HTTP-сервис `MCP` принимает POST-запросы по адресу:
+HTTP-сервис `MCP` реализует Streamable HTTP endpoint:
 
 ```
 http(s)://<сервер>/<база>/hs/mcp/rpc
+```
+
+Поддерживаемые HTTP-методы:
+
+```
+POST     -- JSON-RPC request / notification / response
+GET      -- 405 Method Not Allowed, если не нужен server-to-client SSE
+DELETE   -- 405 Method Not Allowed, сессии транспорта не создаются
+OPTIONS  -- CORS preflight
 ```
 
 Поддерживаемые JSON-RPC методы:
 
 ```
 initialize           -- инициализация сессии
+notifications/initialized -- lifecycle notification после initialize
 tools/list           -- список инструментов
 tools/call           -- вызов инструмента
 resources/list       -- список ресурсов (необязательно)
