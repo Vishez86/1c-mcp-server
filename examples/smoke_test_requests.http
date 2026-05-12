@@ -1,0 +1,244 @@
+### Universal 1C MCP Server — примеры запросов
+### Используй в VSCode "REST Client" или Postman.
+### Замените переменные на свои.
+
+@host = https://1c.example.com/erp_base
+@base = hs/mcp/rpc
+@user = mcp_service
+@pass = secret
+
+### 1. initialize
+POST {{host}}/{{base}}
+Content-Type: application/json
+Authorization: Basic {{user}}:{{pass}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize",
+  "params": {}
+}
+
+### 2. tools/list
+POST {{host}}/{{base}}
+Content-Type: application/json
+Authorization: Basic {{user}}:{{pass}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/list",
+  "params": {}
+}
+
+### 3. get_current_user_context
+POST {{host}}/{{base}}
+Content-Type: application/json
+Authorization: Basic {{user}}:{{pass}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "get_current_user_context",
+    "arguments": {
+      "include_roles": true,
+      "include_limits": true,
+      "include_allowed_metadata_summary": true
+    }
+  }
+}
+
+### 4. list_metadata_objects (Catalogs and Documents, contains "клиент")
+POST {{host}}/{{base}}
+Content-Type: application/json
+Authorization: Basic {{user}}:{{pass}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "method": "tools/call",
+  "params": {
+    "name": "list_metadata_objects",
+    "arguments": {
+      "kinds": ["Справочник", "Документ"],
+      "query": "клиент",
+      "include_details": true,
+      "limit": 20
+    }
+  }
+}
+
+### 5. get_metadata_structure
+POST {{host}}/{{base}}
+Content-Type: application/json
+Authorization: Basic {{user}}:{{pass}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 5,
+  "method": "tools/call",
+  "params": {
+    "name": "get_metadata_structure",
+    "arguments": {
+      "type": "Справочник.Контрагенты",
+      "include_tabular_sections": true,
+      "include_query_names": true
+    }
+  }
+}
+
+### 6. search_objects по ИНН
+POST {{host}}/{{base}}
+Content-Type: application/json
+Authorization: Basic {{user}}:{{pass}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 6,
+  "method": "tools/call",
+  "params": {
+    "name": "search_objects",
+    "arguments": {
+      "query": "7700000000",
+      "types": ["Справочник.Контрагенты"],
+      "search_fields": ["ИНН"],
+      "include_fields": ["Код", "Наименование", "ИНН", "КПП"],
+      "limit": 10
+    }
+  }
+}
+
+### 7. get_object_by_ref
+POST {{host}}/{{base}}
+Content-Type: application/json
+Authorization: Basic {{user}}:{{pass}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 7,
+  "method": "tools/call",
+  "params": {
+    "name": "get_object_by_ref",
+    "arguments": {
+      "type": "Справочник.Номенклатура",
+      "uuid": "550e8400-e29b-41d4-a716-446655440000",
+      "fields": ["Код", "Наименование", "Артикул"]
+    }
+  }
+}
+
+### 8. validate_1c_query
+POST {{host}}/{{base}}
+Content-Type: application/json
+Authorization: Basic {{user}}:{{pass}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 8,
+  "method": "tools/call",
+  "params": {
+    "name": "validate_1c_query",
+    "arguments": {
+      "query": "ВЫБРАТЬ Контрагенты.Ссылка ИЗ Справочник.Контрагенты КАК Контрагенты"
+    }
+  }
+}
+
+### 9. run_1c_query
+POST {{host}}/{{base}}
+Content-Type: application/json
+Authorization: Basic {{user}}:{{pass}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 9,
+  "method": "tools/call",
+  "params": {
+    "name": "run_1c_query",
+    "arguments": {
+      "query": "ВЫБРАТЬ ПЕРВЫЕ 10 Контрагенты.Ссылка КАК Ссылка, Контрагенты.Наименование КАК Наименование ИЗ Справочник.Контрагенты КАК Контрагенты ГДЕ Контрагенты.Наименование ПОДОБНО &Q",
+      "parameters": {
+        "Q": { "kind": "string", "value": "%Ромашка%" }
+      },
+      "limit": 10
+    }
+  }
+}
+
+### 10. get_register_records (остатки товаров)
+POST {{host}}/{{base}}
+Content-Type: application/json
+Authorization: Basic {{user}}:{{pass}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 10,
+  "method": "tools/call",
+  "params": {
+    "name": "get_register_records",
+    "arguments": {
+      "register_type": "РегистрНакопления",
+      "register": "ТоварыНаСкладах",
+      "mode": "balance",
+      "period": "2026-05-12T23:59:59",
+      "dimensions": ["Склад", "Номенклатура"],
+      "resources": ["КоличествоОстаток"],
+      "limit": 100
+    }
+  }
+}
+
+### 11. get_enum_values
+POST {{host}}/{{base}}
+Content-Type: application/json
+Authorization: Basic {{user}}:{{pass}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 11,
+  "method": "tools/call",
+  "params": {
+    "name": "get_enum_values",
+    "arguments": { "type": "Перечисление.ВидыЦен" }
+  }
+}
+
+### 12. list_reports
+POST {{host}}/{{base}}
+Content-Type: application/json
+Authorization: Basic {{user}}:{{pass}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 12,
+  "method": "tools/call",
+  "params": {
+    "name": "list_reports",
+    "arguments": { "query": "продажи", "include_variants": true, "limit": 20 }
+  }
+}
+
+### 13. run_1c_report
+POST {{host}}/{{base}}
+Content-Type: application/json
+Authorization: Basic {{user}}:{{pass}}
+
+{
+  "jsonrpc": "2.0",
+  "id": 13,
+  "method": "tools/call",
+  "params": {
+    "name": "run_1c_report",
+    "arguments": {
+      "report": "Отчет.Продажи",
+      "parameters": {
+        "ПериодНачало": { "kind": "date", "value": "2026-05-01" },
+        "ПериодОкончание": { "kind": "date", "value": "2026-05-12" }
+      },
+      "output_format": "table",
+      "limit": 1000
+    }
+  }
+}

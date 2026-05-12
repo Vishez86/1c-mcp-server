@@ -1,0 +1,122 @@
+{
+  "_comment": "Пример allowlist для Universal 1C MCP. Скопируйте в константу MCP_Allowlist и адаптируйте под свою конфигурацию. По умолчанию разрешены типовые объекты УТ/ERP. Поле hidden_fields содержит реквизиты, которые сервер никогда не возвращает.",
+
+  "default_policy": "deny",
+  "admin_users": ["mcp_admin"],
+
+  "allowed_kinds": [
+    "Справочник",
+    "Документ",
+    "Перечисление",
+    "РегистрСведений",
+    "РегистрНакопления",
+    "РегистрБухгалтерии",
+    "РегистрРасчета",
+    "ПланСчетов",
+    "ПланВидовХарактеристик",
+    "ПланВидовРасчета",
+    "БизнесПроцесс",
+    "Задача",
+    "Отчет"
+  ],
+
+  "denied_objects": [
+    "Справочник.Пользователи",
+    "Справочник.ВнешниеПользователи",
+    "Документ.УстановкаПароля",
+    "РегистрСведений.ПарольныеПолитики"
+  ],
+
+  "allowed_metadata": {
+    "Справочник.Номенклатура": {
+      "read": true,
+      "search_fields": ["Код", "Наименование", "Артикул"],
+      "default_fields": ["Код", "Наименование", "Артикул", "ЕдиницаИзмерения", "Производитель"],
+      "hidden_fields": [],
+      "sensitive": false
+    },
+    "Справочник.Контрагенты": {
+      "read": true,
+      "search_fields": ["Код", "Наименование", "ИНН", "КПП"],
+      "default_fields": ["Код", "Наименование", "ИНН", "КПП", "ЮридическоеФизическоеЛицо"],
+      "hidden_fields": ["КомментарийВнутренний"],
+      "sensitive": false
+    },
+    "Справочник.Договоры": {
+      "read": true,
+      "search_fields": ["Номер", "Наименование"],
+      "default_fields": ["Номер", "Дата", "Наименование", "Контрагент", "ВалютаРасчетов"],
+      "hidden_fields": [],
+      "sensitive": false
+    },
+    "Справочник.Организации": {
+      "read": true,
+      "search_fields": ["Наименование", "ИНН", "КПП"],
+      "default_fields": ["Наименование", "ИНН", "КПП", "ЮридическийАдрес"],
+      "hidden_fields": [],
+      "sensitive": false
+    },
+    "Справочник.Склады": {
+      "read": true,
+      "search_fields": ["Код", "Наименование"],
+      "default_fields": ["Код", "Наименование", "Группа"],
+      "hidden_fields": [],
+      "sensitive": false
+    },
+    "Документ.ЗаказКлиента": {
+      "read": true,
+      "search_fields": ["Номер"],
+      "default_fields": ["Номер", "Дата", "Контрагент", "Организация", "СуммаДокумента", "Проведен"],
+      "hidden_fields": [],
+      "sensitive": false
+    },
+    "Документ.РеализацияТоваровУслуг": {
+      "read": true,
+      "search_fields": ["Номер"],
+      "default_fields": ["Номер", "Дата", "Контрагент", "Организация", "СуммаДокумента", "Проведен"],
+      "hidden_fields": [],
+      "sensitive": false
+    },
+    "Документ.ПоступлениеТоваровУслуг": {
+      "read": true,
+      "search_fields": ["Номер"],
+      "default_fields": ["Номер", "Дата", "Контрагент", "Организация", "СуммаДокумента", "Проведен"],
+      "hidden_fields": [],
+      "sensitive": false
+    },
+    "РегистрНакопления.ТоварыНаСкладах": {
+      "read": true,
+      "supported_modes": ["records", "balance", "turnovers", "balance_and_turnovers"],
+      "default_fields": [],
+      "hidden_fields": [],
+      "sensitive": false
+    },
+    "РегистрНакопления.Продажи": {
+      "read": true,
+      "supported_modes": ["records", "turnovers"],
+      "default_fields": [],
+      "hidden_fields": [],
+      "sensitive": false
+    },
+    "РегистрСведений.ЦеныНоменклатуры": {
+      "read": true,
+      "supported_modes": ["records", "slice_first", "slice_last"],
+      "default_fields": [],
+      "hidden_fields": [],
+      "sensitive": false
+    },
+    "Перечисление.ВидыЦен": {
+      "read": true,
+      "sensitive": false
+    },
+    "Отчет.Продажи": {
+      "read": true,
+      "allowed_variants": ["*"],
+      "sensitive": false
+    }
+  },
+
+  "allowed_base_urls": [
+    "https://1c.example.com/erp"
+  ]
+}

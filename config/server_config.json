@@ -1,0 +1,50 @@
+{
+  "_comment": "Лимиты и настройки MCP-сервера. Загружаются модулем MCP_Config.",
+
+  "server": {
+    "name": "universal-1c-mcp",
+    "version": "0.1.0",
+    "protocol_version": "2025-11-25",
+    "read_only": true
+  },
+
+  "limits": {
+    "default_limit": 50,
+    "max_limit": 1000,
+    "max_query_rows": 1000,
+    "max_report_rows": 5000,
+    "max_tabular_section_rows": 100,
+    "max_register_rows": 1000,
+    "query_timeout_seconds": 15,
+    "report_timeout_seconds": 60,
+    "metadata_cache_ttl_seconds": 300,
+    "max_result_json_bytes": 5242880,
+    "max_searched_types_per_call": 100,
+    "max_string_length_in_response": 10000
+  },
+
+  "query_validation": {
+    "denied_keywords": [
+      "ПОМЕСТИТЬ", "PLACE",
+      "ИНДЕКСИРОВАТЬ ПО", "INDEX BY",
+      "УНИЧТОЖИТЬ", "DROP",
+      "ДЛЯ ИЗМЕНЕНИЯ", "FOR UPDATE",
+      "ПРАВА ДОСТУПА", "GRANT"
+    ],
+    "require_top_clause": true,
+    "block_full_table_scan": false
+  },
+
+  "audit": {
+    "log_arguments": true,
+    "log_arguments_max_bytes": 4096,
+    "log_result_summary": true,
+    "event_prefix": "MCP"
+  },
+
+  "history": {
+    "use_versioning_subsystem": true,
+    "use_event_log": true,
+    "allow_diff": false
+  }
+}
