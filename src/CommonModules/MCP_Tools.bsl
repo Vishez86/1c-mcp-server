@@ -367,9 +367,9 @@
 	Props.Вставить("register_type", _СхемаЕnum(СписокСтрок("РегистрСведений,РегистрНакопления,РегистрБухгалтерии,РегистрРасчета")));
 	Props.Вставить("register", _Схема("string"));
 	Props.Вставить("mode", _СхемаЕnum(СписокСтрок("records,slice_first,slice_last,balance,turnovers,balance_and_turnovers")));
-	Props.Вставить("period", _Схема("string"));
-	Props.Вставить("period_from", _Схема("string"));
-	Props.Вставить("period_to", _Схема("string"));
+	Props.Вставить("period", _Схема("string", , "Дата/момент для records, slice_first/slice_last и balance."));
+	Props.Вставить("period_from", _Схема("string", , "Начало периода для records, turnovers и balance_and_turnovers."));
+	Props.Вставить("period_to", _Схема("string", , "Конец периода для records, turnovers и balance_and_turnovers."));
 	Props.Вставить("filters", _СхемаОбъект());
 	Props.Вставить("dimensions", _Схема("array"));
 	Props.Вставить("resources", _Схема("array"));

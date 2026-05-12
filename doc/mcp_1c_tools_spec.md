@@ -1918,6 +1918,7 @@ Discovery tool. Возвращает справочники, документы,
 
 - Регистр должен быть разрешён.
 - mode должен соответствовать типу регистра.
+- slice_first/slice_last/balance требуют period.
 - turnovers/balance_and_turnovers требуют period_from и period_to.
 - Фильтры, dimensions, resources, attributes только из metadata structure и allowlist.
 - limit обязателен.
