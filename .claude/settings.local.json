@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"C:/Golden/Andersen/1c-mcp-server\" log --oneline -20)"
+    ]
+  }
+}
