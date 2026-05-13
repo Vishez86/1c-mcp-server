@@ -23,21 +23,21 @@
 
 | Имя модуля | Файл | Свойства |
 |---|---|---|
-| `MCP_Config` | `MCP_Config.bsl` | Сервер, Глобальный |
-| `MCP_Errors` | `MCP_Errors.bsl` | Сервер, Глобальный |
-| `MCP_Audit` | `MCP_Audit.bsl` | Сервер, Глобальный |
-| `MCP_Values` | `MCP_Values.bsl` | Сервер, Глобальный |
-| `MCP_Security` | `MCP_Security.bsl` | Сервер, Глобальный |
-| `MCP_Metadata` | `MCP_Metadata.bsl` | Сервер, Глобальный |
-| `MCP_Query` | `MCP_Query.bsl` | Сервер, Глобальный |
-| `MCP_Registers` | `MCP_Registers.bsl` | Сервер, Глобальный |
-| `MCP_Reports` | `MCP_Reports.bsl` | Сервер, Глобальный |
-| `MCP_History` | `MCP_History.bsl` | Сервер, Глобальный |
-| `MCP_JSONRPC` | `MCP_JSONRPC.bsl` | Сервер, Глобальный |
-| `MCP_Tools` | `MCP_Tools.bsl` | Сервер, Глобальный |
-| `MCP_Tools_Impl` | `MCP_Tools_Impl.bsl` | Сервер, Глобальный |
+| `MCP_Config` | `MCP_Config.bsl` | Сервер |
+| `MCP_Errors` | `MCP_Errors.bsl` | Сервер |
+| `MCP_Audit` | `MCP_Audit.bsl` | Сервер |
+| `MCP_Values` | `MCP_Values.bsl` | Сервер |
+| `MCP_Security` | `MCP_Security.bsl` | Сервер |
+| `MCP_Metadata` | `MCP_Metadata.bsl` | Сервер |
+| `MCP_Query` | `MCP_Query.bsl` | Сервер |
+| `MCP_Registers` | `MCP_Registers.bsl` | Сервер |
+| `MCP_Reports` | `MCP_Reports.bsl` | Сервер |
+| `MCP_History` | `MCP_History.bsl` | Сервер |
+| `MCP_JSONRPC` | `MCP_JSONRPC.bsl` | Сервер |
+| `MCP_Tools` | `MCP_Tools.bsl` | Сервер |
+| `MCP_Tools_Impl` | `MCP_Tools_Impl.bsl` | Сервер |
 
-Все модули — серверные, можно сделать `Привилегированный = Ложь`. Если нужна работа от имени системного пользователя, можно отдельный admin-модуль с `Привилегированный = Истина`.
+Для всех общих модулей расширения оставьте `Глобальный = Ложь` и `Привилегированный = Ложь`. Код обращается к экспортным методам явно через имя модуля, например `MCP_JSONRPC.ОбработатьЗапрос(...)`, поэтому глобальный контекст не нужен.
 
 ### 3. Создайте HTTP-сервис
 
