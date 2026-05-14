@@ -275,6 +275,34 @@ class ContractRunner {
       assert(!names.includes("РегистрСведений.КонтактнаяИнформация"), "non-existent КонтактнаяИнформация register appeared in metadata");
       return { found: names.length, hasLegacyRegister: names.includes("РегистрСведений.УдалитьКонтактнаяИнформация") };
     });
+
+    await this.test("tool.discovery_returns_guidance_is_contextual", async () => {
+      const sales = await okTool(this.client, "list_reports", {
+        query: "продажи прибыль рентабельность по товарным позициям",
+        include_variants: false,
+        limit: 1,
+      });
+      assert(hasGuidance(sales, "returns_and_storno"), "sales/report discovery must include returns-and-storno guidance");
+
+      const materials = await okTool(this.client, "list_reports", {
+        query: "остатки и поступление сырья материалов тмц возвраты поставщику",
+        include_variants: false,
+        limit: 1,
+      });
+      assert(hasGuidance(materials, "returns_and_storno"), "materials/inventory discovery must include returns-and-storno guidance");
+
+      const hr = await okTool(this.client, "list_reports", {
+        query: "увольнение сотрудников кадровые документы",
+        include_variants: false,
+        limit: 1,
+      });
+      assert(!hasGuidance(hr, "returns_and_storno"), "HR discovery must not include returns-and-storno guidance");
+      return {
+        salesGuidance: sales.domain_guidance,
+        materialsGuidance: materials.domain_guidance,
+        hrGuidanceCount: hr.domain_guidance?.length || 0,
+      };
+    });
   }
 
   async queryAndSchemaTests() {
@@ -315,6 +343,36 @@ class ContractRunner {
       assert(result.valid === true, `expected valid=true, errors=${JSON.stringify(result.errors)}`);
       assert((result.detected_objects || []).includes("Справочник.Контрагенты"), "detected_objects should include parent catalog");
       return { detected: result.detected_objects };
+    });
+
+    await this.test("tool.validate_1c_query_returns_guidance_is_contextual", async () => {
+      const sales = await okTool(this.client, "validate_1c_query", {
+        query: "ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка ИЗ Документ.РеализацияТоваровУслуг",
+        strict: true,
+        explain: true,
+      });
+      assert(hasGuidance(sales, "returns_and_storno"), "sales-like query validation must include returns-and-storno guidance");
+
+      const assets = await okTool(this.client, "validate_1c_query", {
+        query: "ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка ИЗ Справочник.ОсновныеСредства",
+        strict: true,
+        explain: true,
+      });
+      assert(hasGuidance(assets, "returns_and_storno"), "fixed-assets query validation must include returns-and-storno guidance");
+
+      const hr = await okTool(this.client, "validate_1c_query", {
+        query: "ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка ИЗ Документ.Увольнение",
+        strict: true,
+        explain: true,
+      });
+      assert(!hasGuidance(hr, "returns_and_storno"), "HR-like query validation must not include returns-and-storno guidance");
+      return {
+        salesValid: sales.valid,
+        assetsValid: assets.valid,
+        hrValid: hr.valid,
+        salesGuidance: sales.domain_guidance,
+        assetsGuidance: assets.domain_guidance,
+      };
     });
 
     await this.test("tool.run_1c_query_counterparty_contact_info", async () => {
@@ -690,6 +748,11 @@ function assertRef(value, label) {
   assert(typeof value.type === "string" && value.type.includes("."), `${label}.type is missing`);
   assert(typeof value.uuid === "string" && value.uuid.length >= 32, `${label}.uuid is missing`);
   assert("presentation" in value, `${label}.presentation is missing`);
+}
+
+function hasGuidance(result, id) {
+  return Array.isArray(result?.domain_guidance)
+    && result.domain_guidance.some((item) => item?.id === id);
 }
 
 function requireContextRef(ref, name) {
