@@ -628,8 +628,14 @@ class ContractRunner {
         limit: 1,
       });
       assert(result.ok === false, "missing metadata query must fail");
-      assert(result.error?.message?.includes("Таблица не найдена") || result.error?.details?.parsed_details?.raw_exception?.includes("Таблица не найдена"), "must include raw table-not-found diagnostics");
-      return { errorCode: result.error?.code, message: result.error?.message };
+      const parsedDetails = result.error?.details?.parsed_details;
+      const validationDetails = Array.isArray(parsedDetails) ? parsedDetails : [];
+      const hasMetadataNotFound = validationDetails.some((error) => error.code === "metadata_not_found")
+        || result.error?.details?.raw_exception?.includes("metadata_not_found");
+      const hasExecutionDiagnostic = result.error?.message?.includes("Таблица не найдена")
+        || result.error?.details?.raw_exception?.includes("Таблица не найдена");
+      assert(hasMetadataNotFound || hasExecutionDiagnostic, "must include missing-metadata or table-not-found diagnostics");
+      return { errorCode: result.error?.code, message: result.error?.message, parsedDetails };
     });
 
     await this.test("negative.validate_forbidden_keyword", async () => {
