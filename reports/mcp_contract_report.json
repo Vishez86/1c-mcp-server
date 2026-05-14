@@ -1,413 +1,288 @@
 {
   "target": "https://laba-1c.astondevs.ru/BUH_KORP/hs/mcp/rpc",
-  "startedAt": "2026-05-13T14:17:05.150Z",
-  "finishedAt": "2026-05-13T14:17:15.718Z",
+  "startedAt": "2026-05-13T18:57:11.557Z",
+  "finishedAt": "2026-05-13T19:10:07.519Z",
   "total": 31,
-  "passed": 30,
-  "failed": 1,
+  "passed": 0,
+  "failed": 31,
   "tests": [
     {
       "name": "protocol.initialize",
-      "status": "PASS",
-      "elapsedMs": 332,
-      "details": {
-        "server": {
-          "name": "universal-1c-mcp",
-          "version": "0.1.0"
-        }
+      "status": "FAIL",
+      "elapsedMs": 31160,
+      "error": {
+        "message": "HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!",
+        "stack": "Error: HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!\n    at McpHttpClient.rpc (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:113:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:198:26\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.protocolTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:197:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:183:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "protocol.tools_list_has_17_tools",
-      "status": "PASS",
-      "elapsedMs": 198,
-      "details": {
-        "count": 17
+      "status": "FAIL",
+      "elapsedMs": 31035,
+      "error": {
+        "message": "HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!",
+        "stack": "Error: HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!\n    at McpHttpClient.rpc (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:113:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:208:26\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.protocolTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:207:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:183:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "protocol.resources_list_and_read",
-      "status": "PASS",
-      "elapsedMs": 505,
-      "details": {
-        "resources": [
-          "1c://metadata",
-          "1c://context/current-user"
-        ]
+      "status": "FAIL",
+      "elapsedMs": 31032,
+      "error": {
+        "message": "HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!",
+        "stack": "Error: HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!\n    at McpHttpClient.rpc (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:113:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:220:20\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.protocolTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:219:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:183:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "tool.get_current_user_context",
-      "status": "PASS",
-      "elapsedMs": 420,
-      "details": {
-        "user": "web",
-        "objects": 5653,
-        "tools": 17
+      "status": "FAIL",
+      "elapsedMs": 31035,
+      "error": {
+        "message": "HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!",
+        "stack": "Error: HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!\n    at McpHttpClient.rpc (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:113:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async McpHttpClient.callTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:135:35)\n    at async rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:663:22)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:657:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:233:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.discoveryTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:232:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:184:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "tool.list_metadata_objects_pagination",
-      "status": "PASS",
-      "elapsedMs": 805,
-      "details": {
-        "first": "Справочник.АвансовыйОтчетПрисоединенныеФайлы",
-        "second": "Справочник.АвансовыйПлатежИностранцаПоНДФЛПрисоединенныеФайлы"
+      "status": "FAIL",
+      "elapsedMs": 31033,
+      "error": {
+        "message": "HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!",
+        "stack": "Error: HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!\n    at McpHttpClient.rpc (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:113:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async McpHttpClient.callTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:135:35)\n    at async rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:663:22)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:657:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:249:21\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.discoveryTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:248:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:184:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "tool.list_metadata_objects_contact_reality",
-      "status": "PASS",
-      "elapsedMs": 547,
-      "details": {
-        "found": 14,
-        "hasLegacyRegister": true
+      "status": "FAIL",
+      "elapsedMs": 31033,
+      "error": {
+        "message": "HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!",
+        "stack": "Error: HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!\n    at McpHttpClient.rpc (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:113:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async McpHttpClient.callTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:135:35)\n    at async rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:663:22)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:657:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:268:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.discoveryTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:267:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:184:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "tool.get_metadata_structure_counterparties",
-      "status": "PASS",
-      "elapsedMs": 302,
-      "details": {
-        "attributes": 33,
-        "tabularSections": [
-          "КонтактнаяИнформация",
-          "ДополнительныеРеквизиты",
-          "ИсторияКПП",
-          "ИсторияНаименований",
-          "ИсторияКонтактнойИнформации"
-        ]
+      "status": "FAIL",
+      "elapsedMs": 31036,
+      "error": {
+        "message": "HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!",
+        "stack": "Error: HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!\n    at McpHttpClient.rpc (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:113:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async McpHttpClient.callTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:135:35)\n    at async rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:663:22)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:657:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:282:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:281:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:185:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "tool.get_metadata_structure_register_schema",
-      "status": "PASS",
-      "elapsedMs": 123,
-      "details": {
-        "periodicity": null,
-        "dimensions": 2,
-        "resources": 2
+      "status": "FAIL",
+      "elapsedMs": 31033,
+      "error": {
+        "message": "HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!",
+        "stack": "Error: HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!\n    at McpHttpClient.rpc (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:113:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async McpHttpClient.callTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:135:35)\n    at async rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:663:22)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:657:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:296:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:295:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:185:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "tool.validate_1c_query_existing_tabular_section",
-      "status": "PASS",
-      "elapsedMs": 121,
-      "details": {
-        "detected": [
-          "Справочник.Контрагенты"
-        ]
+      "status": "FAIL",
+      "elapsedMs": 31031,
+      "error": {
+        "message": "HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!",
+        "stack": "Error: HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!\n    at McpHttpClient.rpc (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:113:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async McpHttpClient.callTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:135:35)\n    at async rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:663:22)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:657:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:310:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:309:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:185:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "tool.run_1c_query_counterparty_contact_info",
-      "status": "PASS",
-      "elapsedMs": 158,
-      "details": {
-        "rows": 5,
-        "firstAddress": "142770, Москва г, МКАД 40-й (п Сосенское) км, владение № 1, строение 2",
-        "firstRef": {
-          "type": "Справочник.Контрагенты",
-          "uuid": "69e2ce88-cfdd-11e5-982d-14dae9b19a48",
-          "presentation": "Автотрейд",
-          "navigation_url": "e1cib/data/Справочник.Контрагенты?ref=982d14dae9b19a4811e5cfdd69e2ce88"
-        }
+      "status": "FAIL",
+      "elapsedMs": 31031,
+      "error": {
+        "message": "HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!",
+        "stack": "Error: HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!\n    at McpHttpClient.rpc (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:113:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async McpHttpClient.callTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:135:35)\n    at async rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:663:22)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:657:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:321:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:320:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:185:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "tool.run_1c_query_reference_encoding",
-      "status": "PASS",
-      "elapsedMs": 136,
-      "details": {
-        "ref": {
-          "type": "Справочник.Организации",
-          "uuid": "5b11ccb4-437b-11e6-9d48-14dae9b19a48",
-          "presentation": "Абрамов Г. С. ИП",
-          "navigation_url": "e1cib/data/Справочник.Организации?ref=9d4814dae9b19a4811e6437b5b11ccb4"
-        },
-        "name": "Абрамов Г. С. ИП"
+      "status": "FAIL",
+      "elapsedMs": 31031,
+      "error": {
+        "message": "HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!",
+        "stack": "Error: HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!\n    at McpHttpClient.rpc (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:113:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async McpHttpClient.callTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:135:35)\n    at async rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:663:22)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:657:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:335:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:334:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:185:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "tool.search_objects_returns_structured_refs",
-      "status": "PASS",
-      "elapsedMs": 122,
-      "details": {
-        "matches": 1,
-        "first": {
-          "type": "Справочник.Контрагенты",
-          "uuid": "69e2ce88-cfdd-11e5-982d-14dae9b19a48",
-          "presentation": "Автотрейд",
-          "navigation_url": "e1cib/data/Справочник.Контрагенты?ref=982d14dae9b19a4811e5cfdd69e2ce88"
-        }
+      "status": "FAIL",
+      "elapsedMs": 31034,
+      "error": {
+        "message": "HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!",
+        "stack": "Error: HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!\n    at McpHttpClient.rpc (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:113:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async McpHttpClient.callTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:135:35)\n    at async rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:663:22)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:657:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:351:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:350:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:186:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "tool.get_object_by_ref_with_tabular_section",
-      "status": "PASS",
-      "elapsedMs": 140,
-      "details": {
-        "ref": {
-          "type": "Справочник.Контрагенты",
-          "uuid": "69e2ce88-cfdd-11e5-982d-14dae9b19a48",
-          "presentation": "Автотрейд",
-          "navigation_url": "e1cib/data/Справочник.Контрагенты?ref=982d14dae9b19a4811e5cfdd69e2ce88"
-        },
-        "fields": [
-          "Код",
-          "Наименование",
-          "ИНН",
-          "КПП"
-        ],
-        "contactRows": 3
+      "status": "FAIL",
+      "elapsedMs": 0,
+      "error": {
+        "message": "fixture counterpartyRef is missing",
+        "stack": "Error: fixture counterpartyRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:685:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:696:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:364:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:29)\n    at ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:363:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:186:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "tool.find_object_by_id",
-      "status": "PASS",
-      "elapsedMs": 348,
-      "details": {
-        "searchedTypes": 1,
-        "matches": 1
+      "status": "FAIL",
+      "elapsedMs": 0,
+      "error": {
+        "message": "fixture counterpartyRef is missing",
+        "stack": "Error: fixture counterpartyRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:685:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:696:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:385:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:29)\n    at ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:384:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:186:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "tool.get_link_of_object",
-      "status": "PASS",
-      "elapsedMs": 121,
-      "details": {
-        "links": [
-          {
-            "type": "e1cib",
-            "url": "e1cib/data/Справочник.Контрагенты?ref=982d14dae9b19a4811e5cfdd69e2ce88",
-            "description": "Навигационная ссылка 1С"
-          }
-        ]
+      "status": "FAIL",
+      "elapsedMs": 1,
+      "error": {
+        "message": "fixture counterpartyRef is missing",
+        "stack": "Error: fixture counterpartyRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:685:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:696:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:397:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:29)\n    at ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:396:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:186:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "tool.find_references_to_object",
-      "status": "PASS",
-      "elapsedMs": 1724,
-      "details": {
-        "groups": 3,
-        "searchedTypes": 15,
-        "truncated": true
+      "status": "FAIL",
+      "elapsedMs": 0,
+      "error": {
+        "message": "fixture organizationRef/counterpartyRef is missing",
+        "stack": "Error: fixture organizationRef/counterpartyRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:685:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:696:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:411:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:29)\n    at ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:410:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:186:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "tool.get_object_history_graceful",
-      "status": "PASS",
-      "elapsedMs": 139,
-      "details": {
-        "supported": false,
-        "events": 0,
-        "capabilities": {
-          "versions": false,
-          "event_log": false,
-          "diff": false
-        }
+      "status": "FAIL",
+      "elapsedMs": 0,
+      "error": {
+        "message": "fixture counterpartyRef is missing",
+        "stack": "Error: fixture counterpartyRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:685:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:696:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:424:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:29)\n    at ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:423:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:186:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "tool.get_enum_values",
-      "status": "PASS",
-      "elapsedMs": 110,
-      "details": {
-        "values": [
-          "ПустаяСсылка",
-          "Адрес",
-          "Телефон",
-          "АдресЭлектроннойПочты",
-          "Skype",
-          "ВебСтраница",
-          "Факс",
-          "Другое"
-        ]
+      "status": "FAIL",
+      "elapsedMs": 31034,
+      "error": {
+        "message": "HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!",
+        "stack": "Error: HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!\n    at McpHttpClient.rpc (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:113:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async McpHttpClient.callTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:135:35)\n    at async rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:663:22)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:657:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:439:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.registerTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:438:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:187:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "tool.get_register_records_records_mode",
-      "status": "PASS",
-      "elapsedMs": 150,
-      "details": {
-        "rows": 2,
-        "truncated": true,
-        "nextCursor": "2"
+      "status": "FAIL",
+      "elapsedMs": 31035,
+      "error": {
+        "message": "HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!",
+        "stack": "Error: HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!\n    at McpHttpClient.rpc (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:113:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async McpHttpClient.callTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:135:35)\n    at async rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:663:22)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:657:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:450:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.registerTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:449:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:187:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "tool.get_register_records_bad_mode_is_diagnostic",
-      "status": "PASS",
-      "elapsedMs": 111,
-      "details": {
-        "error": {
-          "code": "register_mode_not_supported",
-          "message": "Режим balance не поддерживается для РегистрСведений",
-          "details": {
-            "diagnostic_mode": true,
-            "correlation_id": "8809b9ff-b532-441e-8476-6de4625e2428",
-            "raw_exception": "{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [register_mode_not_supported] Режим balance не поддерживается для РегистрСведений",
-            "parsed_details": {}
-          },
-          "correlation_id": "8809b9ff-b532-441e-8476-6de4625e2428"
-        }
+      "status": "FAIL",
+      "elapsedMs": 31028,
+      "error": {
+        "message": "HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!",
+        "stack": "Error: HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!\n    at McpHttpClient.rpc (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:113:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async McpHttpClient.callTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:135:35)\n    at async rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:663:22)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:463:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.registerTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:462:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:187:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "fixture.query_document_with_movements",
-      "status": "PASS",
-      "elapsedMs": 128,
-      "details": {
-        "ref": {
-          "type": "Документ.ОтчетПроизводстваЗаСмену",
-          "uuid": "6228a4db-840d-11f0-b64b-107c6124d29d",
-          "presentation": "Выпуск продукции (Отчет производства) КП00-000016 от 31.07.2025 17:00:00",
-          "navigation_url": "e1cib/data/Документ.ОтчетПроизводстваЗаСмену?ref=b64b107c6124d29d11f0840d6228a4db"
-        },
-        "number": "КП00-000016",
-        "date": "2025-07-31T17:00:00"
+      "status": "FAIL",
+      "elapsedMs": 31201,
+      "error": {
+        "message": "HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!",
+        "stack": "Error: HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!\n    at McpHttpClient.rpc (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:113:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async McpHttpClient.callTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:135:35)\n    at async rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:663:22)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:657:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:478:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.documentTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:477:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:188:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "tool.get_document_movements",
-      "status": "PASS",
-      "elapsedMs": 357,
-      "details": {
-        "registers": [
-          "РегистрНакопления.ВыпускПродукцииУслуг",
-          "РегистрБухгалтерии.Хозрасчетный"
-        ],
-        "truncated": false
+      "status": "FAIL",
+      "elapsedMs": 0,
+      "error": {
+        "message": "fixture documentRef is missing",
+        "stack": "Error: fixture documentRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:685:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:696:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:491:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:29)\n    at ContractRunner.documentTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:490:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:188:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "tool.list_reports",
-      "status": "PASS",
-      "elapsedMs": 180,
-      "details": {
-        "reports": [
-          "Отчет.АнализВерсийОбъектов",
-          "Отчет.АнализВзносовВФонды",
-          "Отчет.АнализДвиженийДенежныхСредств",
-          "Отчет.АнализЖурналаРегистрации",
-          "Отчет.АнализИзмененийЛичныхДанныхСотрудников"
-        ],
-        "firstVariant": "Основной"
+      "status": "FAIL",
+      "elapsedMs": 30888,
+      "error": {
+        "message": "HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!",
+        "stack": "Error: HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!\n    at McpHttpClient.rpc (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:113:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async McpHttpClient.callTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:135:35)\n    at async rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:663:22)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:657:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:507:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.reportTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:506:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:189:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "tool.get_report_info",
-      "status": "PASS",
-      "elapsedMs": 370,
-      "details": {
-        "report": "Отчет.АнализВерсийОбъектов",
-        "variants": [
-          {
-            "name": "Основной",
-            "presentation": "Основной"
-          }
-        ]
+      "status": "FAIL",
+      "elapsedMs": 31015,
+      "error": {
+        "message": "HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!",
+        "stack": "Error: HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!\n    at McpHttpClient.rpc (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:113:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async McpHttpClient.callTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:135:35)\n    at async rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:663:22)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:657:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:522:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.reportTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:520:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:189:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "tool.run_1c_report_graceful",
-      "status": "PASS",
-      "elapsedMs": 150,
-      "details": {
-        "report": "Отчет.АнализВерсийОбъектов",
-        "executionSupported": false,
-        "rows": 0,
-        "warnings": [
-          "Отчёт не может быть выведен в коллекцию значений универсальным адаптером. Чаще всего причина в таблицах/диаграммах СКД. Нужен отдельный адаптер отчёта или fallback в ТабличныйДокумент.",
-          "raw_exception: {MCP ОбщийМодуль.MCP_Reports.Модуль(252)}: Ошибка при вызове метода контекста (Выполнить): Ошибка компоновки макета: Ошибка генерации макета: Не поддерживается вывод таблиц и диаграмм в универсальную коллекцию значений"
-        ]
+      "status": "FAIL",
+      "elapsedMs": 31030,
+      "error": {
+        "message": "HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!",
+        "stack": "Error: HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!\n    at McpHttpClient.rpc (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:113:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async McpHttpClient.callTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:135:35)\n    at async rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:663:22)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:657:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:536:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.reportTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:533:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:189:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "negative.validate_missing_metadata_is_invalid",
       "status": "FAIL",
-      "elapsedMs": 112,
+      "elapsedMs": 31108,
       "error": {
-        "message": "validate must reject missing metadata, got valid=true with detected=[\"РегистрСведений.КонтактнаяИнформация\"]",
-        "stack": "Error: validate must reject missing metadata, got valid=true with detected=[\"РегистрСведений.КонтактнаяИнформация\"]\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:685:25)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:562:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.negativeTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:556:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:190:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
+        "message": "HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!",
+        "stack": "Error: HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!\n    at McpHttpClient.rpc (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:113:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async McpHttpClient.callTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:135:35)\n    at async rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:663:22)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:657:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:557:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.negativeTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:556:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:190:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "negative.run_missing_metadata_is_diagnostic",
-      "status": "PASS",
-      "elapsedMs": 119,
-      "details": {
-        "errorCode": "internal_error",
-        "message": "Ошибка выполнения запроса 1С: {MCP ОбщийМодуль.MCP_Query.Модуль(189)}: Ошибка при вызове метода контекста (Выполнить): {(1, 28)}: Таблица не найдена \"РегистрСведений.КонтактнаяИнформация\"\nВЫБРАТЬ ПЕРВЫЕ 1 Объект ИЗ <<?>>РегистрСведений.КонтактнаяИнформация"
+      "status": "FAIL",
+      "elapsedMs": 31011,
+      "error": {
+        "message": "HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!",
+        "stack": "Error: HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!\n    at McpHttpClient.rpc (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:113:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async McpHttpClient.callTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:135:35)\n    at async rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:663:22)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:568:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.negativeTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:567:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:190:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "negative.validate_forbidden_keyword",
-      "status": "PASS",
-      "elapsedMs": 111,
-      "details": {
-        "errors": [
-          {
-            "code": "forbidden_keyword",
-            "message": "Запрещённая конструкция: ПОМЕСТИТЬ",
-            "location": "ПОМЕСТИТЬ"
-          }
-        ]
+      "status": "FAIL",
+      "elapsedMs": 30986,
+      "error": {
+        "message": "HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!",
+        "stack": "Error: HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!\n    at McpHttpClient.rpc (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:113:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async McpHttpClient.callTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:135:35)\n    at async rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:663:22)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:657:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:578:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.negativeTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:577:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:190:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "negative.get_object_by_ref_bad_uuid",
-      "status": "PASS",
-      "elapsedMs": 107,
-      "details": {
-        "error": {
-          "code": "invalid_arguments",
-          "message": "Некорректный UUID: not-a-uuid",
-          "details": {
-            "diagnostic_mode": true,
-            "correlation_id": "8f974059-4cc8-4fbb-8abe-8d9c2b85227a",
-            "raw_exception": "{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [invalid_arguments] Некорректный UUID: not-a-uuid",
-            "parsed_details": {}
-          },
-          "correlation_id": "8f974059-4cc8-4fbb-8abe-8d9c2b85227a"
-        }
+      "status": "FAIL",
+      "elapsedMs": 31027,
+      "error": {
+        "message": "HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!",
+        "stack": "Error: HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!\n    at McpHttpClient.rpc (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:113:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async McpHttpClient.callTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:135:35)\n    at async rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:663:22)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:589:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.negativeTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:588:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:190:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "negative.unknown_tool",
-      "status": "PASS",
-      "elapsedMs": 107,
-      "details": {
-        "error": {
-          "code": "unknown_tool",
-          "message": "Unknown tool: definitely_not_a_tool",
-          "details": {
-            "tool": "definitely_not_a_tool"
-          },
-          "correlation_id": "83f79774-6f3c-4dc4-b633-f2faebeb9b52"
-        }
+      "status": "FAIL",
+      "elapsedMs": 31034,
+      "error": {
+        "message": "HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!",
+        "stack": "Error: HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!\n    at McpHttpClient.rpc (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:113:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async McpHttpClient.callTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:135:35)\n    at async rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:663:22)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:599:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.negativeTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:598:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:190:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     },
     {
       "name": "crosscheck.every_listed_query_object_has_basic_structure_sample",
-      "status": "PASS",
-      "elapsedMs": 2211,
-      "details": {
-        "checked": [
-          "Документ.АвансовыйОтчет",
-          "Документ.АвансовыйПлатежИностранцаПоНДФЛ",
-          "Документ.АвизоМПЗВходящее",
-          "Документ.АвизоМПЗИсходящее",
-          "Документ.АвизоОСВходящее",
-          "Документ.АвизоОСИсходящее",
-          "Документ.АвизоПрочееВходящее",
-          "Документ.АвизоПрочееИсходящее",
-          "Документ.АвизоРасчетыВходящее",
-          "Документ.АвизоРасчетыИсходящее",
-          "Документ.АктИнвентаризацииСАТУРН",
-          "Документ.АктОбОказанииПроизводственныхУслуг"
-        ]
+      "status": "FAIL",
+      "elapsedMs": 31035,
+      "error": {
+        "message": "HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!",
+        "stack": "Error: HTTP 500, non-JSON response: На сервере 1С:Предприятия не найдена лицензия. Не обнаружен ключ защиты программы или полученная программная лицензия!\n    at McpHttpClient.rpc (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:113:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async McpHttpClient.callTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:135:35)\n    at async rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:663:22)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:657:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:608:26\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:152:23)\n    at async ContractRunner.crossChecks (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:607:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:191:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:723:19)"
       }
     }
   ]
