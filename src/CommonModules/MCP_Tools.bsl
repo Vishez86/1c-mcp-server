@@ -245,6 +245,7 @@
 	Props.Вставить("include_commands", _Схема("boolean"));
 	Props.Вставить("include_query_names", _Схема("boolean"));
 	Props.Вставить("include_sensitive_flags", _Схема("boolean"));
+	Props.Вставить("include_virtual_tables", _Схема("boolean"));
 	Возврат _Tool("get_metadata_structure",
 		"Получить структуру объекта метаданных",
 		"Реквизиты, табличные части, измерения/ресурсы регистров и query names.",
