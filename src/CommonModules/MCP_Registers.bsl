@@ -136,7 +136,8 @@
 	ИначеЕсли RegisterType = "РегистрНакопления" Тогда
 		Совместимы = (Mode = "records" ИЛИ Mode = "balance" ИЛИ Mode = "turnovers" ИЛИ Mode = "balance_and_turnovers");
 	ИначеЕсли RegisterType = "РегистрБухгалтерии" Тогда
-		Совместимы = (Mode = "records" ИЛИ Mode = "balance" ИЛИ Mode = "turnovers" ИЛИ Mode = "balance_and_turnovers");
+		Совместимы = (Mode = "records" ИЛИ Mode = "balance" ИЛИ Mode = "turnovers"
+			ИЛИ Mode = "balance_and_turnovers" ИЛИ Mode = "turnovers_debit_credit");
 	ИначеЕсли RegisterType = "РегистрРасчета" Тогда
 		Совместимы = (Mode = "records");
 	КонецЕсли;
@@ -160,7 +161,7 @@
 			"Для режима " + Mode + " обязателен параметр period.");
 	КонецЕсли;
 
-	Если (Mode = "turnovers" ИЛИ Mode = "balance_and_turnovers")
+	Если (Mode = "turnovers" ИЛИ Mode = "balance_and_turnovers" ИЛИ Mode = "turnovers_debit_credit")
 		И (ПериодОт = Неопределено ИЛИ ПериодДо = Неопределено) Тогда
 		MCP_Errors.ВозбудитьОшибку(MCP_Errors.Код_InvalidArguments(),
 			"Для режима " + Mode + " обязательны параметры period_from и period_to.");
@@ -193,6 +194,12 @@
 		Виртуальная = ?(ПустаяСтрока(Фильтр), ".Остатки(&Период)", ".Остатки(&Период, " + Фильтр + ")");
 	ИначеЕсли Mode = "turnovers" Тогда
 		Виртуальная = ?(ПустаяСтрока(Фильтр), ".Обороты(&ПериодНачало, &ПериодКонец)", ".Обороты(&ПериодНачало, &ПериодКонец, , " + Фильтр + ")");
+	ИначеЕсли Mode = "turnovers_debit_credit" Тогда
+		Если RegisterType <> "РегистрБухгалтерии" Тогда
+			MCP_Errors.ВозбудитьОшибку(MCP_Errors.Код_RegisterModeNotSupported(),
+				"Режим turnovers_debit_credit применим только к РегистрБухгалтерии.");
+		КонецЕсли;
+		Виртуальная = ?(ПустаяСтрока(Фильтр), ".ОборотыДтКт(&ПериодНачало, &ПериодКонец)", ".ОборотыДтКт(&ПериодНачало, &ПериодКонец, , " + Фильтр + ")");
 	ИначеЕсли Mode = "balance_and_turnovers" Тогда
 		Виртуальная = ?(ПустаяСтрока(Фильтр), ".ОстаткиИОбороты(&ПериодНачало, &ПериодКонец)", ".ОстаткиИОбороты(&ПериодНачало, &ПериодКонец, , , " + Фильтр + ")");
 	Иначе

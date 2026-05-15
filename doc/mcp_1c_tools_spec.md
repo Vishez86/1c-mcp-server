@@ -214,6 +214,9 @@ string, number, boolean, date, datetime, uuid, ref, enum, array, null
 
 ```json
 {
+  "restrict_data_access": false,
+  "default_policy": "allow",
+  "denied_objects": [],
   "allowed_metadata": {
     "Справочник.Номенклатура": {
       "read": true,
@@ -225,11 +228,15 @@ string, number, boolean, date, datetime, uuid, ref, enum, array, null
       "read": true,
       "search_fields": ["Код", "Наименование", "ИНН", "КПП"],
       "default_fields": ["Код", "Наименование", "ИНН", "КПП"],
-      "hidden_fields": ["КомментарийВнутренний"]
+      "hidden_fields": []
     }
   }
 }
 ```
+
+Для тестовых стендов без чувствительных данных используйте `restrict_data_access=false`:
+сервер не применяет denylist/field-level фильтрацию данных, но продолжает проверять
+read-only синтаксис, безопасность имён, лимиты строк/времени и размер результата.
 
 ---
 
@@ -1748,7 +1755,7 @@ Discovery tool. Возвращает справочники, документы,
 
 ### Назначение
 
-Универсальный tool для чтения регистров: records, slice_first, slice_last, balance, turnovers, balance_and_turnovers.
+Универсальный tool для чтения регистров: records, slice_first, slice_last, balance, turnovers, balance_and_turnovers, turnovers_debit_credit.
 
 ### Когда использовать
 
@@ -1784,7 +1791,8 @@ Discovery tool. Возвращает справочники, документы,
         "slice_last",
         "balance",
         "turnovers",
-        "balance_and_turnovers"
+        "balance_and_turnovers",
+        "turnovers_debit_credit"
       ]
     },
     "period": {
@@ -1927,7 +1935,7 @@ Discovery tool. Возвращает справочники, документы,
 - Регистр должен быть разрешён.
 - mode должен соответствовать типу регистра.
 - slice_first/slice_last/balance требуют period.
-- turnovers/balance_and_turnovers требуют period_from и period_to.
+- turnovers/balance_and_turnovers/turnovers_debit_credit требуют period_from и period_to.
 - Фильтры, dimensions, resources, attributes только из metadata structure и allowlist.
 - limit обязателен.
 
@@ -1936,6 +1944,14 @@ Discovery tool. Возвращает справочники, документы,
 - РегистрСведений.<Имя>.СрезПоследних(...) для slice_last.
 - РегистрСведений.<Имя>.СрезПервых(...) для slice_first.
 - РегистрНакопления.<Имя>.Остатки(...), Обороты(...), ОстаткиИОбороты(...) для накопления.
+- РегистрБухгалтерии.<Имя>.Остатки(...) для остатков по счетам и субконто;
+  используйте `Субконто1/2/3`, `КоличествоОстаток`, `СуммаОстаток` для
+  аналитики остатков в разрезе доступных субконто.
+- РегистрБухгалтерии.<Имя>.Обороты(...) для оборотов по счетам и субконто.
+- РегистрБухгалтерии.<Имя>.ОстаткиИОбороты(...) для начальных/конечных остатков
+  и оборотов по счетам и субконто за период.
+- РегистрБухгалтерии.<Имя>.ОборотыДтКт(...) для корреспонденции Дт/Кт; используйте поля
+  СубконтоДт1/2/3 и СубконтоКт1/2/3 именно здесь, а не в основной таблице регистра.
 - Для records использовать основную таблицу регистра.
 
 ### Ошибки
