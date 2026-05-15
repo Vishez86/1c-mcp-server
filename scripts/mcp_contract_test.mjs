@@ -4,6 +4,7 @@ import { writeFile, mkdir } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 
 const DEFAULT_URL = "https://laba-1c.astondevs.ru/BUH_KORP/hs/mcp/rpc";
+const CONTRACT_PERIOD = makeContractPeriod();
 const EXPECTED_TOOLS = [
   "list_metadata_objects",
   "get_metadata_structure",
@@ -334,6 +335,35 @@ class ContractRunner {
       return { periodicity: schema.periodicity, dimensions: schema.dimensions.length, resources: schema.resources.length };
     });
 
+    await this.test("tool.get_metadata_structure_accounting_register_virtual_tables", async () => {
+      const accountingRegister = await findAccountingRegister(this.client);
+      if (!accountingRegister) {
+        return { skipped: true, reason: "no accounting register in metadata" };
+      }
+      this.context.accountingRegister = accountingRegister;
+      const result = await okTool(this.client, "get_metadata_structure", {
+        type: accountingRegister.fullName,
+        include_standard_attributes: true,
+        include_tabular_sections: false,
+      });
+      const schema = result.metadata?.register_schema;
+      assert(result.metadata?.kind === "РегистрБухгалтерии", "register kind must be РегистрБухгалтерии");
+      assert(schema, "register_schema must be present");
+      const virtualTables = schema.virtual_tables || [];
+      assert(virtualTables.some((item) => item.name === "Остатки"), "accounting register Остатки virtual table is missing");
+      assert(virtualTables.some((item) => item.name === "Обороты"), "accounting register Обороты virtual table is missing");
+      assert(virtualTables.some((item) => item.name === "ОборотыДтКт"), "accounting register ОборотыДтКт virtual table is missing");
+      assert(virtualTables.some((item) => item.name === "ОстаткиИОбороты"), "accounting register ОстаткиИОбороты virtual table is missing");
+      const balance = virtualTables.find((item) => item.name === "Остатки");
+      assert((balance.common_fields || []).includes("Субконто1"), "Остатки must advertise Субконто1");
+      assert((balance.common_fields || []).includes("КоличествоОстаток"), "Остатки must advertise КоличествоОстаток");
+      assert((balance.common_fields || []).includes("СуммаОстаток"), "Остатки must advertise СуммаОстаток");
+      const debitCredit = virtualTables.find((item) => item.name === "ОборотыДтКт");
+      assert((debitCredit.common_fields || []).includes("СубконтоДт1"), "ОборотыДтКт must advertise СубконтоДт1");
+      assert((debitCredit.common_fields || []).includes("СубконтоКт1"), "ОборотыДтКт must advertise СубконтоКт1");
+      return { register: accountingRegister.fullName, virtualTables };
+    });
+
     await this.test("tool.validate_1c_query_existing_tabular_section", async () => {
       const result = await okTool(this.client, "validate_1c_query", {
         query: "ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка, Представление ИЗ Справочник.Контрагенты.КонтактнаяИнформация",
@@ -401,6 +431,46 @@ class ContractRunner {
       assert(row.Ссылка.uuid === row.UUID, "encoded ref uuid must match query UUID column");
       this.context.organizationRef = row.Ссылка;
       return { ref: row.Ссылка, name: row.Наименование };
+    });
+
+    await this.test("tool.run_1c_query_accounting_debit_credit_subconto", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) {
+        return { skipped: true, reason: "no accounting register in metadata" };
+      }
+      const result = await okTool(this.client, "run_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Обороты.СчетДт, Обороты.СчетКт, Обороты.СубконтоДт1, Обороты.СубконтоКт1, Обороты.СуммаОборот ИЗ ${accountingRegister.fullName}.ОборотыДтКт(&Начало, &Конец) КАК Обороты`,
+        parameters: {
+          Начало: { kind: "datetime", value: CONTRACT_PERIOD.start },
+          Конец: { kind: "datetime", value: CONTRACT_PERIOD.end },
+        },
+        limit: 1,
+        include_column_types: true,
+      });
+      const columnNames = (result.columns || []).map((item) => item.name);
+      assert(columnNames.includes("СубконтоДт1"), "ОборотыДтКт query must expose СубконтоДт1");
+      assert(columnNames.includes("СубконтоКт1"), "ОборотыДтКт query must expose СубконтоКт1");
+      return { register: accountingRegister.fullName, columns: columnNames, rows: result.rows?.length || 0 };
+    });
+
+    await this.test("tool.run_1c_query_accounting_balance_subconto", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) {
+        return { skipped: true, reason: "no accounting register in metadata" };
+      }
+      const result = await okTool(this.client, "run_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 5 Остатки.Счет, Остатки.Субконто1, Остатки.КоличествоОстаток, Остатки.СуммаОстаток ИЗ ${accountingRegister.fullName}.Остатки(&Период) КАК Остатки`,
+        parameters: {
+          Период: { kind: "datetime", value: CONTRACT_PERIOD.end },
+        },
+        limit: 5,
+        include_column_types: true,
+      });
+      const columnNames = (result.columns || []).map((item) => item.name);
+      assert(columnNames.includes("Субконто1"), "balance query must expose Субконто1");
+      assert(columnNames.includes("КоличествоОстаток"), "balance query must expose КоличествоОстаток");
+      assert(columnNames.includes("СуммаОстаток"), "balance query must expose СуммаОстаток");
+      return { register: accountingRegister.fullName, columns: columnNames, rows: result.rows?.length || 0 };
     });
   }
 
@@ -515,6 +585,128 @@ class ContractRunner {
       assert(result.rows?.length > 0, "expected register rows");
       assertRef(result.rows[0].Номенклатура, "register row Номенклатура ref");
       return { rows: result.rows.length, truncated: result.truncated, nextCursor: result.next_cursor };
+    });
+
+    await this.test("tool.get_register_records_accounting_debit_credit_mode", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) {
+        return { skipped: true, reason: "no accounting register in metadata" };
+      }
+      const result = await okTool(this.client, "get_register_records", {
+        register_type: "РегистрБухгалтерии",
+        register: accountingRegister.name,
+        mode: "turnovers_debit_credit",
+        period_from: { kind: "datetime", value: CONTRACT_PERIOD.start },
+        period_to: { kind: "datetime", value: CONTRACT_PERIOD.end },
+        dimensions: ["СчетДт", "СчетКт", "СубконтоДт1", "СубконтоКт1"],
+        resources: ["СуммаОборот"],
+        limit: 1,
+      });
+      const columnNames = (result.columns || []).map((item) => item.name);
+      assert(result.register === accountingRegister.fullName, "unexpected accounting register name");
+      assert(result.mode === "turnovers_debit_credit", "unexpected accounting register mode");
+      assert(columnNames.includes("СубконтоДт1"), "get_register_records must expose СубконтоДт1");
+      assert(columnNames.includes("СубконтоКт1"), "get_register_records must expose СубконтоКт1");
+      return { register: accountingRegister.fullName, columns: columnNames, rows: result.rows?.length || 0, queryUsed: result.query_used };
+    });
+
+    await this.test("tool.get_register_records_accounting_debit_credit_filter", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) {
+        return { skipped: true, reason: "no accounting register in metadata" };
+      }
+      const sample = await okTool(this.client, "get_register_records", {
+        register_type: "РегистрБухгалтерии",
+        register: accountingRegister.name,
+        mode: "turnovers_debit_credit",
+        period_from: { kind: "datetime", value: CONTRACT_PERIOD.start },
+        period_to: { kind: "datetime", value: CONTRACT_PERIOD.end },
+        dimensions: ["СчетДт", "СчетКт"],
+        resources: ["СуммаОборот"],
+        limit: 1,
+      });
+      const account = sample.rows?.[0]?.СчетДт;
+      if (!account?.type || !account?.uuid) {
+        return { skipped: true, reason: "no debit-credit turnover rows with account ref", register: accountingRegister.fullName };
+      }
+      const result = await okTool(this.client, "get_register_records", {
+        register_type: "РегистрБухгалтерии",
+        register: accountingRegister.name,
+        mode: "turnovers_debit_credit",
+        period_from: { kind: "datetime", value: CONTRACT_PERIOD.start },
+        period_to: { kind: "datetime", value: CONTRACT_PERIOD.end },
+        filters: { СчетДт: toQueryRef(account) },
+        dimensions: ["СчетДт", "СчетКт"],
+        resources: ["СуммаОборот"],
+        limit: 5,
+      });
+      assert(result.query_used?.includes("ГДЕ СчетДт = &Filter_СчетДт"), "accounting debit-credit filter must be emitted as WHERE");
+      assert(!result.query_used?.includes("ОборотыДтКт(&ПериодНачало, &ПериодКонец,"), "filter must not be injected into ОборотыДтКт parameter slots");
+      for (const row of result.rows || []) {
+        assert(row.СчетДт?.uuid === account.uuid, "filtered debit account must match requested account");
+      }
+      return { register: accountingRegister.fullName, account: account.presentation, rows: result.rows?.length || 0, queryUsed: result.query_used };
+    });
+
+    await this.test("tool.get_register_records_accounting_turnovers_filter", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) {
+        return { skipped: true, reason: "no accounting register in metadata" };
+      }
+      const sample = await okTool(this.client, "get_register_records", {
+        register_type: "РегистрБухгалтерии",
+        register: accountingRegister.name,
+        mode: "turnovers",
+        period_from: { kind: "datetime", value: CONTRACT_PERIOD.start },
+        period_to: { kind: "datetime", value: CONTRACT_PERIOD.end },
+        dimensions: ["Счет"],
+        resources: ["СуммаОборот"],
+        limit: 1,
+      });
+      const account = sample.rows?.[0]?.Счет;
+      if (!account?.type || !account?.uuid) {
+        return { skipped: true, reason: "no accounting turnover rows with account ref", register: accountingRegister.fullName };
+      }
+      const turnovers = await okTool(this.client, "get_register_records", {
+        register_type: "РегистрБухгалтерии",
+        register: accountingRegister.name,
+        mode: "turnovers",
+        period_from: { kind: "datetime", value: CONTRACT_PERIOD.start },
+        period_to: { kind: "datetime", value: CONTRACT_PERIOD.end },
+        filters: { Счет: toQueryRef(account) },
+        dimensions: ["Счет"],
+        resources: ["СуммаОборот"],
+        limit: 5,
+      });
+      assert(turnovers.query_used?.includes("ГДЕ Счет = &Filter_Счет"), "accounting turnovers filter must be emitted as WHERE");
+      assert(!turnovers.query_used?.includes("Обороты(&ПериодНачало, &ПериодКонец,"), "filter must not be injected into Обороты parameter slots");
+      for (const row of turnovers.rows || []) {
+        assert(row.Счет?.uuid === account.uuid, "filtered turnover account must match requested account");
+      }
+      const balanceAndTurnovers = await okTool(this.client, "get_register_records", {
+        register_type: "РегистрБухгалтерии",
+        register: accountingRegister.name,
+        mode: "balance_and_turnovers",
+        period_from: { kind: "datetime", value: CONTRACT_PERIOD.start },
+        period_to: { kind: "datetime", value: CONTRACT_PERIOD.end },
+        filters: { Счет: toQueryRef(account) },
+        dimensions: ["Счет"],
+        resources: ["СуммаОборот"],
+        limit: 5,
+      });
+      assert(balanceAndTurnovers.query_used?.includes("ГДЕ Счет = &Filter_Счет"), "accounting balance-and-turnovers filter must be emitted as WHERE");
+      assert(!balanceAndTurnovers.query_used?.includes("ОстаткиИОбороты(&ПериодНачало, &ПериодКонец,"), "filter must not be injected into ОстаткиИОбороты parameter slots");
+      for (const row of balanceAndTurnovers.rows || []) {
+        assert(row.Счет?.uuid === account.uuid, "filtered account must match requested account");
+      }
+      return {
+        register: accountingRegister.fullName,
+        account: account.presentation,
+        turnoversRows: turnovers.rows?.length || 0,
+        balanceAndTurnoversRows: balanceAndTurnovers.rows?.length || 0,
+        turnoversQueryUsed: turnovers.query_used,
+        balanceAndTurnoversQueryUsed: balanceAndTurnovers.query_used,
+      };
     });
 
     await this.test("tool.get_register_records_bad_mode_is_diagnostic", async () => {
@@ -717,9 +909,26 @@ class ContractRunner {
   }
 }
 
+async function findAccountingRegister(client) {
+  const result = await okTool(client, "list_metadata_objects", {
+    kinds: ["РегистрБухгалтерии"],
+    limit: 1,
+    include_details: false,
+  });
+  const item = result.objects?.[0];
+  if (!item?.full_name) return null;
+  const [, nameFromFullName = ""] = item.full_name.split(".");
+  const name = item.name || nameFromFullName;
+  if (!name) return null;
+  return {
+    fullName: item.full_name,
+    name,
+  };
+}
+
 async function okTool(client, name, args) {
   const result = await rawTool(client, name, args);
-  assert(result?.ok === true, `${name} returned ok=false: ${JSON.stringify(result?.error || result).slice(0, 1200)}`);
+  assert(result?.ok === true, `${name} did not return ok=true: ${JSON.stringify(result?.error || result || {}).slice(0, 1200)}`);
   return result;
 }
 
@@ -733,8 +942,10 @@ function unwrapToolResult(result) {
     return result.structuredContent;
   }
 
-  const text = result?.content?.find?.((item) => item?.type === "text" && typeof item.text === "string")?.text;
-  if (text) {
+  const textItem = result?.content?.find?.((item) => item?.type === "text" && typeof item.text === "string");
+  if (textItem) {
+    const text = textItem.text;
+    if (!text) return {};
     try {
       return JSON.parse(text);
     } catch {
@@ -743,6 +954,23 @@ function unwrapToolResult(result) {
   }
 
   return result;
+}
+
+function makeContractPeriod() {
+  const end = new Date();
+  end.setUTCDate(end.getUTCDate() + 1);
+  return {
+    start: "2000-01-01T00:00:00",
+    end: end.toISOString().slice(0, 19),
+  };
+}
+
+function toQueryRef(ref) {
+  return {
+    kind: "ref",
+    type: ref.type,
+    uuid: ref.uuid,
+  };
 }
 
 function assert(condition, message) {

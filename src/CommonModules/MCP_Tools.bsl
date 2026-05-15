@@ -245,6 +245,7 @@
 	Props.Вставить("include_commands", _Схема("boolean"));
 	Props.Вставить("include_query_names", _Схема("boolean"));
 	Props.Вставить("include_sensitive_flags", _Схема("boolean"));
+	Props.Вставить("include_virtual_tables", _Схема("boolean"));
 	Возврат _Tool("get_metadata_structure",
 		"Получить структуру объекта метаданных",
 		"Реквизиты, табличные части, измерения/ресурсы регистров и query names.",
@@ -386,10 +387,10 @@
 	Props = Новый Структура;
 	Props.Вставить("register_type", _СхемаЕnum(СписокСтрок("РегистрСведений,РегистрНакопления,РегистрБухгалтерии,РегистрРасчета")));
 	Props.Вставить("register", _Схема("string"));
-	Props.Вставить("mode", _СхемаЕnum(СписокСтрок("records,slice_first,slice_last,balance,turnovers,balance_and_turnovers")));
+	Props.Вставить("mode", _СхемаЕnum(СписокСтрок("records,slice_first,slice_last,balance,turnovers,balance_and_turnovers,turnovers_debit_credit")));
 	Props.Вставить("period", _Схема("string", , "Дата/момент для records, slice_first/slice_last и balance."));
-	Props.Вставить("period_from", _Схема("string", , "Начало периода для records, turnovers и balance_and_turnovers."));
-	Props.Вставить("period_to", _Схема("string", , "Конец периода для records, turnovers и balance_and_turnovers."));
+	Props.Вставить("period_from", _Схема("string", , "Начало периода для records, turnovers, balance_and_turnovers и turnovers_debit_credit."));
+	Props.Вставить("period_to", _Схема("string", , "Конец периода для records, turnovers, balance_and_turnovers и turnovers_debit_credit."));
 	Props.Вставить("filters", _СхемаОбъект());
 	Props.Вставить("dimensions", _Схема("array"));
 	Props.Вставить("resources", _Схема("array"));

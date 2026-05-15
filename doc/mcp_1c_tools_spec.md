@@ -210,10 +210,13 @@ string, number, boolean, date, datetime, uuid, ref, enum, array, null
 | metadata_cache_ttl_seconds | 300 |
 | max_result_json_bytes | 5 MB |
 
-Пример allowlist:
+Пример dev allowlist для тестовых стендов без чувствительных данных:
 
 ```json
 {
+  "restrict_data_access": false,
+  "default_policy": "allow",
+  "denied_objects": [],
   "allowed_metadata": {
     "Справочник.Номенклатура": {
       "read": true,
@@ -225,11 +228,20 @@ string, number, boolean, date, datetime, uuid, ref, enum, array, null
       "read": true,
       "search_fields": ["Код", "Наименование", "ИНН", "КПП"],
       "default_fields": ["Код", "Наименование", "ИНН", "КПП"],
-      "hidden_fields": ["КомментарийВнутренний"]
+      "hidden_fields": []
     }
   }
 }
 ```
+
+Для тестовых стендов без чувствительных данных используйте `restrict_data_access=false`:
+сервер не применяет denylist/field-level фильтрацию данных, но продолжает проверять
+read-only синтаксис, безопасность имён, лимиты строк/времени и размер результата.
+
+Для production-режима используйте отдельный пример `config/allowlist.prod.example.json`:
+там включён `restrict_data_access=true`, `default_policy=deny`, denylist типовых
+чувствительных объектов и пример `hidden_fields`. Текущий `config/allowlist.json`
+оставлен permissive намеренно для тестирования работоспособности.
 
 ---
 
@@ -452,6 +464,10 @@ Discovery tool. Возвращает справочники, документы,
       "default": true
     },
     "include_sensitive_flags": {
+      "type": "boolean",
+      "default": true
+    },
+    "include_virtual_tables": {
       "type": "boolean",
       "default": true
     }
@@ -1748,7 +1764,7 @@ Discovery tool. Возвращает справочники, документы,
 
 ### Назначение
 
-Универсальный tool для чтения регистров: records, slice_first, slice_last, balance, turnovers, balance_and_turnovers.
+Универсальный tool для чтения регистров: records, slice_first, slice_last, balance, turnovers, balance_and_turnovers, turnovers_debit_credit.
 
 ### Когда использовать
 
@@ -1784,7 +1800,8 @@ Discovery tool. Возвращает справочники, документы,
         "slice_last",
         "balance",
         "turnovers",
-        "balance_and_turnovers"
+        "balance_and_turnovers",
+        "turnovers_debit_credit"
       ]
     },
     "period": {
@@ -1927,7 +1944,7 @@ Discovery tool. Возвращает справочники, документы,
 - Регистр должен быть разрешён.
 - mode должен соответствовать типу регистра.
 - slice_first/slice_last/balance требуют period.
-- turnovers/balance_and_turnovers требуют period_from и period_to.
+- turnovers/balance_and_turnovers/turnovers_debit_credit требуют period_from и period_to.
 - Фильтры, dimensions, resources, attributes только из metadata structure и allowlist.
 - limit обязателен.
 
@@ -1935,7 +1952,22 @@ Discovery tool. Возвращает справочники, документы,
 
 - РегистрСведений.<Имя>.СрезПоследних(...) для slice_last.
 - РегистрСведений.<Имя>.СрезПервых(...) для slice_first.
-- РегистрНакопления.<Имя>.Остатки(...), Обороты(...), ОстаткиИОбороты(...) для накопления.
+- РегистрНакопления.<Имя>.Обороты(...) для всех регистров накопления.
+- РегистрНакопления.<Имя>.Остатки(...) и ОстаткиИОбороты(...) только для
+  регистров накопления вида `Остатки`; для оборотных регистров эти таблицы не
+  рекламируются в `virtual_tables`.
+- РегистрБухгалтерии.<Имя>.Остатки(...) для остатков по счетам и субконто;
+  используйте `Субконто1/2/3`, `КоличествоОстаток`, `СуммаОстаток` для
+  аналитики остатков в разрезе доступных субконто.
+- РегистрБухгалтерии.<Имя>.Обороты(...) для оборотов по счетам и субконто.
+- РегистрБухгалтерии.<Имя>.ОстаткиИОбороты(...) для начальных/конечных остатков
+  и оборотов по счетам и субконто за период.
+- РегистрБухгалтерии.<Имя>.ОборотыДтКт(...) для корреспонденции Дт/Кт; используйте поля
+  СубконтоДт1/2/3 и СубконтоКт1/2/3 именно здесь, а не в основной таблице регистра.
+- РегистрСведений.<Имя>.СрезПервых/СрезПоследних рекламируются только для
+  периодических регистров сведений.
+- Для РегистрРасчета `virtual_tables` содержит явный `unsupported=true`, пока
+  универсальное описание виртуальных таблиц расчёта не реализовано.
 - Для records использовать основную таблицу регистра.
 
 ### Ошибки
