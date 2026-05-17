@@ -358,6 +358,7 @@ class ContractRunner {
       assert((balance.common_fields || []).includes("Субконто1"), "Остатки must advertise Субконто1");
       assert((balance.common_fields || []).includes("КоличествоОстаток"), "Остатки must advertise КоличествоОстаток");
       assert((balance.common_fields || []).includes("СуммаОстаток"), "Остатки must advertise СуммаОстаток");
+      assert((balance.description || "").includes("УникальныйИдентификатор"), "Остатки description must mention UUID joins for Субконто");
       const debitCredit = virtualTables.find((item) => item.name === "ОборотыДтКт");
       assert((debitCredit.common_fields || []).includes("СубконтоДт1"), "ОборотыДтКт must advertise СубконтоДт1");
       assert((debitCredit.common_fields || []).includes("СубконтоКт1"), "ОборотыДтКт must advertise СубконтоКт1");
@@ -396,13 +397,47 @@ class ContractRunner {
         explain: true,
       });
       assert(!hasGuidance(hr, "returns_and_storno"), "HR-like query validation must not include returns-and-storno guidance");
+      const subconto = await okTool(this.client, "validate_1c_query", {
+        query: "ВЫБРАТЬ ПЕРВЫЕ 1 Обороты.СубконтоДт1 ИЗ РегистрБухгалтерии.Хозрасчетный.ОборотыДтКт(&Начало, &Конец) КАК Обороты",
+        parameters: {
+          Начало: { kind: "datetime", value: CONTRACT_PERIOD.start },
+          Конец: { kind: "datetime", value: CONTRACT_PERIOD.end },
+        },
+        strict: true,
+        explain: true,
+      });
+      assert(hasGuidance(subconto, "subconto_join_by_uuid"), "subconto query validation must include UUID join guidance");
       return {
         salesValid: sales.valid,
         assetsValid: assets.valid,
         hrValid: hr.valid,
         salesGuidance: sales.domain_guidance,
         assetsGuidance: assets.domain_guidance,
+        subcontoGuidance: subconto.domain_guidance,
       };
+    });
+
+    await this.test("tool.validate_1c_query_having_keyword", async () => {
+      const result = await okTool(this.client, "validate_1c_query", {
+        query: "ВЫБРАТЬ ПЕРВЫЕ 10 Организации.ПометкаУдаления КАК ПометкаУдаления, КОЛИЧЕСТВО(Организации.Ссылка) КАК Количество ИЗ Справочник.Организации КАК Организации СГРУППИРОВАТЬ ПО Организации.ПометкаУдаления ИМЕЮЩИЕ КОЛИЧЕСТВО(Организации.Ссылка) > 0",
+        strict: true,
+        explain: true,
+      });
+      assert(result.valid === true, `ИМЕЮЩИЕ must be valid, errors=${JSON.stringify(result.errors)}`);
+      return { detected: result.detected_objects };
+    });
+
+    await this.test("tool.run_1c_query_temporary_table_package", async () => {
+      const result = await okTool(this.client, "run_1c_query", {
+        query: "ВЫБРАТЬ ПЕРВЫЕ 5 Организации.Ссылка КАК Ссылка, УникальныйИдентификатор(Организации.Ссылка) КАК UUID ПОМЕСТИТЬ ВТОрганизации ИЗ Справочник.Организации КАК Организации ИНДЕКСИРОВАТЬ ПО UUID; ВЫБРАТЬ ПЕРВЫЕ 1 ВТОрганизации.Ссылка КАК Ссылка, ВТОрганизации.UUID КАК UUID ИЗ ВТОрганизации КАК ВТОрганизации",
+        limit: 1,
+        include_column_types: true,
+      });
+      const row = result.rows?.[0];
+      assert(row, "temporary table package must return final SELECT row");
+      assertRef(row.Ссылка, "temporary table ref");
+      assert(row.Ссылка.uuid === row.UUID, "temporary table UUID must match encoded ref uuid");
+      return { row };
     });
 
     await this.test("tool.run_1c_query_counterparty_contact_info", async () => {
@@ -832,12 +867,45 @@ class ContractRunner {
 
     await this.test("negative.validate_forbidden_keyword", async () => {
       const result = await okTool(this.client, "validate_1c_query", {
-        query: "ВЫБРАТЬ Ссылка ПОМЕСТИТЬ ВТ ИЗ Справочник.Контрагенты",
+        query: "ВЫБРАТЬ Ссылка ИЗ Справочник.Контрагенты ДЛЯ ИЗМЕНЕНИЯ",
         strict: true,
         explain: true,
       });
       assert(result.valid === false, "forbidden keyword query must be invalid");
       assert((result.errors || []).some((error) => error.code === "forbidden_keyword"), "forbidden_keyword error is missing");
+      return { errors: result.errors };
+    });
+
+    await this.test("negative.validate_invalid_imeya_keyword", async () => {
+      const result = await okTool(this.client, "validate_1c_query", {
+        query: "ВЫБРАТЬ ПЕРВЫЕ 10 Организации.ПометкаУдаления КАК ПометкаУдаления, КОЛИЧЕСТВО(Организации.Ссылка) КАК Количество ИЗ Справочник.Организации КАК Организации СГРУППИРОВАТЬ ПО Организации.ПометкаУдаления ИМЕЯ КОЛИЧЕСТВО(Организации.Ссылка) > 0",
+        strict: true,
+        explain: true,
+      });
+      assert(result.valid === false, "ИМЕЯ query must be invalid");
+      assert((result.errors || []).some((error) => error.code === "invalid_1c_query_keyword"), "invalid_1c_query_keyword error is missing");
+      return { errors: result.errors };
+    });
+
+    await this.test("negative.validate_plain_batch_without_temp_tables", async () => {
+      const result = await okTool(this.client, "validate_1c_query", {
+        query: "ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка ИЗ Справочник.Организации; ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка ИЗ Справочник.Контрагенты",
+        strict: true,
+        explain: true,
+      });
+      assert(result.valid === false, "plain batch query without temp tables must be invalid");
+      assert((result.errors || []).some((error) => error.code === "batch_query_forbidden"), "batch_query_forbidden error is missing");
+      return { errors: result.errors };
+    });
+
+    await this.test("negative.validate_temp_table_without_final_select", async () => {
+      const result = await okTool(this.client, "validate_1c_query", {
+        query: "ВЫБРАТЬ ПЕРВЫЕ 1 Организации.Ссылка КАК Ссылка ПОМЕСТИТЬ ВТОрганизации ИЗ Справочник.Организации КАК Организации",
+        strict: true,
+        explain: true,
+      });
+      assert(result.valid === false, "temp table query without final SELECT must be invalid");
+      assert((result.errors || []).some((error) => error.code === "temporary_table_package_required"), "temporary_table_package_required error is missing");
       return { errors: result.errors };
     });
 
