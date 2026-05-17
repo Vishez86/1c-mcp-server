@@ -30,12 +30,12 @@
 
   "query_validation": {
     "denied_keywords": [
-      "ПОМЕСТИТЬ", "PLACE",
-      "ИНДЕКСИРОВАТЬ ПО", "INDEX BY",
-      "УНИЧТОЖИТЬ", "DROP",
+      "DROP",
       "ДЛЯ ИЗМЕНЕНИЯ", "FOR UPDATE",
       "ПРАВА ДОСТУПА", "GRANT"
     ],
+    "allow_temporary_tables": true,
+    "temporary_table_note": "Постоянные данные read-only; ПОМЕСТИТЬ/ИНДЕКСИРОВАТЬ ПО/УНИЧТОЖИТЬ разрешены только для временных таблиц внутри пакетного запроса.",
     "require_top_clause": true,
     "block_full_table_scan": false
   },
