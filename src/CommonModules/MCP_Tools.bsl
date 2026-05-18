@@ -15,6 +15,7 @@
 	Результат.Добавить(Tool_validate_1c_query());
 	Результат.Добавить(Tool_get_1c_query_guidance());
 	Результат.Добавить(Tool_get_accounting_accounts_map());
+	Результат.Добавить(Tool_get_database_passport());
 	Результат.Добавить(Tool_get_object_by_ref());
 	Результат.Добавить(Tool_find_object_by_id());
 	Результат.Добавить(Tool_search_objects());
@@ -61,6 +62,8 @@
 			Данные = MCP_Tools_Impl.Get1CQueryGuidance(Аргументы);
 		ИначеЕсли ИмяТула = "get_accounting_accounts_map" Тогда
 			Данные = MCP_Tools_Impl.GetAccountingAccountsMap(Аргументы);
+		ИначеЕсли ИмяТула = "get_database_passport" Тогда
+			Данные = MCP_Tools_Impl.GetDatabasePassport(Аргументы);
 		ИначеЕсли ИмяТула = "get_object_by_ref" Тогда
 			Данные = MCP_Tools_Impl.GetObjectByRef(Аргументы);
 		ИначеЕсли ИмяТула = "find_object_by_id" Тогда
@@ -310,6 +313,22 @@
 	Возврат _Tool("get_accounting_accounts_map",
 		"Получить карту счетов и субконто",
 		"Универсально читает ПланСчетов.<Имя> и табличную часть ВидыСубконто, чтобы LLM видел соответствие счёта позициям Субконто1/2/3 без угадывания структуры конкретной базы.",
+		Props);
+КонецФункции
+
+Функция Tool_get_database_passport()
+	Props = Новый Структура;
+	Props.Вставить("accounting_register", _Схема("string", , "Опционально: полное имя бухгалтерского регистра, например РегистрБухгалтерии.<Имя>. Если не указано, проверяются доступные бухгалтерские регистры."));
+	Props.Вставить("include_organizations", _Схема("boolean", , "Вернуть организации, реально встречающиеся в бухгалтерских регистрах."));
+	Props.Вставить("include_accounting_registers", _Схема("boolean", , "Вернуть период и количество записей бухгалтерских регистров."));
+	Props.Вставить("include_accumulation_registers", _Схема("boolean", , "Проверить регистры накопления на наличие данных."));
+	Props.Вставить("organization_limit", _СхемаInt(1, 200, 50));
+	Props.Вставить("accounting_register_limit", _СхемаInt(1, 50, 10));
+	Props.Вставить("accumulation_register_limit", _СхемаInt(1, 200, 100));
+	Props.Вставить("include_empty_registers", _Схема("boolean", , "Если false, в accumulation_registers возвращаются только регистры с данными; counters всё равно отражают checked."));
+	Возврат _Tool("get_database_passport",
+		"Получить паспорт фактических данных базы",
+		"Возвращает активные организации, горизонт данных бухгалтерских регистров и флаги заполненности регистров накопления. Tool читает только фактические данные и остаётся независимым от конкретной конфигурации.",
 		Props);
 КонецФункции
 
