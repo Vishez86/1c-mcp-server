@@ -487,7 +487,8 @@ class ContractRunner {
     await this.test("tool.get_database_passport", async () => {
       const result = await okTool(this.client, "get_database_passport", {
         include_organizations: true,
-        include_accounting_registers: true,
+        include_period: true,
+        include_closed_periods: true,
         include_accumulation_registers: true,
         organization_limit: 5,
         accounting_register_limit: 2,
@@ -499,8 +500,10 @@ class ContractRunner {
       assert(Array.isArray(result.organizations), "organizations must be an array");
       assert(result.data_period && typeof result.data_period === "object", "data_period must be present");
       assert(Array.isArray(result.accounting_registers), "accounting_registers must be an array");
-      assert(Array.isArray(result.accumulation_registers), "accumulation_registers must be an array");
-      assert(Array.isArray(result.accumulation_registers_with_data), "accumulation_registers_with_data must be an array");
+      assert(Array.isArray(result.closed_periods), "closed_periods must be an array");
+      assert(result.accumulation_registers && typeof result.accumulation_registers === "object", "accumulation_registers must be an object");
+      assert(Array.isArray(result.accumulation_registers.with_data), "accumulation_registers.with_data must be an array");
+      assert(Array.isArray(result.accumulation_registers.empty), "accumulation_registers.empty must be an array");
       return {
         organizations: result.organizations.length,
         accountingRegisters: result.accounting_registers.length,
