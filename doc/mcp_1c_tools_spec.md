@@ -1,4 +1,4 @@
-# Спецификация MCP-сервера для 1С: 18 read-only tools
+# Спецификация MCP-сервера для 1С: 19 read-only tools
 
 **Версия документа:** 0.1  
 **Дата:** 2026-05-12  
@@ -254,19 +254,20 @@ read-only синтаксис, безопасность имён, лимиты с
 | 3 | `run_1c_query` | Выполнить безопасный read-only запрос 1С | P0 |
 | 4 | `validate_1c_query` | Проверить запрос 1С до выполнения | P0 |
 | 5 | `get_1c_query_guidance` | Получить универсальные подсказки по языку запросов 1С | P0 |
-| 6 | `get_object_by_ref` | Получить объект по типу и UUID ссылки | P0 |
-| 7 | `find_object_by_id` | Найти объект по UUID без знания типа | P0 |
-| 8 | `search_objects` | Поиск объектов по строке, коду, номеру, ИНН, артикулу | P0 |
-| 9 | `get_link_of_object` | Получить навигационную ссылку на объект | P1 |
-| 10 | `find_references_to_object` | Найти ссылки на объект | P1 |
-| 11 | `get_enum_values` | Получить значения перечисления | P0 |
-| 12 | `get_register_records` | Получить записи, срезы, остатки и обороты регистров | P0 |
-| 13 | `get_document_movements` | Получить движения документа по регистрам | P0 |
-| 14 | `list_reports` | Получить список доступных отчётов | P1 |
-| 15 | `get_report_info` | Получить параметры и структуру отчёта | P1 |
-| 16 | `run_1c_report` | Выполнить отчёт 1С | P1 |
-| 17 | `get_object_history` | Получить историю объекта, версии или события журнала | P2 |
-| 18 | `get_current_user_context` | Получить текущий контекст пользователя и базы | P0 |
+| 6 | `get_accounting_accounts_map` | Получить карту счетов и субконто плана счетов | P0 |
+| 7 | `get_object_by_ref` | Получить объект по типу и UUID ссылки | P0 |
+| 8 | `find_object_by_id` | Найти объект по UUID без знания типа | P0 |
+| 9 | `search_objects` | Поиск объектов по строке, коду, номеру, ИНН, артикулу | P0 |
+| 10 | `get_link_of_object` | Получить навигационную ссылку на объект | P1 |
+| 11 | `find_references_to_object` | Найти ссылки на объект | P1 |
+| 12 | `get_enum_values` | Получить значения перечисления | P0 |
+| 13 | `get_register_records` | Получить записи, срезы, остатки и обороты регистров | P0 |
+| 14 | `get_document_movements` | Получить движения документа по регистрам | P0 |
+| 15 | `list_reports` | Получить список доступных отчётов | P1 |
+| 16 | `get_report_info` | Получить параметры и структуру отчёта | P1 |
+| 17 | `run_1c_report` | Выполнить отчёт 1С | P1 |
+| 18 | `get_object_history` | Получить историю объекта, версии или события журнала | P2 |
+| 19 | `get_current_user_context` | Получить текущий контекст пользователя и базы | P0 |
 
 ---
 
@@ -1044,7 +1045,77 @@ Discovery tool. Возвращает справочники, документы,
 
 ---
 
-## 7.6. `get_object_by_ref`
+## 7.6. `get_accounting_accounts_map`
+
+**Title:** Получить карту счетов и субконто
+**Priority:** P0
+
+### Назначение
+
+Универсально читает `ПланСчетов.<Имя>` и табличную часть `ВидыСубконто`, чтобы агент видел соответствие счёта позициям `Субконто1/2/3` без угадывания структуры конкретной базы.
+
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "chart": {
+      "type": "string",
+      "description": "Полное имя плана счетов. Если не указано и доступен один ПланСчетов.*, он выбирается автоматически."
+    },
+    "account_code_prefix": {
+      "type": "string"
+    },
+    "include_empty_subconto": {
+      "type": "boolean",
+      "default": false
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000,
+      "default": 500
+    },
+    "cursor": {
+      "type": "string"
+    },
+    "include_query": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": false
+}
+```
+
+### Output Shape
+
+```json
+{
+  "ok": true,
+  "chart": "ПланСчетов.<Имя>",
+  "tabular_section": "ВидыСубконто",
+  "tabular_section_found": true,
+  "subconto_attributes": ["ВидСубконто"],
+  "columns": [],
+  "rows": [],
+  "truncated": false,
+  "next_cursor": null,
+  "configuration_agnostic": true,
+  "guidance": "Позиция строки ВидыСубконто соответствует позиции Субконто1/2/3."
+}
+```
+
+### Правила
+
+- Tool не знает заранее имена счетов и не содержит типовых кодов счетов.
+- Если доступно несколько планов счетов и `chart` не указан, tool возвращает `needs_chart=true` и список кандидатов.
+- Для чтения используются только metadata-discovered поля табличной части `ВидыСубконто`; счета без строк `ВидыСубконто` по умолчанию не включаются.
+- Постоянные данные не изменяются.
+
+---
+
+## 7.7. `get_object_by_ref`
 
 **Title:** Получить объект по типу и UUID ссылки  
 **Priority:** P0
@@ -1189,7 +1260,7 @@ Discovery tool. Возвращает справочники, документы,
 
 ---
 
-## 7.7. `find_object_by_id`
+## 7.8. `find_object_by_id`
 
 **Title:** Найти объект по UUID без знания типа  
 **Priority:** P0
@@ -1318,7 +1389,7 @@ Discovery tool. Возвращает справочники, документы,
 
 ---
 
-## 7.8. `search_objects`
+## 7.9. `search_objects`
 
 **Title:** Поиск объектов по строке, коду, номеру, ИНН, артикулу  
 **Priority:** P0
@@ -1496,7 +1567,7 @@ Discovery tool. Возвращает справочники, документы,
 
 ---
 
-## 7.9. `get_link_of_object`
+## 7.10. `get_link_of_object`
 
 **Title:** Получить навигационную ссылку на объект  
 **Priority:** P1
@@ -1625,7 +1696,7 @@ Discovery tool. Возвращает справочники, документы,
 
 ---
 
-## 7.10. `find_references_to_object`
+## 7.11. `find_references_to_object`
 
 **Title:** Найти ссылки на объект  
 **Priority:** P1
@@ -1805,7 +1876,7 @@ Discovery tool. Возвращает справочники, документы,
 
 ---
 
-## 7.11. `get_enum_values`
+## 7.12. `get_enum_values`
 
 **Title:** Получить значения перечисления  
 **Priority:** P0
@@ -1912,7 +1983,7 @@ Discovery tool. Возвращает справочники, документы,
 
 ---
 
-## 7.12. `get_register_records`
+## 7.13. `get_register_records`
 
 **Title:** Получить записи, срезы, остатки и обороты регистров  
 **Priority:** P0
@@ -2140,7 +2211,7 @@ Discovery tool. Возвращает справочники, документы,
 
 ---
 
-## 7.13. `get_document_movements`
+## 7.14. `get_document_movements`
 
 **Title:** Получить движения документа по регистрам  
 **Priority:** P0
@@ -2284,7 +2355,7 @@ Discovery tool. Возвращает справочники, документы,
 
 ---
 
-## 7.14. `list_reports`
+## 7.15. `list_reports`
 
 **Title:** Получить список доступных отчётов  
 **Priority:** P1
@@ -2430,7 +2501,7 @@ Discovery tool для отчётов: возвращает доступные О
 
 ---
 
-## 7.15. `get_report_info`
+## 7.16. `get_report_info`
 
 **Title:** Получить параметры и структуру отчёта  
 **Priority:** P1
@@ -2568,7 +2639,7 @@ Discovery tool для отчётов: возвращает доступные О
 
 ---
 
-## 7.16. `run_1c_report`
+## 7.17. `run_1c_report`
 
 **Title:** Выполнить отчёт 1С  
 **Priority:** P1
@@ -2736,7 +2807,7 @@ Discovery tool для отчётов: возвращает доступные О
 
 ---
 
-## 7.17. `get_object_history`
+## 7.18. `get_object_history`
 
 **Title:** Получить историю объекта, версии или события журнала  
 **Priority:** P2
@@ -2907,7 +2978,7 @@ Discovery tool для отчётов: возвращает доступные О
 
 ---
 
-## 7.18. `get_current_user_context`
+## 7.19. `get_current_user_context`
 
 **Title:** Получить текущий контекст пользователя и базы  
 **Priority:** P0
@@ -3021,6 +3092,7 @@ Discovery tool для отчётов: возвращает доступные О
       "run_1c_query",
       "validate_1c_query",
       "get_1c_query_guidance",
+      "get_accounting_accounts_map",
       "get_object_by_ref",
       "find_object_by_id",
       "search_objects",
@@ -3223,7 +3295,7 @@ Knowledge resources возвращают встроенные правила и�
 
 MVP готов, если:
 
-1. Все 18 tools возвращаются в `tools/list`.
+1. Все 19 tools возвращаются в `tools/list`.
 2. У каждого tool есть корректный `inputSchema`.
 3. Все tools возвращают `content`, `structuredContent`, `isError`.
 4. Реализованы allowlist и denylist.
@@ -3247,7 +3319,7 @@ MVP готов, если:
 }
 ```
 
-Ожидание: `ok=true`, `read_only=true`, список tools содержит 18 tools.
+Ожидание: `ok=true`, `read_only=true`, список tools содержит 19 tools.
 
 ## Test 2: Metadata
 
