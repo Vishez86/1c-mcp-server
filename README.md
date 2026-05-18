@@ -2,12 +2,12 @@
 
 Универсальный MCP-сервер для безопасного read-only доступа к данным и метаданным 1С:Предприятия 8. Постоянные данные не изменяются; временные таблицы языка запросов 1С разрешены как рабочая область выполнения аналитического запроса.
 
-Сервер реализует протокол **Model Context Protocol (MCP) 2025-11-25** поверх HTTP-сервиса 1С и предоставляет LLM-агентам 19 read-only инструментов согласно спецификации `mcp_1c_tools_spec.md`.
+Сервер реализует протокол **Model Context Protocol (MCP) 2025-11-25** поверх HTTP-сервиса 1С и предоставляет LLM-агентам 20 read-only инструментов согласно спецификации `mcp_1c_tools_spec.md`.
 
 ## Возможности
 
 - Полностью read-only: создание/изменение/удаление объектов невозможно.
-- 19 tools: discovery → inspect → search → retrieve → explain → navigate → report → query guidance.
+- 20 tools: discovery → inspect → search → retrieve → explain → navigate → report → query guidance → data passport.
 - Allowlist/denylist типов метаданных и полей.
 - Лимиты строк, времени и размера результата.
 - Аудит всех вызовов с correlation_id.
@@ -24,19 +24,20 @@
 | 4 | `validate_1c_query` | Проверка запроса до выполнения |
 | 5 | `get_1c_query_guidance` | Универсальные подсказки по языку запросов 1С |
 | 6 | `get_accounting_accounts_map` | Карта счетов и субконто плана счетов |
-| 7 | `get_object_by_ref` | Получение объекта по типу и UUID |
-| 8 | `find_object_by_id` | Поиск объекта по UUID без знания типа |
-| 9 | `search_objects` | Поиск по строке/коду/ИНН/артикулу |
-| 10 | `get_link_of_object` | Навигационная ссылка на объект |
-| 11 | `find_references_to_object` | Поиск ссылок на объект |
-| 12 | `get_enum_values` | Значения перечисления |
-| 13 | `get_register_records` | Записи / срезы / остатки / обороты |
-| 14 | `get_document_movements` | Движения документа по регистрам |
-| 15 | `list_reports` | Список отчётов |
-| 16 | `get_report_info` | Параметры и структура отчёта |
-| 17 | `run_1c_report` | Выполнение отчёта |
-| 18 | `get_object_history` | История объекта / журнал регистрации |
-| 19 | `get_current_user_context` | Контекст пользователя и базы |
+| 7 | `get_database_passport` | Паспорт фактических данных базы |
+| 8 | `get_object_by_ref` | Получение объекта по типу и UUID |
+| 9 | `find_object_by_id` | Поиск объекта по UUID без знания типа |
+| 10 | `search_objects` | Поиск по строке/коду/ИНН/артикулу |
+| 11 | `get_link_of_object` | Навигационная ссылка на объект |
+| 12 | `find_references_to_object` | Поиск ссылок на объект |
+| 13 | `get_enum_values` | Значения перечисления |
+| 14 | `get_register_records` | Записи / срезы / остатки / обороты |
+| 15 | `get_document_movements` | Движения документа по регистрам |
+| 16 | `list_reports` | Список отчётов |
+| 17 | `get_report_info` | Параметры и структура отчёта |
+| 18 | `run_1c_report` | Выполнение отчёта |
+| 19 | `get_object_history` | История объекта / журнал регистрации |
+| 20 | `get_current_user_context` | Контекст пользователя и базы |
 
 ## Структура проекта
 
@@ -102,7 +103,8 @@ ping                 -- ping
 Сервер отдаёт знания из `doc/skills` через MCP, чтобы агент мог составлять запросы 1С без привязки к конкретной конфигурации:
 
 - tool `get_1c_query_guidance` возвращает короткие контекстные подсказки по теме или черновику запроса;
-- tool `get_accounting_accounts_map` возвращает карту `ПланСчетов.<Имя>.ВидыСубконто`, чтобы агент не угадывал позиции `Субконто1/2/3`;
+- tool `get_accounting_accounts_map` возвращает карту `ПланСчетов.<Имя>.ВидыСубконто`, включая сгруппированный список `accounts[].subconto[]`, чтобы агент не угадывал позиции `Субконто1/2/3`;
+- tool `get_database_passport` возвращает фактический срез данных: активные организации из бухгалтерских регистров, горизонт записей и заполненность регистров накопления;
 - `validate_1c_query` и `run_1c_query` добавляют `query_guidance`, если запрос содержит временные таблицы, агрегаты, субконто, составные ссылки, `NULL`, JOIN или другие рискованные конструкции;
 - resources `1c://knowledge/query/*` дают полную встроенную справку: syntax, functions, optimization, temporary-tables, compound-types, subconto.
 

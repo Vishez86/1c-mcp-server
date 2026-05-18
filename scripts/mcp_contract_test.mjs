@@ -12,6 +12,7 @@ const EXPECTED_TOOLS = [
   "validate_1c_query",
   "get_1c_query_guidance",
   "get_accounting_accounts_map",
+  "get_database_passport",
   "get_object_by_ref",
   "find_object_by_id",
   "search_objects",
@@ -475,8 +476,36 @@ class ContractRunner {
       assert(result.chart === chart, `unexpected chart: ${result.chart}`);
       assert(Array.isArray(result.columns), "columns must be present");
       assert(Array.isArray(result.rows), "rows must be present");
+      assert(Array.isArray(result.accounts), "accounts must be present");
+      if (result.accounts.length > 0) {
+        assert(Array.isArray(result.accounts[0].subconto), "account.subconto must be an array");
+      }
       assert(result.configuration_agnostic === true, "result must be configuration agnostic");
       return { chart, rows: result.rows.length, subcontoAttributes: result.subconto_attributes };
+    });
+
+    await this.test("tool.get_database_passport", async () => {
+      const result = await okTool(this.client, "get_database_passport", {
+        include_organizations: true,
+        include_accounting_registers: true,
+        include_accumulation_registers: true,
+        organization_limit: 5,
+        accounting_register_limit: 2,
+        accumulation_register_limit: 5,
+        include_empty_registers: true,
+      });
+      assert(result.configuration_agnostic === true, "passport must be configuration agnostic");
+      assert(result.read_only === true, "passport must be read-only");
+      assert(Array.isArray(result.organizations), "organizations must be an array");
+      assert(result.data_period && typeof result.data_period === "object", "data_period must be present");
+      assert(Array.isArray(result.accounting_registers), "accounting_registers must be an array");
+      assert(Array.isArray(result.accumulation_registers), "accumulation_registers must be an array");
+      assert(Array.isArray(result.accumulation_registers_with_data), "accumulation_registers_with_data must be an array");
+      return {
+        organizations: result.organizations.length,
+        accountingRegisters: result.accounting_registers.length,
+        accumulationChecked: result.accumulation_registers_checked,
+      };
     });
 
     await this.test("tool.run_1c_query_temporary_table_package", async () => {

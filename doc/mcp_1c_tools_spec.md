@@ -1,4 +1,4 @@
-# Спецификация MCP-сервера для 1С: 19 read-only tools
+# Спецификация MCP-сервера для 1С: 20 read-only tools
 
 **Версия документа:** 0.1  
 **Дата:** 2026-05-12  
@@ -255,19 +255,20 @@ read-only синтаксис, безопасность имён, лимиты с
 | 4 | `validate_1c_query` | Проверить запрос 1С до выполнения | P0 |
 | 5 | `get_1c_query_guidance` | Получить универсальные подсказки по языку запросов 1С | P0 |
 | 6 | `get_accounting_accounts_map` | Получить карту счетов и субконто плана счетов | P0 |
-| 7 | `get_object_by_ref` | Получить объект по типу и UUID ссылки | P0 |
-| 8 | `find_object_by_id` | Найти объект по UUID без знания типа | P0 |
-| 9 | `search_objects` | Поиск объектов по строке, коду, номеру, ИНН, артикулу | P0 |
-| 10 | `get_link_of_object` | Получить навигационную ссылку на объект | P1 |
-| 11 | `find_references_to_object` | Найти ссылки на объект | P1 |
-| 12 | `get_enum_values` | Получить значения перечисления | P0 |
-| 13 | `get_register_records` | Получить записи, срезы, остатки и обороты регистров | P0 |
-| 14 | `get_document_movements` | Получить движения документа по регистрам | P0 |
-| 15 | `list_reports` | Получить список доступных отчётов | P1 |
-| 16 | `get_report_info` | Получить параметры и структуру отчёта | P1 |
-| 17 | `run_1c_report` | Выполнить отчёт 1С | P1 |
-| 18 | `get_object_history` | Получить историю объекта, версии или события журнала | P2 |
-| 19 | `get_current_user_context` | Получить текущий контекст пользователя и базы | P0 |
+| 7 | `get_database_passport` | Получить паспорт фактических данных базы | P0 |
+| 8 | `get_object_by_ref` | Получить объект по типу и UUID ссылки | P0 |
+| 9 | `find_object_by_id` | Найти объект по UUID без знания типа | P0 |
+| 10 | `search_objects` | Поиск объектов по строке, коду, номеру, ИНН, артикулу | P0 |
+| 11 | `get_link_of_object` | Получить навигационную ссылку на объект | P1 |
+| 12 | `find_references_to_object` | Найти ссылки на объект | P1 |
+| 13 | `get_enum_values` | Получить значения перечисления | P0 |
+| 14 | `get_register_records` | Получить записи, срезы, остатки и обороты регистров | P0 |
+| 15 | `get_document_movements` | Получить движения документа по регистрам | P0 |
+| 16 | `list_reports` | Получить список доступных отчётов | P1 |
+| 17 | `get_report_info` | Получить параметры и структуру отчёта | P1 |
+| 18 | `run_1c_report` | Выполнить отчёт 1С | P1 |
+| 19 | `get_object_history` | Получить историю объекта, версии или события журнала | P2 |
+| 20 | `get_current_user_context` | Получить текущий контекст пользователя и базы | P0 |
 
 ---
 
@@ -1099,6 +1100,18 @@ Discovery tool. Возвращает справочники, документы,
   "subconto_attributes": ["ВидСубконто"],
   "columns": [],
   "rows": [],
+  "accounts": [
+    {
+      "account": {"type": "ПланСчетов.<Имя>", "uuid": "...", "presentation": "<КодСчета>"},
+      "code": "<КодСчета>",
+      "name": "<НаименованиеСчета>",
+      "subconto": [
+        {"position": 1, "ВидСубконто": {"presentation": "<ВидСубконто1>"}},
+        {"position": 2, "ВидСубконто": {"presentation": "<ВидСубконто2>"}}
+      ],
+      "subconto_count": 2
+    }
+  ],
   "truncated": false,
   "next_cursor": null,
   "configuration_agnostic": true,
@@ -1110,12 +1123,80 @@ Discovery tool. Возвращает справочники, документы,
 
 - Tool не знает заранее имена счетов и не содержит типовых кодов счетов.
 - Если доступно несколько планов счетов и `chart` не указан, tool возвращает `needs_chart=true` и список кандидатов.
-- Для чтения используются только metadata-discovered поля табличной части `ВидыСубконто`; счета без строк `ВидыСубконто` по умолчанию не включаются.
+- Для чтения используются metadata-discovered поля плана счетов и табличной части `ВидыСубконто`; счета без строк `ВидыСубконто` включаются в `accounts[]` только при `include_empty_subconto=true`.
+- `rows` сохраняет плоскую таблицу для обратной совместимости, а `accounts[].subconto[]` даёт LLM готовую карту `счёт -> позиция -> вид субконто`.
 - Постоянные данные не изменяются.
 
 ---
 
-## 7.7. `get_object_by_ref`
+## 7.7. `get_database_passport`
+
+**Title:** Получить паспорт фактических данных базы
+**Priority:** P0
+
+### Назначение
+
+Возвращает срез фактического состояния базы: активные организации из бухгалтерских регистров, горизонт записей бухгалтерских регистров и флаги заполненности регистров накопления. Это не метаданные и не отчёт по конкретной конфигурации, а универсальная стартовая ориентация для LLM.
+
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "accounting_register": {"type": "string"},
+    "include_organizations": {"type": "boolean"},
+    "include_accounting_registers": {"type": "boolean"},
+    "include_accumulation_registers": {"type": "boolean"},
+    "organization_limit": {"type": "integer", "minimum": 1, "maximum": 200, "default": 50},
+    "accounting_register_limit": {"type": "integer", "minimum": 1, "maximum": 50, "default": 10},
+    "accumulation_register_limit": {"type": "integer", "minimum": 1, "maximum": 200, "default": 100},
+    "include_empty_registers": {"type": "boolean"}
+  },
+  "additionalProperties": false
+}
+```
+
+### Output Shape
+
+```json
+{
+  "ok": true,
+  "configuration_agnostic": true,
+  "read_only": true,
+  "organizations": [
+    {"name": "Организация", "uuid": "...", "type": "Справочник.Организации", "ref": {}, "source_register": "РегистрБухгалтерии.<Имя>"}
+  ],
+  "data_period": {
+    "first_entry": "<ДатаПервойЗаписи>",
+    "last_entry": "<ДатаПоследнейЗаписи>",
+    "source_register": "РегистрБухгалтерии.<Имя>",
+    "closed_periods": [],
+    "open_periods": [],
+    "period_closure_inferred": false
+  },
+  "accounting_registers": [
+    {"register": "РегистрБухгалтерии.<Имя>", "first_entry": "...", "last_entry": "...", "total_entries": 12453, "has_organization_field": true}
+  ],
+  "accumulation_registers": [
+    {"register": "РегистрНакопления.<Имя>", "has_data": true, "sample_period": "..."}
+  ],
+  "accumulation_registers_with_data": ["РегистрНакопления.<Имя>"],
+  "accumulation_registers_checked": 100,
+  "warnings": []
+}
+```
+
+### Правила
+
+- Tool не предполагает наличие `Хозрасчетный`, `Организации` или типовых регистров: он перебирает доступные метаданные и проверяет поля перед запросом.
+- `organizations` строится по фактическим строкам бухгалтерских регистров, а не по всему справочнику организаций.
+- `closed_periods/open_periods` не выводятся эвристически: закрытие периода зависит от прикладной конфигурации.
+- Постоянные данные не изменяются.
+
+---
+
+## 7.8. `get_object_by_ref`
 
 **Title:** Получить объект по типу и UUID ссылки  
 **Priority:** P0
@@ -1260,7 +1341,7 @@ Discovery tool. Возвращает справочники, документы,
 
 ---
 
-## 7.8. `find_object_by_id`
+## 7.9. `find_object_by_id`
 
 **Title:** Найти объект по UUID без знания типа  
 **Priority:** P0
@@ -1389,7 +1470,7 @@ Discovery tool. Возвращает справочники, документы,
 
 ---
 
-## 7.9. `search_objects`
+## 7.10. `search_objects`
 
 **Title:** Поиск объектов по строке, коду, номеру, ИНН, артикулу  
 **Priority:** P0
@@ -1567,7 +1648,7 @@ Discovery tool. Возвращает справочники, документы,
 
 ---
 
-## 7.10. `get_link_of_object`
+## 7.11. `get_link_of_object`
 
 **Title:** Получить навигационную ссылку на объект  
 **Priority:** P1
@@ -1696,7 +1777,7 @@ Discovery tool. Возвращает справочники, документы,
 
 ---
 
-## 7.11. `find_references_to_object`
+## 7.12. `find_references_to_object`
 
 **Title:** Найти ссылки на объект  
 **Priority:** P1
@@ -1876,7 +1957,7 @@ Discovery tool. Возвращает справочники, документы,
 
 ---
 
-## 7.12. `get_enum_values`
+## 7.13. `get_enum_values`
 
 **Title:** Получить значения перечисления  
 **Priority:** P0
@@ -1983,7 +2064,7 @@ Discovery tool. Возвращает справочники, документы,
 
 ---
 
-## 7.13. `get_register_records`
+## 7.14. `get_register_records`
 
 **Title:** Получить записи, срезы, остатки и обороты регистров  
 **Priority:** P0
@@ -2211,7 +2292,7 @@ Discovery tool. Возвращает справочники, документы,
 
 ---
 
-## 7.14. `get_document_movements`
+## 7.15. `get_document_movements`
 
 **Title:** Получить движения документа по регистрам  
 **Priority:** P0
@@ -2355,7 +2436,7 @@ Discovery tool. Возвращает справочники, документы,
 
 ---
 
-## 7.15. `list_reports`
+## 7.16. `list_reports`
 
 **Title:** Получить список доступных отчётов  
 **Priority:** P1
@@ -2501,7 +2582,7 @@ Discovery tool для отчётов: возвращает доступные О
 
 ---
 
-## 7.16. `get_report_info`
+## 7.17. `get_report_info`
 
 **Title:** Получить параметры и структуру отчёта  
 **Priority:** P1
@@ -2639,7 +2720,7 @@ Discovery tool для отчётов: возвращает доступные О
 
 ---
 
-## 7.17. `run_1c_report`
+## 7.18. `run_1c_report`
 
 **Title:** Выполнить отчёт 1С  
 **Priority:** P1
@@ -2807,7 +2888,7 @@ Discovery tool для отчётов: возвращает доступные О
 
 ---
 
-## 7.18. `get_object_history`
+## 7.19. `get_object_history`
 
 **Title:** Получить историю объекта, версии или события журнала  
 **Priority:** P2
@@ -2978,7 +3059,7 @@ Discovery tool для отчётов: возвращает доступные О
 
 ---
 
-## 7.19. `get_current_user_context`
+## 7.20. `get_current_user_context`
 
 **Title:** Получить текущий контекст пользователя и базы  
 **Priority:** P0
@@ -3093,6 +3174,7 @@ Discovery tool для отчётов: возвращает доступные О
       "validate_1c_query",
       "get_1c_query_guidance",
       "get_accounting_accounts_map",
+      "get_database_passport",
       "get_object_by_ref",
       "find_object_by_id",
       "search_objects",
@@ -3193,6 +3275,23 @@ Knowledge resources возвращают встроенные правила и�
 | `register_mode_not_supported` | Регистр не поддерживает режим |
 | `history_not_supported` | История недоступна |
 | `internal_error` | Непредвиденная ошибка |
+
+Для ошибок выполнения `run_1c_query` сервер должен возвращать `error.details.parsed_details.diagnostics`:
+
+```json
+{
+  "error_code": "field_not_found",
+  "field": "СубконтоДт1",
+  "field_path": "<ИмяРегистра>.СубконтоДт1",
+  "object": "РегистрБухгалтерии.<Имя>",
+  "hint": "Субконто - аналитика счетов...",
+  "suggestions": ["..."],
+  "available_fields": ["Период", "Регистратор", "НомерСтроки"],
+  "available_fields_sample": []
+}
+```
+
+Типовые ловушки, которые должны диагностироваться проактивно: `ИМЕЯ` вместо `ИМЕЮЩИЕ`, обращение к субконто не через подходящую таблицу/виртуальную таблицу, JOIN по ссылочным субконто вместо UUID или временной таблицы.
 
 ---
 
@@ -3295,7 +3394,7 @@ Knowledge resources возвращают встроенные правила и�
 
 MVP готов, если:
 
-1. Все 19 tools возвращаются в `tools/list`.
+1. Все 20 tools возвращаются в `tools/list`.
 2. У каждого tool есть корректный `inputSchema`.
 3. Все tools возвращают `content`, `structuredContent`, `isError`.
 4. Реализованы allowlist и denylist.
@@ -3319,7 +3418,7 @@ MVP готов, если:
 }
 ```
 
-Ожидание: `ok=true`, `read_only=true`, список tools содержит 19 tools.
+Ожидание: `ok=true`, `read_only=true`, список tools содержит 20 tools.
 
 ## Test 2: Metadata
 
