@@ -1,15 +1,15 @@
 {
   "target": "https://laba-1c.astondevs.ru/BUH_KORP/hs/mcp/rpc",
-  "startedAt": "2026-05-14T10:52:42.468Z",
-  "finishedAt": "2026-05-14T10:52:53.507Z",
-  "total": 33,
-  "passed": 33,
-  "failed": 0,
+  "startedAt": "2026-05-18T09:04:10.616Z",
+  "finishedAt": "2026-05-18T09:05:24.212Z",
+  "total": 44,
+  "passed": 43,
+  "failed": 1,
   "tests": [
     {
       "name": "protocol.initialize",
       "status": "PASS",
-      "elapsedMs": 343,
+      "elapsedMs": 523,
       "details": {
         "server": {
           "name": "universal-1c-mcp",
@@ -20,7 +20,7 @@
     {
       "name": "protocol.tools_list_has_17_tools",
       "status": "PASS",
-      "elapsedMs": 197,
+      "elapsedMs": 198,
       "details": {
         "count": 17
       }
@@ -28,7 +28,7 @@
     {
       "name": "protocol.resources_list_and_read",
       "status": "PASS",
-      "elapsedMs": 497,
+      "elapsedMs": 10858,
       "details": {
         "resources": [
           "1c://metadata",
@@ -39,17 +39,17 @@
     {
       "name": "tool.get_current_user_context",
       "status": "PASS",
-      "elapsedMs": 397,
+      "elapsedMs": 10867,
       "details": {
         "user": "web",
-        "objects": 5653,
+        "objects": 5654,
         "tools": 17
       }
     },
     {
       "name": "tool.list_metadata_objects_pagination",
       "status": "PASS",
-      "elapsedMs": 774,
+      "elapsedMs": 3589,
       "details": {
         "first": "Справочник.АвансовыйОтчетПрисоединенныеФайлы",
         "second": "Справочник.АвансовыйПлатежИностранцаПоНДФЛПрисоединенныеФайлы"
@@ -58,7 +58,7 @@
     {
       "name": "tool.list_metadata_objects_contact_reality",
       "status": "PASS",
-      "elapsedMs": 541,
+      "elapsedMs": 576,
       "details": {
         "found": 14,
         "hasLegacyRegister": true
@@ -67,7 +67,7 @@
     {
       "name": "tool.discovery_returns_guidance_is_contextual",
       "status": "PASS",
-      "elapsedMs": 394,
+      "elapsedMs": 4617,
       "details": {
         "salesGuidance": [
           {
@@ -91,7 +91,7 @@
     {
       "name": "tool.get_metadata_structure_counterparties",
       "status": "PASS",
-      "elapsedMs": 319,
+      "elapsedMs": 501,
       "details": {
         "attributes": 33,
         "tabularSections": [
@@ -106,7 +106,7 @@
     {
       "name": "tool.get_metadata_structure_register_schema",
       "status": "PASS",
-      "elapsedMs": 127,
+      "elapsedMs": 138,
       "details": {
         "periodicity": null,
         "dimensions": 2,
@@ -114,9 +114,137 @@
       }
     },
     {
+      "name": "tool.get_metadata_structure_accounting_register_virtual_tables",
+      "status": "PASS",
+      "elapsedMs": 646,
+      "details": {
+        "register": "РегистрБухгалтерии.Хозрасчетный",
+        "virtualTables": [
+          {
+            "name": "Остатки",
+            "query_table": "РегистрБухгалтерии.Хозрасчетный.Остатки(&Период)",
+            "mode": "balance",
+            "description": "Остатки по счетам и субконто на дату. Для аналитики остатков в разрезе субконто используйте Субконто1/2/3 из этой таблицы. В сложных JOIN между независимыми подзапросами сопоставляйте субконто через УникальныйИдентификатор(СубконтоN).",
+            "parameters": [
+              "Период"
+            ],
+            "common_fields": [
+              "Счет",
+              "Субконто1",
+              "Субконто2",
+              "Субконто3",
+              "ВидСубконто1",
+              "ВидСубконто2",
+              "ВидСубконто3",
+              "СуммаОстаток",
+              "ВалютнаяСуммаОстаток",
+              "КоличествоОстаток",
+              "СуммаНУОстаток",
+              "СуммаПРОстаток",
+              "СуммаВРОстаток"
+            ]
+          },
+          {
+            "name": "Обороты",
+            "query_table": "РегистрБухгалтерии.Хозрасчетный.Обороты(&ПериодНачало, &ПериодКонец)",
+            "mode": "turnovers",
+            "description": "Обороты по счету и субконто. Для аналитики субконто используйте эту таблицу, а не основную таблицу движений. В сложных JOIN между независимыми подзапросами сопоставляйте субконто через УникальныйИдентификатор(СубконтоN).",
+            "parameters": [
+              "ПериодНачало",
+              "ПериодКонец"
+            ],
+            "common_fields": [
+              "Счет",
+              "Субконто1",
+              "Субконто2",
+              "Субконто3",
+              "ВидСубконто1",
+              "ВидСубконто2",
+              "ВидСубконто3",
+              "СуммаОборот",
+              "ВалютнаяСуммаОборот",
+              "КоличествоОборот",
+              "СуммаНУОборот",
+              "СуммаПРОборот",
+              "СуммаВРОборот"
+            ]
+          },
+          {
+            "name": "ОборотыДтКт",
+            "query_table": "РегистрБухгалтерии.Хозрасчетный.ОборотыДтКт(&ПериодНачало, &ПериодКонец)",
+            "mode": "turnovers_debit_credit",
+            "description": "Корреспонденция Дт/Кт с отдельными полями СубконтоДт1..3 и СубконтоКт1..3. В сложных JOIN между независимыми подзапросами сопоставляйте субконто через УникальныйИдентификатор(СубконтоДтN/СубконтоКтN).",
+            "parameters": [
+              "ПериодНачало",
+              "ПериодКонец"
+            ],
+            "common_fields": [
+              "СчетДт",
+              "СчетКт",
+              "СубконтоДт1",
+              "СубконтоДт2",
+              "СубконтоДт3",
+              "СубконтоКт1",
+              "СубконтоКт2",
+              "СубконтоКт3",
+              "ВидСубконтоДт1",
+              "ВидСубконтоДт2",
+              "ВидСубконтоДт3",
+              "ВидСубконтоКт1",
+              "ВидСубконтоКт2",
+              "ВидСубконтоКт3",
+              "СуммаОборот",
+              "ВалютнаяСуммаОборот",
+              "КоличествоОборот",
+              "СуммаНУОборот",
+              "СуммаПРОборот",
+              "СуммаВРОборот"
+            ]
+          },
+          {
+            "name": "ОстаткиИОбороты",
+            "query_table": "РегистрБухгалтерии.Хозрасчетный.ОстаткиИОбороты(&ПериодНачало, &ПериодКонец)",
+            "mode": "balance_and_turnovers",
+            "description": "Начальные/конечные остатки и обороты по счетам и субконто за период. В сложных JOIN между независимыми подзапросами сопоставляйте субконто через УникальныйИдентификатор(СубконтоN).",
+            "parameters": [
+              "ПериодНачало",
+              "ПериодКонец"
+            ],
+            "common_fields": [
+              "Счет",
+              "Субконто1",
+              "Субконто2",
+              "Субконто3",
+              "ВидСубконто1",
+              "ВидСубконто2",
+              "ВидСубконто3",
+              "СуммаНачальныйОстаток",
+              "СуммаОборот",
+              "СуммаКонечныйОстаток",
+              "ВалютнаяСуммаНачальныйОстаток",
+              "ВалютнаяСуммаОборот",
+              "ВалютнаяСуммаКонечныйОстаток",
+              "КоличествоНачальныйОстаток",
+              "КоличествоОборот",
+              "КоличествоКонечныйОстаток",
+              "СуммаНУНачальныйОстаток",
+              "СуммаНУОборот",
+              "СуммаНУКонечныйОстаток",
+              "СуммаПРНачальныйОстаток",
+              "СуммаПРОборот",
+              "СуммаПРКонечныйОстаток",
+              "СуммаВРНачальныйОстаток",
+              "СуммаВРОборот",
+              "СуммаВРКонечныйОстаток"
+            ]
+          }
+        ]
+      }
+    },
+    {
       "name": "tool.validate_1c_query_existing_tabular_section",
       "status": "PASS",
-      "elapsedMs": 124,
+      "elapsedMs": 121,
       "details": {
         "detected": [
           "Справочник.Контрагенты"
@@ -126,7 +254,7 @@
     {
       "name": "tool.validate_1c_query_returns_guidance_is_contextual",
       "status": "PASS",
-      "elapsedMs": 345,
+      "elapsedMs": 506,
       "details": {
         "salesValid": true,
         "assetsValid": true,
@@ -146,13 +274,40 @@
             "instruction": "Для аналитики движений, стоимости, остатков, закупок, продаж, себестоимости, прибыли и рентабельности считайте показатели с учётом возвратов и сторно. Не суммируйте только документы поступления/реализации/принятия к учёту или только положительные движения: используйте отчёты/регистры, где обороты уже имеют знак, или явно учитывайте возвраты поставщику, возвраты покупателей, сторнирующие документы, ВидДвижения/ПриходРасход и отрицательные количества/суммы. Если структура конфигурации неизвестна, сначала исследуйте метаданные, регистры и движения документов.",
             "configuration_agnostic": true
           }
+        ],
+        "subcontoGuidance": [
+          {
+            "id": "subconto_join_by_uuid",
+            "applies_to": "Бухгалтерские регистры и аналитика по Субконто1/2/3, СубконтоДт1/2/3 и СубконтоКт1/2/3.",
+            "instruction": "Поля Субконто в бухгалтерских регистрах имеют обобщённый ссылочный тип. При соединении независимых подзапросов по субконто выводите стабильный ключ УникальныйИдентификатор(Субконто...) КАК ...UUID и соединяйте по этому UUID; саму ссылку оставляйте отдельным полем для представления.",
+            "configuration_agnostic": true
+          }
         ]
+      }
+    },
+    {
+      "name": "tool.validate_1c_query_having_keyword",
+      "status": "PASS",
+      "elapsedMs": 142,
+      "details": {
+        "detected": [
+          "Справочник.Организации"
+        ]
+      }
+    },
+    {
+      "name": "tool.run_1c_query_temporary_table_package",
+      "status": "FAIL",
+      "elapsedMs": 154,
+      "error": {
+        "message": "run_1c_query did not return ok=true: {\"code\":\"query_validation_failed\",\"message\":\"Запрос не прошёл проверку.\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"e35a3923-98e9-47c3-b962-cd7af19cd830\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [query_validation_failed] Запрос не прошёл проверку. | [\\n{\\n\\\"code\\\": \\\"unknown_query_source\\\",\\n\\\"message\\\": \\\"Источник запроса не является разрешённым объектом метаданных: ВТОрганизации.UUID\\\",\\n\\\"location\\\": \\\"ВТОрганизации.UUID\\\"\\n}\\n]\",\"parsed_details\":[{\"code\":\"unknown_query_source\",\"message\":\"Источник запроса не является разрешённым объектом метаданных: ВТОрганизации.UUID\",\"location\":\"ВТОрганизации.UUID\"}]},\"correlation_id\":\"e35a3923-98e9-47c3-b962-cd7af19cd830\"}",
+        "stack": "Error: run_1c_query did not return ok=true: {\"code\":\"query_validation_failed\",\"message\":\"Запрос не прошёл проверку.\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"e35a3923-98e9-47c3-b962-cd7af19cd830\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [query_validation_failed] Запрос не прошёл проверку. | [\\n{\\n\\\"code\\\": \\\"unknown_query_source\\\",\\n\\\"message\\\": \\\"Источник запроса не является разрешённым объектом метаданных: ВТОрганизации.UUID\\\",\\n\\\"location\\\": \\\"ВТОрганизации.UUID\\\"\\n}\\n]\",\"parsed_details\":[{\"code\":\"unknown_query_source\",\"message\":\"Источник запроса не является разрешённым объектом метаданных: ВТОрганизации.UUID\",\"location\":\"ВТОрганизации.UUID\"}]},\"correlation_id\":\"e35a3923-98e9-47c3-b962-cd7af19cd830\"}\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1045:25)\n    at okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:999:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:431:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:153:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:430:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:186:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1088:19)"
       }
     },
     {
       "name": "tool.run_1c_query_counterparty_contact_info",
       "status": "PASS",
-      "elapsedMs": 153,
+      "elapsedMs": 519,
       "details": {
         "rows": 5,
         "firstAddress": "142770, Москва г, МКАД 40-й (п Сосенское) км, владение № 1, строение 2",
@@ -167,7 +322,7 @@
     {
       "name": "tool.run_1c_query_reference_encoding",
       "status": "PASS",
-      "elapsedMs": 133,
+      "elapsedMs": 146,
       "details": {
         "ref": {
           "type": "Справочник.Организации",
@@ -179,9 +334,40 @@
       }
     },
     {
+      "name": "tool.run_1c_query_accounting_debit_credit_subconto",
+      "status": "PASS",
+      "elapsedMs": 267,
+      "details": {
+        "register": "РегистрБухгалтерии.Хозрасчетный",
+        "columns": [
+          "СчетДт",
+          "СчетКт",
+          "СубконтоДт1",
+          "СубконтоКт1",
+          "СуммаОборот"
+        ],
+        "rows": 1
+      }
+    },
+    {
+      "name": "tool.run_1c_query_accounting_balance_subconto",
+      "status": "PASS",
+      "elapsedMs": 233,
+      "details": {
+        "register": "РегистрБухгалтерии.Хозрасчетный",
+        "columns": [
+          "Счет",
+          "Субконто1",
+          "КоличествоОстаток",
+          "СуммаОстаток"
+        ],
+        "rows": 5
+      }
+    },
+    {
       "name": "tool.search_objects_returns_structured_refs",
       "status": "PASS",
-      "elapsedMs": 118,
+      "elapsedMs": 324,
       "details": {
         "matches": 1,
         "first": {
@@ -195,7 +381,7 @@
     {
       "name": "tool.get_object_by_ref_with_tabular_section",
       "status": "PASS",
-      "elapsedMs": 132,
+      "elapsedMs": 268,
       "details": {
         "ref": {
           "type": "Справочник.Контрагенты",
@@ -215,7 +401,7 @@
     {
       "name": "tool.find_object_by_id",
       "status": "PASS",
-      "elapsedMs": 340,
+      "elapsedMs": 4624,
       "details": {
         "searchedTypes": 1,
         "matches": 1
@@ -224,7 +410,7 @@
     {
       "name": "tool.get_link_of_object",
       "status": "PASS",
-      "elapsedMs": 112,
+      "elapsedMs": 124,
       "details": {
         "links": [
           {
@@ -238,7 +424,7 @@
     {
       "name": "tool.find_references_to_object",
       "status": "PASS",
-      "elapsedMs": 1706,
+      "elapsedMs": 20042,
       "details": {
         "groups": 3,
         "searchedTypes": 15,
@@ -248,7 +434,7 @@
     {
       "name": "tool.get_object_history_graceful",
       "status": "PASS",
-      "elapsedMs": 139,
+      "elapsedMs": 436,
       "details": {
         "supported": false,
         "events": 0,
@@ -262,7 +448,7 @@
     {
       "name": "tool.get_enum_values",
       "status": "PASS",
-      "elapsedMs": 109,
+      "elapsedMs": 150,
       "details": {
         "values": [
           "ПустаяСсылка",
@@ -279,7 +465,7 @@
     {
       "name": "tool.get_register_records_records_mode",
       "status": "PASS",
-      "elapsedMs": 133,
+      "elapsedMs": 423,
       "details": {
         "rows": 2,
         "truncated": true,
@@ -287,27 +473,68 @@
       }
     },
     {
+      "name": "tool.get_register_records_accounting_debit_credit_mode",
+      "status": "PASS",
+      "elapsedMs": 267,
+      "details": {
+        "register": "РегистрБухгалтерии.Хозрасчетный",
+        "columns": [
+          "СчетДт",
+          "СчетКт",
+          "СубконтоДт1",
+          "СубконтоКт1",
+          "СуммаОборот"
+        ],
+        "rows": 1,
+        "queryUsed": "ВЫБРАТЬ ПЕРВЫЕ 2 СчетДт, СчетКт, СубконтоДт1, СубконтоКт1, СуммаОборот\nИЗ РегистрБухгалтерии.Хозрасчетный.ОборотыДтКт(&ПериодНачало, &ПериодКонец)"
+      }
+    },
+    {
+      "name": "tool.get_register_records_accounting_debit_credit_filter",
+      "status": "PASS",
+      "elapsedMs": 361,
+      "details": {
+        "register": "РегистрБухгалтерии.Хозрасчетный",
+        "account": "09",
+        "rows": 1,
+        "queryUsed": "ВЫБРАТЬ ПЕРВЫЕ 6 СчетДт, СчетКт, СуммаОборот\nИЗ РегистрБухгалтерии.Хозрасчетный.ОборотыДтКт(&ПериодНачало, &ПериодКонец)\nГДЕ СчетДт = &Filter_СчетДт"
+      }
+    },
+    {
+      "name": "tool.get_register_records_accounting_turnovers_filter",
+      "status": "PASS",
+      "elapsedMs": 571,
+      "details": {
+        "register": "РегистрБухгалтерии.Хозрасчетный",
+        "account": "60.01",
+        "turnoversRows": 1,
+        "balanceAndTurnoversRows": 1,
+        "turnoversQueryUsed": "ВЫБРАТЬ ПЕРВЫЕ 6 Счет, СуммаОборот\nИЗ РегистрБухгалтерии.Хозрасчетный.Обороты(&ПериодНачало, &ПериодКонец)\nГДЕ Счет = &Filter_Счет",
+        "balanceAndTurnoversQueryUsed": "ВЫБРАТЬ ПЕРВЫЕ 6 Счет, СуммаОборот\nИЗ РегистрБухгалтерии.Хозрасчетный.ОстаткиИОбороты(&ПериодНачало, &ПериодКонец)\nГДЕ Счет = &Filter_Счет"
+      }
+    },
+    {
       "name": "tool.get_register_records_bad_mode_is_diagnostic",
       "status": "PASS",
-      "elapsedMs": 109,
+      "elapsedMs": 111,
       "details": {
         "error": {
           "code": "register_mode_not_supported",
           "message": "Режим balance не поддерживается для РегистрСведений",
           "details": {
             "diagnostic_mode": true,
-            "correlation_id": "d4ef372c-ad1d-419e-b4bb-b81750bd209a",
+            "correlation_id": "d7be66aa-8299-42a6-b70b-5d2aa6c0f491",
             "raw_exception": "{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [register_mode_not_supported] Режим balance не поддерживается для РегистрСведений",
             "parsed_details": {}
           },
-          "correlation_id": "d4ef372c-ad1d-419e-b4bb-b81750bd209a"
+          "correlation_id": "d7be66aa-8299-42a6-b70b-5d2aa6c0f491"
         }
       }
     },
     {
       "name": "fixture.query_document_with_movements",
       "status": "PASS",
-      "elapsedMs": 132,
+      "elapsedMs": 164,
       "details": {
         "ref": {
           "type": "Документ.ОтчетПроизводстваЗаСмену",
@@ -322,7 +549,7 @@
     {
       "name": "tool.get_document_movements",
       "status": "PASS",
-      "elapsedMs": 255,
+      "elapsedMs": 484,
       "details": {
         "registers": [
           "РегистрНакопления.ВыпускПродукцииУслуг",
@@ -334,7 +561,7 @@
     {
       "name": "tool.list_reports",
       "status": "PASS",
-      "elapsedMs": 174,
+      "elapsedMs": 1640,
       "details": {
         "reports": [
           "Отчет.АнализВерсийОбъектов",
@@ -349,7 +576,7 @@
     {
       "name": "tool.get_report_info",
       "status": "PASS",
-      "elapsedMs": 328,
+      "elapsedMs": 119,
       "details": {
         "report": "Отчет.АнализВерсийОбъектов",
         "variants": [
@@ -363,7 +590,7 @@
     {
       "name": "tool.run_1c_report_graceful",
       "status": "PASS",
-      "elapsedMs": 153,
+      "elapsedMs": 234,
       "details": {
         "report": "Отчет.АнализВерсийОбъектов",
         "executionSupported": false,
@@ -377,7 +604,7 @@
     {
       "name": "negative.validate_missing_metadata_is_invalid",
       "status": "PASS",
-      "elapsedMs": 116,
+      "elapsedMs": 130,
       "details": {
         "errors": [
           {
@@ -391,7 +618,7 @@
     {
       "name": "negative.run_missing_metadata_is_diagnostic",
       "status": "PASS",
-      "elapsedMs": 117,
+      "elapsedMs": 123,
       "details": {
         "errorCode": "query_validation_failed",
         "message": "Запрос не прошёл проверку.",
@@ -407,12 +634,54 @@
     {
       "name": "negative.validate_forbidden_keyword",
       "status": "PASS",
-      "elapsedMs": 114,
+      "elapsedMs": 120,
       "details": {
         "errors": [
           {
             "code": "forbidden_keyword",
-            "message": "Запрещённая конструкция: ПОМЕСТИТЬ",
+            "message": "Запрещённая конструкция: ДЛЯ ИЗМЕНЕНИЯ",
+            "location": "ДЛЯ ИЗМЕНЕНИЯ"
+          }
+        ]
+      }
+    },
+    {
+      "name": "negative.validate_invalid_imeya_keyword",
+      "status": "PASS",
+      "elapsedMs": 142,
+      "details": {
+        "errors": [
+          {
+            "code": "invalid_1c_query_keyword",
+            "message": "ИМЕЯ не является ключевым словом языка запросов 1С. Для условий по агрегатам используйте ИМЕЮЩИЕ.",
+            "location": "ИМЕЯ"
+          }
+        ]
+      }
+    },
+    {
+      "name": "negative.validate_plain_batch_without_temp_tables",
+      "status": "PASS",
+      "elapsedMs": 124,
+      "details": {
+        "errors": [
+          {
+            "code": "batch_query_forbidden",
+            "message": "Пакетные запросы разрешены только для создания, индексации, чтения или уничтожения временных таблиц.",
+            "location": ";"
+          }
+        ]
+      }
+    },
+    {
+      "name": "negative.validate_temp_table_without_final_select",
+      "status": "PASS",
+      "elapsedMs": 124,
+      "details": {
+        "errors": [
+          {
+            "code": "temporary_table_package_required",
+            "message": "Временные таблицы должны использоваться в пакетном запросе с финальным SELECT/ВЫБРАТЬ, чтобы сервер вернул табличный результат.",
             "location": "ПОМЕСТИТЬ"
           }
         ]
@@ -421,25 +690,25 @@
     {
       "name": "negative.get_object_by_ref_bad_uuid",
       "status": "PASS",
-      "elapsedMs": 109,
+      "elapsedMs": 110,
       "details": {
         "error": {
           "code": "invalid_arguments",
           "message": "Некорректный UUID: not-a-uuid",
           "details": {
             "diagnostic_mode": true,
-            "correlation_id": "2ebb29da-9a26-421a-b648-64ee303997ed",
+            "correlation_id": "c09d99e6-67d8-4976-9c14-0e097a0db1ef",
             "raw_exception": "{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [invalid_arguments] Некорректный UUID: not-a-uuid",
             "parsed_details": {}
           },
-          "correlation_id": "2ebb29da-9a26-421a-b648-64ee303997ed"
+          "correlation_id": "c09d99e6-67d8-4976-9c14-0e097a0db1ef"
         }
       }
     },
     {
       "name": "negative.unknown_tool",
       "status": "PASS",
-      "elapsedMs": 104,
+      "elapsedMs": 102,
       "details": {
         "error": {
           "code": "unknown_tool",
@@ -447,14 +716,14 @@
           "details": {
             "tool": "definitely_not_a_tool"
           },
-          "correlation_id": "a50f59e2-5bd9-4f56-919c-ed55bd46cee0"
+          "correlation_id": "2fb861d2-ed8d-42c0-a162-fd671ffbae30"
         }
       }
     },
     {
       "name": "crosscheck.every_listed_query_object_has_basic_structure_sample",
       "status": "PASS",
-      "elapsedMs": 2189,
+      "elapsedMs": 7671,
       "details": {
         "checked": [
           "Документ.АвансовыйОтчет",

@@ -1,7 +1,7 @@
 // MCP_Tools.bsl
 // ====================================================================
 // Каталог MCP tools и их dispatcher.
-// Содержит описания всех 17 read-only tools (name, title, description, inputSchema)
+// Содержит описания всех read-only tools (name, title, description, inputSchema)
 // и единую точку вызова MCP_Tools_Impl.
 // ====================================================================
 
@@ -13,6 +13,7 @@
 	Результат.Добавить(Tool_get_metadata_structure());
 	Результат.Добавить(Tool_run_1c_query());
 	Результат.Добавить(Tool_validate_1c_query());
+	Результат.Добавить(Tool_get_1c_query_guidance());
 	Результат.Добавить(Tool_get_object_by_ref());
 	Результат.Добавить(Tool_find_object_by_id());
 	Результат.Добавить(Tool_search_objects());
@@ -55,6 +56,8 @@
 			Данные = MCP_Tools_Impl.Run1CQuery(Аргументы);
 		ИначеЕсли ИмяТула = "validate_1c_query" Тогда
 			Данные = MCP_Tools_Impl.Validate1CQuery(Аргументы);
+		ИначеЕсли ИмяТула = "get_1c_query_guidance" Тогда
+			Данные = MCP_Tools_Impl.Get1CQueryGuidance(Аргументы);
 		ИначеЕсли ИмяТула = "get_object_by_ref" Тогда
 			Данные = MCP_Tools_Impl.GetObjectByRef(Аргументы);
 		ИначеЕсли ИмяТула = "find_object_by_id" Тогда
@@ -278,6 +281,19 @@
 		"Проверить запрос 1С до выполнения",
 		"Проверка синтаксиса, объектов, параметров и рисков до run_1c_query. Разрешает временные таблицы, но блокирует изменения постоянных данных. ИМЕЮЩИЕ — корректное условие по агрегатам; ИМЕЯ будет диагностировано как ошибка.",
 		Props, _Required("query"));
+КонецФункции
+
+Функция Tool_get_1c_query_guidance()
+	Props = Новый Структура;
+	Props.Вставить("topic", _Схема("string", , "Тема или auto: metadata-first, query-structure, virtual-tables, temporary-tables, joins, grouping-and-having, functions, compound-types, subconto, null-handling, parameters, performance-pitfalls, mcp-query-safety."));
+	Props.Вставить("query", _Схема("string", , "Черновик запроса 1С для контекстных подсказок."));
+	Props.Вставить("intent", _Схема("string", , "Описание аналитической задачи пользователя."));
+	Props.Вставить("include_examples", _Схема("boolean", , "Вернуть короткие шаблонные примеры."));
+	Props.Вставить("max_sections", _СхемаInt(1, 12, 6));
+	Возврат _Tool("get_1c_query_guidance",
+		"Получить подсказки по языку запросов 1С",
+		"Возвращает встроенные универсальные правила из doc/skills: синтаксис, функции, временные таблицы, составные типы, субконто, оптимизация и ограничения read-only MCP. Используйте перед сложными запросами и при исправлении ошибок validate_1c_query.",
+		Props);
 КонецФункции
 
 Функция Tool_get_object_by_ref()

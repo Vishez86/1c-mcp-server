@@ -2,12 +2,12 @@
 
 Универсальный MCP-сервер для безопасного read-only доступа к данным и метаданным 1С:Предприятия 8. Постоянные данные не изменяются; временные таблицы языка запросов 1С разрешены как рабочая область выполнения аналитического запроса.
 
-Сервер реализует протокол **Model Context Protocol (MCP) 2025-11-25** поверх HTTP-сервиса 1С и предоставляет LLM-агентам 17 read-only инструментов согласно спецификации `mcp_1c_tools_spec.md`.
+Сервер реализует протокол **Model Context Protocol (MCP) 2025-11-25** поверх HTTP-сервиса 1С и предоставляет LLM-агентам 18 read-only инструментов согласно спецификации `mcp_1c_tools_spec.md`.
 
 ## Возможности
 
 - Полностью read-only: создание/изменение/удаление объектов невозможно.
-- 17 tools: discovery → inspect → search → retrieve → explain → navigate → report.
+- 18 tools: discovery → inspect → search → retrieve → explain → navigate → report → query guidance.
 - Allowlist/denylist типов метаданных и полей.
 - Лимиты строк, времени и размера результата.
 - Аудит всех вызовов с correlation_id.
@@ -22,19 +22,20 @@
 | 2 | `get_metadata_structure` | Структура объекта метаданных |
 | 3 | `run_1c_query` | Безопасный read-only запрос 1С |
 | 4 | `validate_1c_query` | Проверка запроса до выполнения |
-| 5 | `get_object_by_ref` | Получение объекта по типу и UUID |
-| 6 | `find_object_by_id` | Поиск объекта по UUID без знания типа |
-| 7 | `search_objects` | Поиск по строке/коду/ИНН/артикулу |
-| 8 | `get_link_of_object` | Навигационная ссылка на объект |
-| 9 | `find_references_to_object` | Поиск ссылок на объект |
-| 10 | `get_enum_values` | Значения перечисления |
-| 11 | `get_register_records` | Записи / срезы / остатки / обороты |
-| 12 | `get_document_movements` | Движения документа по регистрам |
-| 13 | `list_reports` | Список отчётов |
-| 14 | `get_report_info` | Параметры и структура отчёта |
-| 15 | `run_1c_report` | Выполнение отчёта |
-| 16 | `get_object_history` | История объекта / журнал регистрации |
-| 17 | `get_current_user_context` | Контекст пользователя и базы |
+| 5 | `get_1c_query_guidance` | Универсальные подсказки по языку запросов 1С |
+| 6 | `get_object_by_ref` | Получение объекта по типу и UUID |
+| 7 | `find_object_by_id` | Поиск объекта по UUID без знания типа |
+| 8 | `search_objects` | Поиск по строке/коду/ИНН/артикулу |
+| 9 | `get_link_of_object` | Навигационная ссылка на объект |
+| 10 | `find_references_to_object` | Поиск ссылок на объект |
+| 11 | `get_enum_values` | Значения перечисления |
+| 12 | `get_register_records` | Записи / срезы / остатки / обороты |
+| 13 | `get_document_movements` | Движения документа по регистрам |
+| 14 | `list_reports` | Список отчётов |
+| 15 | `get_report_info` | Параметры и структура отчёта |
+| 16 | `run_1c_report` | Выполнение отчёта |
+| 17 | `get_object_history` | История объекта / журнал регистрации |
+| 18 | `get_current_user_context` | Контекст пользователя и базы |
 
 ## Структура проекта
 
@@ -58,11 +59,12 @@
         ├── MCP_Values.bsl                   -- кодирование значений 1С в JSON
         ├── MCP_Metadata.bsl                 -- обход метаданных
         ├── MCP_Query.bsl                    -- безопасные запросы 1С
+        ├── MCP_Knowledge.bsl                -- встроенные правила языка запросов 1С для LLM
         ├── MCP_Registers.bsl                -- работа с регистрами
         ├── MCP_Reports.bsl                  -- работа с отчётами (СКД)
         ├── MCP_History.bsl                  -- история объектов
         ├── MCP_Tools.bsl                    -- описания и dispatcher tools
-        └── MCP_Tools_Impl.bsl               -- реализация всех 17 tools
+        └── MCP_Tools_Impl.bsl               -- реализация tools
 ```
 
 ## Транспорт
@@ -93,6 +95,16 @@ resources/list       -- список ресурсов (необязательн�
 resources/read       -- чтение ресурса
 ping                 -- ping
 ```
+
+## Встроенная база знаний для LLM
+
+Сервер отдаёт знания из `doc/skills` через MCP, чтобы агент мог составлять запросы 1С без привязки к конкретной конфигурации:
+
+- tool `get_1c_query_guidance` возвращает короткие контекстные подсказки по теме или черновику запроса;
+- `validate_1c_query` и `run_1c_query` добавляют `query_guidance`, если запрос содержит временные таблицы, агрегаты, субконто, составные ссылки, `NULL`, JOIN или другие рискованные конструкции;
+- resources `1c://knowledge/query/*` дают полную встроенную справку: syntax, functions, optimization, temporary-tables, compound-types, subconto.
+
+Главное правило этой базы знаний: сначала получить метаданные через `list_metadata_objects` / `get_metadata_structure`, затем писать запрос по фактическим именам объектов и полей текущей базы.
 
 ## Быстрый старт
 

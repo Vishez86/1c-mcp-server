@@ -10,6 +10,7 @@ const EXPECTED_TOOLS = [
   "get_metadata_structure",
   "run_1c_query",
   "validate_1c_query",
+  "get_1c_query_guidance",
   "get_object_by_ref",
   "find_object_by_id",
   "search_objects",
@@ -205,7 +206,7 @@ class ContractRunner {
       return { server: result.serverInfo };
     });
 
-    await this.test("protocol.tools_list_has_17_tools", async () => {
+    await this.test("protocol.tools_list_has_expected_tools", async () => {
       const { result } = await this.client.rpc("tools/list", {});
       const tools = result?.tools || [];
       const names = tools.map((tool) => tool.name).sort();
@@ -222,9 +223,15 @@ class ContractRunner {
       const resources = list.result?.resources || [];
       assert(resources.some((item) => item.uri === "1c://metadata"), "metadata resource is missing");
       assert(resources.some((item) => item.uri === "1c://context/current-user"), "current-user resource is missing");
+      assert(resources.some((item) => item.uri === "1c://knowledge/query"), "query knowledge resource is missing");
+      assert(resources.some((item) => item.uri === "1c://knowledge/query/subkonto"), "subkonto knowledge resource is missing");
       const read = await this.client.rpc("resources/read", { uri: "1c://context/current-user" });
       const text = read.result?.contents?.[0]?.text || "";
       assert(text.includes("user"), "current-user resource must contain user data");
+      const knowledge = await this.client.rpc("resources/read", { uri: "1c://knowledge/query/temporary-tables" });
+      const knowledgeText = knowledge.result?.contents?.[0]?.text || "";
+      assert(knowledgeText.includes("ПОМЕСТИТЬ"), "temporary-table knowledge must mention ПОМЕСТИТЬ");
+      assert(knowledgeText.includes("read-only"), "temporary-table knowledge must explain read-only boundary");
       return { resources: resources.map((item) => item.uri) };
     });
   }
@@ -358,10 +365,13 @@ class ContractRunner {
       assert((balance.common_fields || []).includes("Субконто1"), "Остатки must advertise Субконто1");
       assert((balance.common_fields || []).includes("КоличествоОстаток"), "Остатки must advertise КоличествоОстаток");
       assert((balance.common_fields || []).includes("СуммаОстаток"), "Остатки must advertise СуммаОстаток");
+      assert(!(balance.common_fields || []).includes("ВидСубконто1"), "Остатки must not advertise non-universal ВидСубконто1 field");
       assert((balance.description || "").includes("УникальныйИдентификатор"), "Остатки description must mention UUID joins for Субконто");
+      assert((balance.description || "").includes("ВидыСубконто"), "Остатки description must mention account chart ВидыСубконто lookup");
       const debitCredit = virtualTables.find((item) => item.name === "ОборотыДтКт");
       assert((debitCredit.common_fields || []).includes("СубконтоДт1"), "ОборотыДтКт must advertise СубконтоДт1");
       assert((debitCredit.common_fields || []).includes("СубконтоКт1"), "ОборотыДтКт must advertise СубконтоКт1");
+      assert(!(debitCredit.common_fields || []).includes("ВидСубконтоДт1"), "ОборотыДтКт must not advertise non-universal ВидСубконтоДт1 field");
       return { register: accountingRegister.fullName, virtualTables };
     });
 
@@ -397,23 +407,29 @@ class ContractRunner {
         explain: true,
       });
       assert(!hasGuidance(hr, "returns_and_storno"), "HR-like query validation must not include returns-and-storno guidance");
-      const subconto = await okTool(this.client, "validate_1c_query", {
-        query: "ВЫБРАТЬ ПЕРВЫЕ 1 Обороты.СубконтоДт1 ИЗ РегистрБухгалтерии.Хозрасчетный.ОборотыДтКт(&Начало, &Конец) КАК Обороты",
-        parameters: {
-          Начало: { kind: "datetime", value: CONTRACT_PERIOD.start },
-          Конец: { kind: "datetime", value: CONTRACT_PERIOD.end },
-        },
-        strict: true,
-        explain: true,
-      });
-      assert(hasGuidance(subconto, "subconto_join_by_uuid"), "subconto query validation must include UUID join guidance");
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      let subconto = null;
+      if (accountingRegister) {
+        subconto = await okTool(this.client, "validate_1c_query", {
+          query: `ВЫБРАТЬ ПЕРВЫЕ 1 Обороты.СубконтоДт1 ИЗ ${accountingRegister.fullName}.ОборотыДтКт(&Начало, &Конец) КАК Обороты`,
+          parameters: {
+            Начало: { kind: "datetime", value: CONTRACT_PERIOD.start },
+            Конец: { kind: "datetime", value: CONTRACT_PERIOD.end },
+          },
+          strict: true,
+          explain: true,
+        });
+        assert(hasGuidance(subconto, "subconto_join_by_uuid"), "subconto query validation must include UUID join guidance");
+        const instruction = (subconto.domain_guidance || []).find((item) => item.id === "subconto_join_by_uuid")?.instruction || "";
+        assert(instruction.includes("ВидыСубконто"), "subconto guidance must mention account chart ВидыСубконто lookup");
+      }
       return {
         salesValid: sales.valid,
         assetsValid: assets.valid,
         hrValid: hr.valid,
         salesGuidance: sales.domain_guidance,
         assetsGuidance: assets.domain_guidance,
-        subcontoGuidance: subconto.domain_guidance,
+        subcontoGuidance: subconto?.domain_guidance,
       };
     });
 
@@ -424,7 +440,23 @@ class ContractRunner {
         explain: true,
       });
       assert(result.valid === true, `ИМЕЮЩИЕ must be valid, errors=${JSON.stringify(result.errors)}`);
+      assert(hasQueryGuidance(result, "grouping_having"), "validation must include grouping guidance");
       return { detected: result.detected_objects };
+    });
+
+    await this.test("tool.get_1c_query_guidance_contextual", async () => {
+      const result = await okTool(this.client, "get_1c_query_guidance", {
+        query: "ВЫБРАТЬ Субконто1, СУММА(СуммаОборот) КАК Сумма ПОМЕСТИТЬ ВТ_Обороты ИЗ РегистрБухгалтерии.<Имя>.Обороты(&Нач, &Кон) СГРУППИРОВАТЬ ПО Субконто1 ИМЕЮЩИЕ СУММА(СуммаОборот) > 0",
+        intent: "проверить бухгалтерскую аналитику по субконто через временные таблицы",
+        include_examples: true,
+        max_sections: 8,
+      });
+      assert(Array.isArray(result.guidance), "guidance must be an array");
+      assert(result.configuration_agnostic === true, "guidance must be configuration agnostic");
+      assert(hasGuidanceItem(result.guidance, "temporary_tables_read_only"), "must include temporary table guidance");
+      assert(hasGuidanceItem(result.guidance, "subconto_generic"), "must include subconto guidance");
+      assert(hasGuidanceItem(result.guidance, "grouping_having"), "must include grouping guidance");
+      return { guidance: result.guidance.map((item) => item.id) };
     });
 
     await this.test("tool.run_1c_query_temporary_table_package", async () => {
@@ -1055,6 +1087,16 @@ function assertRef(value, label) {
 function hasGuidance(result, id) {
   return Array.isArray(result?.domain_guidance)
     && result.domain_guidance.some((item) => item?.id === id);
+}
+
+function hasQueryGuidance(result, id) {
+  return Array.isArray(result?.query_guidance)
+    && result.query_guidance.some((item) => item?.id === id);
+}
+
+function hasGuidanceItem(items, id) {
+  return Array.isArray(items)
+    && items.some((item) => item?.id === id);
 }
 
 function requireContextRef(ref, name) {

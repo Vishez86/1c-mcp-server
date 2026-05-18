@@ -30,6 +30,7 @@
 | `MCP_Security` | `MCP_Security.bsl` | Сервер |
 | `MCP_Metadata` | `MCP_Metadata.bsl` | Сервер |
 | `MCP_Query` | `MCP_Query.bsl` | Сервер |
+| `MCP_Knowledge` | `MCP_Knowledge.bsl` | Сервер |
 | `MCP_Registers` | `MCP_Registers.bsl` | Сервер |
 | `MCP_Reports` | `MCP_Reports.bsl` | Сервер |
 | `MCP_History` | `MCP_History.bsl` | Сервер |
@@ -38,6 +39,8 @@
 | `MCP_Tools_Impl` | `MCP_Tools_Impl.bsl` | Сервер |
 
 Для всех общих модулей расширения оставьте `Глобальный = Ложь` и `Привилегированный = Ложь`. Код обращается к экспортным методам явно через имя модуля, например `MCP_JSONRPC.ОбработатьЗапрос(...)`, поэтому глобальный контекст не нужен.
+
+`MCP_Knowledge` содержит встроенную базу знаний из `doc/skills` для LLM: синтаксис языка запросов, функции, временные таблицы, составные типы, субконто и правила оптимизации. Модуль не читает markdown-файлы с диска во время работы 1С; справка поставляется вместе с расширением и доступна через `get_1c_query_guidance` и resources `1c://knowledge/query/*`.
 
 ### 3. Создайте HTTP-сервис
 
