@@ -23,7 +23,7 @@
         +-----------+-------------+
                     |
         +-----------v-------------+      +---------------+
-        |   MCP_Tools dispatch    |----->| MCP_Tools_Impl|  (18 read-only tools)
+        |   MCP_Tools dispatch    |----->| MCP_Tools_Impl|  (19 read-only tools)
         +-----------+-------------+      +-------+-------+
                     |                            |
                     v                            v
@@ -55,11 +55,11 @@
 - `ping`.
 
 ### `MCP_Tools`
-Каталог всех 18 tools: описания (`name`, `title`, `description`, `inputSchema`).
+Каталог всех 19 tools: описания (`name`, `title`, `description`, `inputSchema`).
 Dispatcher `Выполнить(ИмяТула, Аргументы, Контекст)` → передача в реализацию.
 
 ### `MCP_Tools_Impl`
-Бизнес-логика всех 18 tools. Каждая функция:
+Бизнес-логика всех 19 tools. Каждая функция:
 1. Валидирует аргументы.
 2. Запрашивает у `MCP_Security` разрешение на тип/поле.
 3. Использует `MCP_Metadata`, `MCP_Query`, `MCP_Registers`, `MCP_Reports`, `MCP_History`.

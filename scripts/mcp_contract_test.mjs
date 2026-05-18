@@ -11,6 +11,7 @@ const EXPECTED_TOOLS = [
   "run_1c_query",
   "validate_1c_query",
   "get_1c_query_guidance",
+  "get_accounting_accounts_map",
   "get_object_by_ref",
   "find_object_by_id",
   "search_objects",
@@ -457,6 +458,25 @@ class ContractRunner {
       assert(hasGuidanceItem(result.guidance, "subconto_generic"), "must include subconto guidance");
       assert(hasGuidanceItem(result.guidance, "grouping_having"), "must include grouping guidance");
       return { guidance: result.guidance.map((item) => item.id) };
+    });
+
+    await this.test("tool.get_accounting_accounts_map", async () => {
+      const charts = await okTool(this.client, "list_metadata_objects", {
+        kinds: ["ПланСчетов"],
+        limit: 1,
+      });
+      const chart = charts.objects?.[0]?.full_name;
+      if (!chart) return { skipped: true, reason: "no chart of accounts in metadata" };
+      const result = await okTool(this.client, "get_accounting_accounts_map", {
+        chart,
+        include_empty_subconto: false,
+        limit: 5,
+      });
+      assert(result.chart === chart, `unexpected chart: ${result.chart}`);
+      assert(Array.isArray(result.columns), "columns must be present");
+      assert(Array.isArray(result.rows), "rows must be present");
+      assert(result.configuration_agnostic === true, "result must be configuration agnostic");
+      return { chart, rows: result.rows.length, subcontoAttributes: result.subconto_attributes };
     });
 
     await this.test("tool.run_1c_query_temporary_table_package", async () => {
