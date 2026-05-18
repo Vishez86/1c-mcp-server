@@ -351,19 +351,19 @@
 	КонецЕсли;
 
 	Warnings = Новый Массив;
-	AccountingRegisters = ДоступныеОбъектыМетаданныхПоВиду("РегистрБухгалтерии");
+	СписокРегистровБухгалтерии = ДоступныеОбъектыМетаданныхПоВиду("РегистрБухгалтерии");
 	Если НЕ ПустаяСтрока(AccountingRegisterArg) Тогда
 		Если СтрНайти(AccountingRegisterArg, ".") = 0 Тогда
 			AccountingRegisterArg = "РегистрБухгалтерии." + AccountingRegisterArg;
 		КонецЕсли;
 		Отобранные = Новый Массив;
-		Для Каждого Рег Из AccountingRegisters Цикл
+		Для Каждого Рег Из СписокРегистровБухгалтерии Цикл
 			Если ВРег(Рег.full_name) = ВРег(AccountingRegisterArg) Тогда
 				Отобранные.Добавить(Рег);
 			КонецЕсли;
 		КонецЦикла;
-		AccountingRegisters = Отобранные;
-		Если AccountingRegisters.Количество() = 0 Тогда
+		СписокРегистровБухгалтерии = Отобранные;
+		Если СписокРегистровБухгалтерии.Количество() = 0 Тогда
 			MCP_Errors.ВозбудитьОшибку(MCP_Errors.Код_MetadataNotFound(),
 				"Бухгалтерский регистр не найден или запрещён: " + AccountingRegisterArg);
 		КонецЕсли;
@@ -385,7 +385,7 @@
 	PrimaryPeriod.Вставить("source_register", Null);
 
 	СчетчикРегистров = 0;
-	Для Каждого Рег Из AccountingRegisters Цикл
+	Для Каждого Рег Из СписокРегистровБухгалтерии Цикл
 		Если СчетчикРегистров >= AccountingRegisterLimit Тогда
 			Warnings.Добавить("Список бухгалтерских регистров усечён accounting_register_limit=" + AccountingRegisterLimit + ".");
 			Прервать;
@@ -418,12 +418,12 @@
 	КонецЕсли;
 
 	Если IncludeAccumulationRegisters Тогда
-		AccumulationRegisters = ДоступныеОбъектыМетаданныхПоВиду("РегистрНакопления");
+		СписокРегистровНакопления = ДоступныеОбъектыМетаданныхПоВиду("РегистрНакопления");
 		AccumulationSummaries = Новый Массив;
 		AccumulationWithData = Новый Массив;
 		AccumulationEmpty = Новый Массив;
 		Checked = 0;
-		Для Каждого РегНак Из AccumulationRegisters Цикл
+		Для Каждого РегНак Из СписокРегистровНакопления Цикл
 			Если Checked >= AccumulationRegisterLimit Тогда
 				Warnings.Добавить("Список регистров накопления усечён accumulation_register_limit=" + AccumulationRegisterLimit + ".");
 				Прервать;
