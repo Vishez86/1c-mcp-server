@@ -76,14 +76,82 @@ http(s)://<сервер>/<база>/hs/mcp/rpc
 
 ### 6. Настройте allowlist
 
-Содержимое `config/allowlist.json` нужно перенести в:
+Содержимое `config/allowlist.json` нужно перенести в константу `MCP_Allowlist` с типом `СтрокаНеограниченнойДлины`.
 
-- Константу `MCP_Allowlist` (тип `СтрокаНеограниченнойДлины`) — простой вариант.
-- Или регистр сведений `MCP_AllowedMetadata` — для granular конфигурации.
+В модуле `MCP_Config` функция `Allowlist()` читает константу `MCP_Allowlist`. При необходимости адаптируйте её под хранение allowlist в регистре сведений.
 
-В модуле `MCP_Config` функция `ЗагрузитьAllowlist()` читает константу. При необходимости адаптируйте её.
+### 7. Настройте серверный конфиг
 
-### 7. Проверьте установку
+`config/server_config.json` — это шаблон runtime-настроек для константы 1С `MCP_ServerConfig`. Сервер **не читает файл с диска** во время работы: содержимое JSON нужно перенести в базу.
+
+Создайте константу:
+
+- Имя: `MCP_ServerConfig`
+- Тип: `СтрокаНеограниченнойДлины`
+- Значение: содержимое `config/server_config.json`
+
+Минимальный рабочий пример:
+
+```json
+{
+  "http": {
+    "allowed_origins": []
+  },
+  "limits": {
+    "max_limit": 1000,
+    "max_query_rows": 1000,
+    "max_report_rows": 5000,
+    "max_tabular_section_rows": 100,
+    "max_register_rows": 1000,
+    "query_timeout_seconds": 15,
+    "report_timeout_seconds": 60,
+    "max_result_json_bytes": 5242880,
+    "max_searched_types_per_call": 100,
+    "max_string_length_in_response": 10000
+  }
+}
+```
+
+Роль файла:
+
+- `http.allowed_origins` управляет CORS-проверкой HTTP-сервиса.
+- `limits.*` задаёт серверные верхние границы для tools, запросов, отчётов, регистров, размера ответа и длины строк.
+- Если константа отсутствует или поле не задано, используются значения по умолчанию из `MCP_Config`.
+- Неизвестные поля в `limits` игнорируются.
+
+Поля `http`:
+
+| Поле | Значение |
+|---|---|
+| `allowed_origins: []` | Не ограничивать Origin. Удобно для server-to-server MCP-клиентов и тестов. |
+| `allowed_origins: ["https://example.com"]` | Разрешить только указанные browser origins. Используйте точные scheme + host + port. |
+| `allowed_origins: ["*"]` | Разрешить любой Origin явно. Для production лучше указывать конкретные origins. |
+
+Поля `limits`:
+
+| Поле | Где применяется |
+|---|---|
+| `max_limit` | Верхняя граница обычных списков discovery/search. |
+| `max_query_rows` | Максимум строк для `run_1c_query`; также ограничивает явный `ПЕРВЫЕ/TOP`. |
+| `max_report_rows` | Максимум строк результата `run_1c_report`. |
+| `max_tabular_section_rows` | Максимум строк табличных частей в `get_object_by_ref`. |
+| `max_register_rows` | Максимум строк регистров и движений документов. |
+| `query_timeout_seconds` | Бюджет выполнения пользовательских запросов 1С. |
+| `report_timeout_seconds` | Бюджет выполнения отчётов. |
+| `max_result_json_bytes` | Максимальный размер JSON-ответа tool. |
+| `max_searched_types_per_call` | Ограничение перебора типов при UUID/reference search. |
+| `max_string_length_in_response` | Усечение длинных строк в JSON-ответах. |
+
+Что не настраивается через `MCP_ServerConfig`:
+
+- Имя сервера, версия, версия MCP-протокола и `read_only` режим задаются кодом.
+- Правила безопасности запросов, включая запрет изменения постоянных данных и разрешение временных таблиц, задаются кодом.
+- Аудит всегда пишет события `MCP.*` best-effort; его настройки не вынесены в JSON.
+- Возможности истории определяются динамически по конфигурации и правам пользователя.
+
+После изменения константы повторите MCP-вызов. Перепубликовывать HTTP-сервис не нужно, если менялся только JSON в `MCP_ServerConfig`.
+
+### 8. Проверьте установку
 
 Из любого HTTP-клиента (Postman, curl) выполните:
 
@@ -131,7 +199,7 @@ curl -i -X GET https://<server>/<base>/hs/mcp/rpc \
 
 Ожидаемый статус: `405 Method Not Allowed`.
 
-### 8. Подключите MCP-клиента
+### 9. Подключите MCP-клиента
 
 Claude web/custom connector:
 

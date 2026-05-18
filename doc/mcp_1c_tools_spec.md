@@ -199,7 +199,6 @@ string, number, boolean, date, datetime, uuid, ref, enum, array, null
 
 | Параметр | Значение |
 |---|---:|
-| default_limit | 50 |
 | max_limit | 1000 |
 | max_query_rows | 1000 |
 | max_report_rows | 5000 |
@@ -207,8 +206,9 @@ string, number, boolean, date, datetime, uuid, ref, enum, array, null
 | max_register_rows | 1000 |
 | query_timeout_seconds | 15 |
 | report_timeout_seconds | 60 |
-| metadata_cache_ttl_seconds | 300 |
 | max_result_json_bytes | 5 MB |
+| max_searched_types_per_call | 100 |
+| max_string_length_in_response | 10000 |
 
 Пример dev allowlist для тестовых стендов без чувствительных данных:
 
@@ -407,7 +407,7 @@ Discovery tool. Возвращает справочники, документы,
 
 - Обходить Метаданные.Справочники, Метаданные.Документы, Метаданные.РегистрыСведений и т.д.
 - supports_ref=true для справочников, документов, планов, бизнес-процессов и задач.
-- Результат кешировать на metadata_cache_ttl_seconds.
+- Возвращать результат без обязательного серверного кеша; реализация кеширования опциональна и не является частью runtime-конфига.
 
 ### Ошибки
 

@@ -87,7 +87,6 @@ Dispatcher `Выполнить(ИмяТула, Аргументы, Контек�
 
 ### `MCP_Metadata`
 - Обход всех видов метаданных (Справочники, Документы, Регистры, и т.д.).
-- Кеширование структуры объектов на `metadata_cache_ttl_seconds`.
 - Поддержка `query_table`, `supports_ref`, `hierarchical`, `register_schema`.
 
 ### `MCP_Query`
@@ -157,7 +156,6 @@ Dispatcher `Выполнить(ИмяТула, Аргументы, Контек�
 
 | Параметр | Значение |
 |---|---:|
-| default_limit | 50 |
 | max_limit | 1000 |
 | max_query_rows | 1000 |
 | max_report_rows | 5000 |
@@ -165,7 +163,8 @@ Dispatcher `Выполнить(ИмяТула, Аргументы, Контек�
 | max_register_rows | 1000 |
 | query_timeout_seconds | 15 |
 | report_timeout_seconds | 60 |
-| metadata_cache_ttl_seconds | 300 |
 | max_result_json_bytes | 5 MB |
+| max_searched_types_per_call | 100 |
+| max_string_length_in_response | 10000 |
 
 Все лимиты сервер-side, клиент не может их обойти.
