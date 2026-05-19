@@ -1,4 +1,4 @@
-# Спецификация MCP-сервера для 1С: 20 read-only tools
+# Спецификация MCP-сервера для 1С: 21 read-only tools
 
 **Версия документа:** 0.1  
 **Дата:** 2026-05-12  
@@ -260,20 +260,21 @@ read-only синтаксис, безопасность имён, лимиты с
 | 4 | `validate_1c_query` | Проверить запрос 1С до выполнения | P0 |
 | 5 | `get_1c_query_guidance` | Получить универсальные подсказки по языку запросов 1С | P0 |
 | 6 | `get_accounting_accounts_map` | Получить карту счетов и субконто плана счетов | P0 |
-| 7 | `get_database_passport` | Получить паспорт фактических данных базы | P0 |
-| 8 | `get_object_by_ref` | Получить объект по типу и UUID ссылки | P0 |
-| 9 | `find_object_by_id` | Найти объект по UUID без знания типа | P0 |
-| 10 | `search_objects` | Поиск объектов по строке, коду, номеру, ИНН, артикулу | P0 |
-| 11 | `get_link_of_object` | Получить навигационную ссылку на объект | P1 |
-| 12 | `find_references_to_object` | Найти ссылки на объект | P1 |
-| 13 | `get_enum_values` | Получить значения перечисления | P0 |
-| 14 | `get_register_records` | Получить записи, срезы, остатки и обороты регистров | P0 |
-| 15 | `get_document_movements` | Получить движения документа по регистрам | P0 |
-| 16 | `list_reports` | Получить список доступных отчётов | P1 |
-| 17 | `get_report_info` | Получить параметры и структуру отчёта | P1 |
-| 18 | `run_1c_report` | Выполнить отчёт 1С | P1 |
-| 19 | `get_object_history` | Получить историю объекта, версии или события журнала | P2 |
-| 20 | `get_current_user_context` | Получить текущий контекст пользователя и базы | P0 |
+| 7 | `get_calculation_types_map` | Получить карту видов расчёта плана видов расчёта | P0 |
+| 8 | `get_database_passport` | Получить паспорт фактических данных базы | P0 |
+| 9 | `get_object_by_ref` | Получить объект по типу и UUID ссылки | P0 |
+| 10 | `find_object_by_id` | Найти объект по UUID без знания типа | P0 |
+| 11 | `search_objects` | Поиск объектов по строке, коду, номеру, ИНН, артикулу | P0 |
+| 12 | `get_link_of_object` | Получить навигационную ссылку на объект | P1 |
+| 13 | `find_references_to_object` | Найти ссылки на объект | P1 |
+| 14 | `get_enum_values` | Получить значения перечисления | P0 |
+| 15 | `get_register_records` | Получить записи, срезы, остатки и обороты регистров | P0 |
+| 16 | `get_document_movements` | Получить движения документа по регистрам | P0 |
+| 17 | `list_reports` | Получить список доступных отчётов | P1 |
+| 18 | `get_report_info` | Получить параметры и структуру отчёта | P1 |
+| 19 | `run_1c_report` | Выполнить отчёт 1С | P1 |
+| 20 | `get_object_history` | Получить историю объекта, версии или события журнала | P2 |
+| 21 | `get_current_user_context` | Получить текущий контекст пользователя и базы | P0 |
 
 ---
 
@@ -1158,7 +1159,56 @@ live-таблицу `ПланСчетов.<ИмяПлана>.ВидыСубко�
 
 ---
 
-## 7.7. `get_database_passport`
+## 7.7. `get_calculation_types_map`
+
+**Title:** Получить карту видов расчёта
+**Priority:** P0
+
+### Назначение
+
+Универсально читает `ПланВидовРасчета.<Имя>`, чтобы агент видел реальные виды начислений, удержаний и расчётов с UUID. Используется для ЗУП-подобных конфигураций перед запросами к `РегистрРасчета.*`.
+
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "plan": {"type": "string"},
+    "code_prefix": {"type": "string"},
+    "limit": {"type": "integer", "minimum": 1, "maximum": 1000, "default": 500},
+    "cursor": {"type": "string"},
+    "include_query": {"type": "boolean"}
+  },
+  "additionalProperties": false
+}
+```
+
+### Output Shape
+
+```json
+{
+  "ok": true,
+  "plan": "ПланВидовРасчета.<Имя>",
+  "calculation_types": [
+    {"code": "Оклад", "name": "Оплата по окладу", "uuid": "...", "ref": {}}
+  ],
+  "total_calculation_types": 100,
+  "truncated": false,
+  "next_cursor": null,
+  "configuration_agnostic": true
+}
+```
+
+### Правила
+
+- Tool не содержит типовых имён ЗУП и не угадывает виды расчёта.
+- Если доступно несколько `ПланВидовРасчета.*` и `plan` не указан, возвращает `needs_plan=true`.
+- UUID из ответа можно передавать как ссылочный параметр `{ "type": "ПланВидовРасчета.<Имя>", "uuid": "..." }`.
+
+---
+
+## 7.8. `get_database_passport`
 
 **Title:** Получить паспорт фактических данных базы
 **Priority:** P0
@@ -3228,6 +3278,7 @@ Discovery tool для отчётов: возвращает доступные О
       "validate_1c_query",
       "get_1c_query_guidance",
       "get_accounting_accounts_map",
+      "get_calculation_types_map",
       "get_database_passport",
       "get_object_by_ref",
       "find_object_by_id",
@@ -3450,7 +3501,7 @@ Knowledge resources возвращают встроенные правила и�
 
 MVP готов, если:
 
-1. Все 20 tools возвращаются в `tools/list`.
+1. Все 21 tools возвращаются в `tools/list`.
 2. У каждого tool есть корректный `inputSchema`.
 3. Все tools возвращают `content`, `structuredContent`, `isError`.
 4. Реализованы allowlist и denylist.
@@ -3474,7 +3525,7 @@ MVP готов, если:
 }
 ```
 
-Ожидание: `ok=true`, `read_only=true`, список tools содержит 20 tools.
+Ожидание: `ok=true`, `read_only=true`, список tools содержит 21 tools.
 
 ## Test 2: Metadata
 

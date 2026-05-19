@@ -15,6 +15,7 @@
 	Результат.Добавить(Tool_validate_1c_query());
 	Результат.Добавить(Tool_get_1c_query_guidance());
 	Результат.Добавить(Tool_get_accounting_accounts_map());
+	Результат.Добавить(Tool_get_calculation_types_map());
 	Результат.Добавить(Tool_get_database_passport());
 	Результат.Добавить(Tool_get_object_by_ref());
 	Результат.Добавить(Tool_find_object_by_id());
@@ -62,6 +63,8 @@
 			Данные = MCP_Tools_Impl.Get1CQueryGuidance(Аргументы);
 		ИначеЕсли ИмяТула = "get_accounting_accounts_map" Тогда
 			Данные = MCP_Tools_Impl.GetAccountingAccountsMap(Аргументы);
+		ИначеЕсли ИмяТула = "get_calculation_types_map" Тогда
+			Данные = MCP_Tools_Impl.GetCalculationTypesMap(Аргументы);
 		ИначеЕсли ИмяТула = "get_database_passport" Тогда
 			Данные = MCP_Tools_Impl.GetDatabasePassport(Аргументы);
 		ИначеЕсли ИмяТула = "get_object_by_ref" Тогда
@@ -514,6 +517,19 @@
 		Props);
 КонецФункции
 
+Функция Tool_get_calculation_types_map()
+	Props = Новый Структура;
+	Props.Вставить("plan", _Схема("string", , "Полное имя плана видов расчёта, например ПланВидовРасчета.<Имя>. Если не указано и доступен один план, он будет выбран автоматически."));
+	Props.Вставить("code_prefix", _Схема("string", , "Опциональный префикс кода вида расчёта."));
+	Props.Вставить("limit", _СхемаInt(1, 1000, 500));
+	Props.Вставить("cursor", _Схема("string", , "Offset cursor видов расчёта."));
+	Props.Вставить("include_query", _Схема("boolean", , "Вернуть использованный read-only запрос."));
+	Возврат _Tool("get_calculation_types_map",
+		"Получить карту видов расчёта",
+		"Универсально читает ПланВидовРасчета.<Имя>, чтобы LLM видел реальные виды начислений/удержаний/расчётов и их UUID без привязки к конкретной конфигурации ЗУП.",
+		Props);
+КонецФункции
+
 Функция Tool_get_database_passport()
 	Props = Новый Структура;
 	Props.Вставить("accounting_register", _Схема("string", , "Опционально: полное имя бухгалтерского регистра, например РегистрБухгалтерии.<Имя>. Если не указано, проверяются доступные бухгалтерские регистры."));
@@ -521,15 +537,19 @@
 	Props.Вставить("include_period", _Схема("boolean", , "Вернуть горизонт данных и количество проводок по бухгалтерским регистрам."));
 	Props.Вставить("include_closed_periods", _Схема("boolean", , "Вернуть данные регистра ДатыЗапретаИзменения, если он есть и разрешён."));
 	Props.Вставить("include_accumulation_registers", _Схема("boolean", , "Проверить регистры накопления на наличие данных."));
+	Props.Вставить("include_information_registers", _Схема("boolean", , "Проверить регистры сведений на наличие данных и период, если есть поле Период."));
+	Props.Вставить("include_calculation_registers", _Схема("boolean", , "Проверить регистры расчёта на наличие данных, период и организации, если есть соответствующие поля."));
 	Props.Вставить("include_accounting_registers", _Схема("boolean", , "Deprecated alias для include_period."));
 	Props.Вставить("organization_limit", _СхемаInt(1, 200, 50));
 	Props.Вставить("accounting_register_limit", _СхемаInt(1, 50, 10));
 	Props.Вставить("accumulation_register_limit", _СхемаInt(1, 200, 100));
+	Props.Вставить("information_register_limit", _СхемаInt(1, 200, 50));
+	Props.Вставить("calculation_register_limit", _СхемаInt(1, 200, 50));
 	Props.Вставить("include_empty_registers", _Схема("boolean", , "Если false, в accumulation_registers возвращаются только регистры с данными; counters всё равно отражают checked."));
 	Props.Вставить("force_refresh", _Схема("boolean", , "Принудительно пересчитать паспорт, минуя кэш текущей серверной сессии."));
 	Возврат _Tool("get_database_passport",
 		"Получить паспорт фактических данных базы",
-		"Возвращает активные организации, горизонт данных бухгалтерских регистров и флаги заполненности регистров накопления. Tool читает только фактические данные и остаётся независимым от конкретной конфигурации.",
+		"Возвращает активные организации, горизонт данных бухгалтерских регистров и флаги заполненности регистров накопления, сведений и расчёта. Tool читает только фактические данные и остаётся независимым от конкретной конфигурации.",
 		Props);
 КонецФункции
 

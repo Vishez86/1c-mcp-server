@@ -12,6 +12,7 @@ const EXPECTED_TOOLS = [
   "validate_1c_query",
   "get_1c_query_guidance",
   "get_accounting_accounts_map",
+  "get_calculation_types_map",
   "get_database_passport",
   "get_object_by_ref",
   "find_object_by_id",
@@ -496,6 +497,12 @@ class ContractRunner {
       });
       assert(hasGuidanceItem(parameters.guidance, "query_parameters"), "parameters topic must include query_parameters guidance");
       assert(JSON.stringify(parameters.guidance).includes("uuid"), "parameters guidance must mention UUID references");
+      const payroll = await okTool(this.client, "get_1c_query_guidance", {
+        topic: "payroll-and-hr",
+        include_examples: true,
+        max_sections: 3,
+      });
+      assert(hasGuidanceItem(payroll.guidance, "payroll_calculation_registers"), "payroll topic must include calculation register guidance");
       return { guidance: result.guidance.map((item) => item.id) };
     });
 
@@ -523,6 +530,25 @@ class ContractRunner {
       return { chart, rows: result.rows.length, subcontoAttributes: result.subconto_attributes };
     });
 
+    await this.test("tool.get_calculation_types_map", async () => {
+      const plans = await okTool(this.client, "list_metadata_objects", {
+        kinds: ["ПланВидовРасчета"],
+        limit: 2,
+      });
+      const plan = plans.objects?.[0]?.full_name;
+      if (!plan) return { skipped: true, reason: "no chart of calculation types in metadata" };
+      const result = await okTool(this.client, "get_calculation_types_map", {
+        plan,
+        limit: 5,
+      });
+      assert(result.plan === plan, `unexpected plan: ${result.plan}`);
+      assert(Array.isArray(result.rows), "rows must be present");
+      assert(Array.isArray(result.calculation_types), "calculation_types must be present");
+      assert("total_calculation_types" in result, "total_calculation_types must be present");
+      assert(result.configuration_agnostic === true, "result must be configuration agnostic");
+      return { plan, rows: result.rows.length, total: result.total_calculation_types };
+    });
+
     await this.test("tool.get_database_passport", async () => {
       const result = await okTool(this.client, "get_database_passport", {
         include_organizations: true,
@@ -532,6 +558,8 @@ class ContractRunner {
         organization_limit: 5,
         accounting_register_limit: 2,
         accumulation_register_limit: 5,
+        information_register_limit: 5,
+        calculation_register_limit: 5,
         include_empty_registers: true,
       });
       assert(result.configuration_agnostic === true, "passport must be configuration agnostic");
@@ -548,6 +576,8 @@ class ContractRunner {
       assert(typeof result.accumulation_registers.checked === "number", "accumulation_registers.checked must be a number");
       assert(Array.isArray(result.accumulation_registers.with_data), "accumulation_registers.with_data must be an array");
       assert(Array.isArray(result.accumulation_registers.empty), "accumulation_registers.empty must be an array");
+      assert(result.information_registers && typeof result.information_registers === "object", "information_registers must be an object");
+      assert(result.calculation_registers && typeof result.calculation_registers === "object", "calculation_registers must be an object");
       return {
         organizations: result.organizations.length,
         accountingRegisters: result.accounting_registers.length,
