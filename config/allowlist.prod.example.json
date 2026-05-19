@@ -1,5 +1,5 @@
 {
-  "_comment": "Production-oriented example. Do not use for the current open test stand unless you want to restrict data access.",
+  "_comment": "Production-oriented generic example. Keep default_policy=deny and fill allowed_metadata with the actual objects discovered in your base through list_metadata_objects/get_metadata_structure.",
 
   "restrict_data_access": true,
   "default_policy": "deny",
@@ -29,18 +29,6 @@
     "РегистрСведений.ПарольныеПолитики"
   ],
 
-  "allowed_metadata": {
-    "Справочник.Номенклатура": {
-      "read": true,
-      "search_fields": ["Код", "Наименование", "Артикул"],
-      "default_fields": ["Код", "Наименование", "Артикул", "ЕдиницаИзмерения"],
-      "hidden_fields": []
-    },
-    "Справочник.Контрагенты": {
-      "read": true,
-      "search_fields": ["Код", "Наименование", "ИНН", "КПП"],
-      "default_fields": ["Код", "Наименование", "ИНН", "КПП"],
-      "hidden_fields": ["КомментарийВнутренний"]
-    }
-  }
+  "allowed_metadata": {},
+  "allowed_base_urls": []
 }

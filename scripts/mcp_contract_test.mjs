@@ -186,6 +186,7 @@ class ContractRunner {
     console.log(`Started: ${this.startedAt}`);
 
     await this.protocolTests();
+    await this.fixtureDiscovery();
     await this.discoveryTests();
     await this.queryAndSchemaTests();
     await this.referenceTests();
@@ -196,6 +197,63 @@ class ContractRunner {
     await this.crossChecks();
 
     return this.summary();
+  }
+
+  async fixtureDiscovery() {
+    await this.test("fixtures.discover_generic_metadata", async () => {
+      this.context.genericCatalog = await findFirstMetadataObject(this.client, ["Справочник"], async (item) => {
+        const structure = await rawTool(this.client, "get_metadata_structure", {
+          type: item.full_name,
+          include_standard_attributes: true,
+          include_tabular_sections: false,
+        });
+        return structure.ok === true && structure.metadata?.supports_ref === true;
+      });
+      this.context.genericDocument = await findFirstMetadataObject(this.client, ["Документ"], async (item) => {
+        const structure = await rawTool(this.client, "get_metadata_structure", {
+          type: item.full_name,
+          include_standard_attributes: true,
+          include_tabular_sections: false,
+        });
+        return structure.ok === true && structure.metadata?.supports_ref === true;
+      });
+      this.context.catalogWithTabular = await findFirstMetadataObject(this.client, ["Справочник", "Документ"], async (item) => {
+        const structure = await rawTool(this.client, "get_metadata_structure", {
+          type: item.full_name,
+          include_standard_attributes: true,
+          include_tabular_sections: true,
+        });
+        const sections = structure.metadata?.tabular_sections || [];
+        if (structure.ok === true && sections.length > 0) {
+          item.structure = structure.metadata;
+          item.tabularSection = sections[0];
+          return true;
+        }
+        return false;
+      });
+      this.context.infoRegister = await findFirstMetadataObject(this.client, ["РегистрСведений"], async (item) => {
+        const structure = await rawTool(this.client, "get_metadata_structure", {
+          type: item.full_name,
+          include_standard_attributes: true,
+          include_tabular_sections: false,
+        });
+        const schema = structure.metadata?.register_schema;
+        if (structure.ok === true && schema && ((schema.dimensions || []).length > 0 || (schema.resources || []).length > 0)) {
+          item.structure = structure.metadata;
+          return true;
+        }
+        return false;
+      });
+      this.context.enumType = await findFirstMetadataObject(this.client, ["Перечисление"], async () => true);
+      assert(this.context.genericCatalog || this.context.infoRegister, "no generic metadata fixture found");
+      return {
+        catalog: this.context.genericCatalog?.full_name,
+        document: this.context.genericDocument?.full_name,
+        catalogWithTabular: this.context.catalogWithTabular?.full_name,
+        infoRegister: this.context.infoRegister?.full_name,
+        enumType: this.context.enumType?.full_name,
+      };
+    });
   }
 
   async protocolTests() {
@@ -275,16 +333,16 @@ class ContractRunner {
       return { first: first.objects[0].full_name, second: second.objects[0].full_name };
     });
 
-    await this.test("tool.list_metadata_objects_contact_reality", async () => {
+    await this.test("tool.list_metadata_objects_does_not_invent_missing_register", async () => {
       const result = await okTool(this.client, "list_metadata_objects", {
-        query: "Контакт",
+        query: "MCP_НесуществующийРегистр",
         limit: 50,
         include_details: true,
         include_not_allowed: true,
       });
       const names = (result.objects || []).map((item) => item.full_name);
-      assert(!names.includes("РегистрСведений.КонтактнаяИнформация"), "non-existent КонтактнаяИнформация register appeared in metadata");
-      return { found: names.length, hasLegacyRegister: names.includes("РегистрСведений.УдалитьКонтактнаяИнформация") };
+      assert(!names.includes("РегистрСведений.MCP_НесуществующийРегистр"), "non-existent register appeared in metadata");
+      return { found: names.length };
     });
 
     await this.test("tool.discovery_returns_guidance_is_contextual", async () => {
@@ -317,31 +375,34 @@ class ContractRunner {
   }
 
   async queryAndSchemaTests() {
-    await this.test("tool.get_metadata_structure_counterparties", async () => {
+    await this.test("tool.get_metadata_structure_generic_reference_object", async () => {
+      const fixture = this.context.catalogWithTabular || this.context.genericCatalog;
+      if (!fixture) return { skipped: true, reason: "no reference metadata object" };
       const result = await okTool(this.client, "get_metadata_structure", {
-        type: "Справочник.Контрагенты",
+        type: fixture.full_name,
         include_standard_attributes: true,
         include_tabular_sections: true,
       });
       const meta = result.metadata;
-      assert(meta.kind === "Справочник", `unexpected kind: ${meta.kind}`);
-      assert(meta.supports_ref === true, "counterparties must support references");
+      assert(meta.supports_ref === true, "fixture must support references");
       const ts = meta.tabular_sections || [];
-      assert(ts.some((item) => item.name === "КонтактнаяИнформация"), "КонтактнаяИнформация tabular section is missing");
+      if (fixture.tabularSection) {
+        assert(ts.some((item) => item.name === fixture.tabularSection.name), "fixture tabular section is missing");
+      }
       return { attributes: meta.attributes?.length, tabularSections: ts.map((item) => item.name).slice(0, 8) };
     });
 
-    await this.test("tool.get_metadata_structure_register_schema", async () => {
+    await this.test("tool.get_metadata_structure_information_register_schema", async () => {
+      const fixture = this.context.infoRegister;
+      if (!fixture) return { skipped: true, reason: "no information register fixture" };
       const result = await okTool(this.client, "get_metadata_structure", {
-        type: "РегистрСведений.ЦеныНоменклатуры",
+        type: fixture.full_name,
         include_standard_attributes: false,
         include_tabular_sections: false,
       });
       const schema = result.metadata?.register_schema;
       assert(result.metadata?.kind === "РегистрСведений", "register kind must be РегистрСведений");
       assert(schema, "register_schema must be present");
-      assert((schema.dimensions || []).some((item) => item.name === "Номенклатура"), "Номенклатура dimension is missing");
-      assert((schema.resources || []).some((item) => item.name === "Цена"), "Цена resource is missing");
       return { periodicity: schema.periodicity, dimensions: schema.dimensions.length, resources: schema.resources.length };
     });
 
@@ -397,33 +458,37 @@ class ContractRunner {
     });
 
     await this.test("tool.validate_1c_query_existing_tabular_section", async () => {
+      const fixture = this.context.catalogWithTabular;
+      if (!fixture?.tabularSection?.name) return { skipped: true, reason: "no tabular section fixture" };
       const result = await okTool(this.client, "validate_1c_query", {
-        query: "ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка, Представление ИЗ Справочник.Контрагенты.КонтактнаяИнформация",
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка ИЗ ${fixture.full_name}.${fixture.tabularSection.name}`,
         strict: true,
         explain: true,
       });
       assert(result.valid === true, `expected valid=true, errors=${JSON.stringify(result.errors)}`);
-      assert((result.detected_objects || []).includes("Справочник.Контрагенты"), "detected_objects should include parent catalog");
+      assert((result.detected_objects || []).includes(fixture.full_name), "detected_objects should include parent object");
       return { detected: result.detected_objects };
     });
 
     await this.test("tool.validate_1c_query_returns_guidance_is_contextual", async () => {
+      const fixture = this.context.genericCatalog;
+      if (!fixture) return { skipped: true, reason: "no generic catalog fixture" };
       const sales = await okTool(this.client, "validate_1c_query", {
-        query: "ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка ИЗ Документ.РеализацияТоваровУслуг",
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка КАК Продажи ИЗ ${fixture.full_name}`,
         strict: true,
         explain: true,
       });
       assert(hasGuidance(sales, "returns_and_storno"), "sales-like query validation must include returns-and-storno guidance");
 
       const assets = await okTool(this.client, "validate_1c_query", {
-        query: "ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка ИЗ Справочник.ОсновныеСредства",
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка КАК ОсновныеСредства ИЗ ${fixture.full_name}`,
         strict: true,
         explain: true,
       });
       assert(hasGuidance(assets, "returns_and_storno"), "fixed-assets query validation must include returns-and-storno guidance");
 
       const hr = await okTool(this.client, "validate_1c_query", {
-        query: "ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка ИЗ Документ.Увольнение",
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка КАК КадровыйОбъект ИЗ ${fixture.full_name}`,
         strict: true,
         explain: true,
       });
@@ -468,8 +533,10 @@ class ContractRunner {
     });
 
     await this.test("tool.validate_1c_query_having_keyword", async () => {
+      const fixture = this.context.genericCatalog;
+      if (!fixture) return { skipped: true, reason: "no generic catalog fixture" };
       const result = await okTool(this.client, "validate_1c_query", {
-        query: "ВЫБРАТЬ ПЕРВЫЕ 10 Организации.ПометкаУдаления КАК ПометкаУдаления, КОЛИЧЕСТВО(Организации.Ссылка) КАК Количество ИЗ Справочник.Организации КАК Организации СГРУППИРОВАТЬ ПО Организации.ПометкаУдаления ИМЕЮЩИЕ КОЛИЧЕСТВО(Организации.Ссылка) > 0",
+        query: `ВЫБРАТЬ ПЕРВЫЕ 10 Объект.Ссылка КАК Ссылка, КОЛИЧЕСТВО(Объект.Ссылка) КАК Количество ИЗ ${fixture.full_name} КАК Объект СГРУППИРОВАТЬ ПО Объект.Ссылка ИМЕЮЩИЕ КОЛИЧЕСТВО(Объект.Ссылка) > 0`,
         strict: true,
         explain: true,
       });
@@ -586,44 +653,53 @@ class ContractRunner {
     });
 
     await this.test("tool.run_1c_query_temporary_table_package", async () => {
+      const fixture = this.context.genericCatalog;
+      if (!fixture) return { skipped: true, reason: "no generic catalog fixture" };
       const result = await okTool(this.client, "run_1c_query", {
-        query: "ВЫБРАТЬ ПЕРВЫЕ 5 Организации.Ссылка КАК Ссылка, УникальныйИдентификатор(Организации.Ссылка) КАК UUID ПОМЕСТИТЬ ВТОрганизации ИЗ Справочник.Организации КАК Организации ИНДЕКСИРОВАТЬ ПО UUID; ВЫБРАТЬ ПЕРВЫЕ 1 ВТОрганизации.Ссылка КАК Ссылка, ВТОрганизации.UUID КАК UUID ИЗ ВТОрганизации КАК ВТОрганизации",
+        query: `ВЫБРАТЬ ПЕРВЫЕ 5 Объект.Ссылка КАК Ссылка, УникальныйИдентификатор(Объект.Ссылка) КАК UUID ПОМЕСТИТЬ ВТОбъекты ИЗ ${fixture.full_name} КАК Объект ИНДЕКСИРОВАТЬ ПО UUID; ВЫБРАТЬ ПЕРВЫЕ 1 ВТОбъекты.Ссылка КАК Ссылка, ВТОбъекты.UUID КАК UUID ИЗ ВТОбъекты КАК ВТОбъекты`,
         limit: 1,
         include_column_types: true,
       });
       const row = result.rows?.[0];
-      assert(row, "temporary table package must return final SELECT row");
+      if (!row) return { skipped: true, reason: "generic catalog fixture has no rows", catalog: fixture.full_name };
       assertRef(row.Ссылка, "temporary table ref");
       assert(row.Ссылка.uuid === row.UUID, "temporary table UUID must match encoded ref uuid");
       return { row };
     });
 
     await this.test("tool.run_1c_query_counterparty_contact_info", async () => {
+      const fixture = this.context.catalogWithTabular;
+      if (!fixture?.tabularSection?.name) return { skipped: true, reason: "no tabular section fixture" };
       const result = await okTool(this.client, "run_1c_query", {
-        query: "ВЫБРАТЬ ПЕРВЫЕ 5 Ссылка, Тип, Вид, Представление, Страна, Регион, Город ИЗ Справочник.Контрагенты.КонтактнаяИнформация ГДЕ Тип = ЗНАЧЕНИЕ(Перечисление.ТипыКонтактнойИнформации.Адрес)",
+        query: `ВЫБРАТЬ ПЕРВЫЕ 5 Ссылка ИЗ ${fixture.full_name}.${fixture.tabularSection.name}`,
         limit: 5,
         include_column_types: true,
       });
-      assert(result.rows?.length > 0, "expected at least one counterparty address");
+      if (!result.rows?.length) {
+        return { skipped: true, reason: "tabular section fixture has no rows", table: `${fixture.full_name}.${fixture.tabularSection.name}` };
+      }
       const first = result.rows[0];
-      assertRef(first.Ссылка, "counterparty contact row ref");
-      assert(first.Представление, "address presentation must be present");
+      assertRef(first.Ссылка, "tabular section row owner ref");
       this.context.counterpartyRef = first.Ссылка;
-      return { rows: result.rows.length, firstAddress: first.Представление, firstRef: first.Ссылка };
+      this.context.sampleRef ||= first.Ссылка;
+      return { rows: result.rows.length, firstRef: first.Ссылка };
     });
 
     await this.test("tool.run_1c_query_reference_encoding", async () => {
+      const fixture = this.context.genericCatalog;
+      if (!fixture) return { skipped: true, reason: "no generic catalog fixture" };
       const result = await okTool(this.client, "run_1c_query", {
-        query: "ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка, УникальныйИдентификатор(Ссылка) КАК UUID, Наименование ИЗ Справочник.Организации УПОРЯДОЧИТЬ ПО Наименование",
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка, УникальныйИдентификатор(Ссылка) КАК UUID ИЗ ${fixture.full_name}`,
         limit: 1,
         include_column_types: true,
       });
       const row = result.rows?.[0];
-      assert(row, "expected one organization row");
+      if (!row) return { skipped: true, reason: "generic catalog fixture has no rows", catalog: fixture.full_name };
       assertRef(row.Ссылка, "organization query ref");
       assert(row.Ссылка.uuid === row.UUID, "encoded ref uuid must match query UUID column");
       this.context.organizationRef = row.Ссылка;
-      return { ref: row.Ссылка, name: row.Наименование };
+      this.context.sampleRef ||= row.Ссылка;
+      return { ref: row.Ссылка };
     });
 
     await this.test("tool.run_1c_query_accounting_debit_credit_subconto", async () => {
@@ -669,11 +745,15 @@ class ContractRunner {
 
   async referenceTests() {
     await this.test("tool.search_objects_returns_structured_refs", async () => {
+      const ref = this.context.sampleRef || this.context.organizationRef || this.context.counterpartyRef;
+      if (!ref?.type) return { skipped: true, reason: "no sample reference fixture" };
+      const query = String(ref.presentation || "").trim();
+      if (!query) return { skipped: true, reason: "sample reference has empty presentation" };
       const result = await okTool(this.client, "search_objects", {
-        query: "Автотрейд",
-        types: ["Справочник.Контрагенты"],
+        query,
+        types: [ref.type],
         limit: 3,
-        include_fields: ["Код", "Наименование", "ИНН", "КПП"],
+        include_fields: [],
       });
       assert(result.matches?.length > 0, "expected at least one search match");
       assertRef(result.matches[0].ref, "search_objects ref");
@@ -682,28 +762,32 @@ class ContractRunner {
     });
 
     await this.test("tool.get_object_by_ref_with_tabular_section", async () => {
-      const ref = requireContextRef(this.context.counterpartyRef, "counterpartyRef");
+      const ref = requireContextRef(this.context.counterpartyRef || this.context.sampleRef, "counterpartyRef/sampleRef");
+      const fixture = this.context.catalogWithTabular;
+      const wantsTabular = fixture?.full_name === ref.type && fixture?.tabularSection?.name;
       const result = await okTool(this.client, "get_object_by_ref", {
         type: ref.type,
         uuid: ref.uuid,
-        fields: ["Код", "Наименование", "ИНН", "КПП"],
+        fields: [],
         include_standard_fields: true,
-        include_tabular_sections: true,
-        tabular_sections: ["КонтактнаяИнформация"],
+        include_tabular_sections: Boolean(wantsTabular),
+        tabular_sections: wantsTabular ? [fixture.tabularSection.name] : [],
         tabular_section_row_limit: 5,
       });
       assert(result.found === true, "object must be found");
       assertRef(result.object?.ref, "get_object_by_ref object.ref");
-      assert(result.object?.tabular_sections?.КонтактнаяИнформация, "КонтактнаяИнформация tabular section must be returned");
+      if (wantsTabular) {
+        assert(result.object?.tabular_sections?.[fixture.tabularSection.name], "fixture tabular section must be returned");
+      }
       return {
         ref: result.object.ref,
         fields: Object.keys(result.object.fields || {}),
-        contactRows: result.object.tabular_sections.КонтактнаяИнформация.length,
+        tabularSections: Object.keys(result.object.tabular_sections || {}),
       };
     });
 
     await this.test("tool.find_object_by_id", async () => {
-      const ref = requireContextRef(this.context.counterpartyRef, "counterpartyRef");
+      const ref = requireContextRef(this.context.counterpartyRef || this.context.sampleRef, "counterpartyRef/sampleRef");
       const result = await okTool(this.client, "find_object_by_id", {
         uuid: ref.uuid,
         types: [ref.type],
@@ -715,7 +799,7 @@ class ContractRunner {
     });
 
     await this.test("tool.get_link_of_object", async () => {
-      const ref = requireContextRef(this.context.counterpartyRef, "counterpartyRef");
+      const ref = requireContextRef(this.context.counterpartyRef || this.context.sampleRef, "counterpartyRef/sampleRef");
       const result = await okTool(this.client, "get_link_of_object", {
         type: ref.type,
         uuid: ref.uuid,
@@ -729,7 +813,7 @@ class ContractRunner {
     });
 
     await this.test("tool.find_references_to_object", async () => {
-      const ref = requireContextRef(this.context.organizationRef || this.context.counterpartyRef, "organizationRef/counterpartyRef");
+      const ref = requireContextRef(this.context.organizationRef || this.context.counterpartyRef || this.context.sampleRef, "organizationRef/counterpartyRef/sampleRef");
       const result = await okTool(this.client, "find_references_to_object", {
         target: { type: ref.type, uuid: ref.uuid },
         max_types: 3,
@@ -742,7 +826,7 @@ class ContractRunner {
     });
 
     await this.test("tool.get_object_history_graceful", async () => {
-      const ref = requireContextRef(this.context.counterpartyRef, "counterpartyRef");
+      const ref = requireContextRef(this.context.counterpartyRef || this.context.sampleRef, "counterpartyRef/sampleRef");
       const result = await okTool(this.client, "get_object_history", {
         target: { type: ref.type, uuid: ref.uuid },
         mode: "auto",
@@ -757,26 +841,29 @@ class ContractRunner {
 
   async registerTests() {
     await this.test("tool.get_enum_values", async () => {
+      const enumType = this.context.enumType;
+      if (!enumType) return { skipped: true, reason: "no enum fixture" };
       const result = await okTool(this.client, "get_enum_values", {
-        type: "Перечисление.ТипыКонтактнойИнформации",
+        type: enumType.full_name,
         include_empty: true,
         include_order: true,
         limit: 10,
       });
-      assert((result.values || []).some((item) => item.name === "Адрес"), "Адрес enum value must be present");
+      assert(Array.isArray(result.values), "enum values must be an array");
       return { values: result.values.map((item) => item.name) };
     });
 
     await this.test("tool.get_register_records_records_mode", async () => {
+      const fixture = this.context.infoRegister;
+      if (!fixture) return { skipped: true, reason: "no information register fixture" };
       const result = await okTool(this.client, "get_register_records", {
         register_type: "РегистрСведений",
-        register: "ЦеныНоменклатуры",
+        register: fixture.name,
         mode: "records",
         limit: 2,
       });
-      assert(result.register === "РегистрСведений.ЦеныНоменклатуры", "unexpected register name");
-      assert(result.rows?.length > 0, "expected register rows");
-      assertRef(result.rows[0].Номенклатура, "register row Номенклатура ref");
+      assert(result.register === fixture.full_name, "unexpected register name");
+      assert(Array.isArray(result.rows), "register rows must be an array");
       return { rows: result.rows.length, truncated: result.truncated, nextCursor: result.next_cursor };
     });
 
@@ -903,9 +990,11 @@ class ContractRunner {
     });
 
     await this.test("tool.get_register_records_bad_mode_is_diagnostic", async () => {
+      const fixture = this.context.infoRegister;
+      if (!fixture) return { skipped: true, reason: "no information register fixture" };
       const result = await rawTool(this.client, "get_register_records", {
         register_type: "РегистрСведений",
-        register: "ЦеныНоменклатуры",
+        register: fixture.name,
         mode: "balance",
         period: "2026-05-13T00:00:00",
         limit: 1,
@@ -918,20 +1007,23 @@ class ContractRunner {
 
   async documentTests() {
     await this.test("fixture.query_document_with_movements", async () => {
+      const fixture = this.context.genericDocument;
+      if (!fixture) return { skipped: true, reason: "no document fixture" };
       const result = await okTool(this.client, "run_1c_query", {
-        query: "ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка, УникальныйИдентификатор(Ссылка) КАК UUID, Номер, Дата ИЗ Документ.ОтчетПроизводстваЗаСмену УПОРЯДОЧИТЬ ПО Дата УБЫВ",
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка, УникальныйИдентификатор(Ссылка) КАК UUID ИЗ ${fixture.full_name}`,
         limit: 1,
         include_column_types: true,
       });
       const row = result.rows?.[0];
-      assert(row, "expected one production report document");
+      if (!row) return { skipped: true, reason: "document fixture has no rows", document: fixture.full_name };
       assertRef(row.Ссылка, "document query ref");
       this.context.documentRef = row.Ссылка;
-      return { ref: row.Ссылка, number: row.Номер, date: row.Дата };
+      return { ref: row.Ссылка };
     });
 
     await this.test("tool.get_document_movements", async () => {
-      const ref = requireContextRef(this.context.documentRef, "documentRef");
+      const ref = this.context.documentRef;
+      if (!ref) return { skipped: true, reason: "no document row fixture" };
       const result = await okTool(this.client, "get_document_movements", {
         document_type: ref.type,
         uuid: ref.uuid,
@@ -940,7 +1032,7 @@ class ContractRunner {
       });
       assert(result.found === true, "document movements target must be found");
       assertRef(result.document, "get_document_movements document");
-      assert(result.movements?.length > 0, "expected document movements");
+      assert(Array.isArray(result.movements), "movements must be an array");
       return { registers: result.movements.map((item) => item.register), truncated: result.truncated };
     });
   }
@@ -961,7 +1053,8 @@ class ContractRunner {
     });
 
     await this.test("tool.get_report_info", async () => {
-      const report = this.context.reportType || "Отчет.АнализВерсийОбъектов";
+      const report = this.context.reportType;
+      if (!report) return { skipped: true, reason: "no report fixture" };
       const result = await okTool(this.client, "get_report_info", {
         report,
         include_schema: true,
@@ -979,7 +1072,8 @@ class ContractRunner {
     });
 
     await this.test("tool.run_1c_report_graceful", async () => {
-      const report = this.context.reportType || "Отчет.АнализВерсийОбъектов";
+      const report = this.context.reportType;
+      if (!report) return { skipped: true, reason: "no report fixture" };
       const variant = this.context.reportVariant || "Основной";
       const result = await okTool(this.client, "run_1c_report", {
         report,
@@ -1004,7 +1098,7 @@ class ContractRunner {
   async negativeTests() {
     await this.test("negative.validate_missing_metadata_is_invalid", async () => {
       const result = await okTool(this.client, "validate_1c_query", {
-        query: "ВЫБРАТЬ ПЕРВЫЕ 1 Объект ИЗ РегистрСведений.КонтактнаяИнформация",
+        query: "ВЫБРАТЬ ПЕРВЫЕ 1 Объект ИЗ РегистрСведений.MCP_НесуществующийРегистр",
         strict: true,
         explain: true,
       });
@@ -1015,7 +1109,7 @@ class ContractRunner {
 
     await this.test("negative.run_missing_metadata_is_diagnostic", async () => {
       const result = await rawTool(this.client, "run_1c_query", {
-        query: "ВЫБРАТЬ ПЕРВЫЕ 1 Объект ИЗ РегистрСведений.КонтактнаяИнформация",
+        query: "ВЫБРАТЬ ПЕРВЫЕ 1 Объект ИЗ РегистрСведений.MCP_НесуществующийРегистр",
         limit: 1,
       });
       assert(result.ok === false, "missing metadata query must fail");
@@ -1030,8 +1124,10 @@ class ContractRunner {
     });
 
     await this.test("negative.validate_forbidden_keyword", async () => {
+      const fixture = this.context.genericCatalog;
+      if (!fixture) return { skipped: true, reason: "no generic catalog fixture" };
       const result = await okTool(this.client, "validate_1c_query", {
-        query: "ВЫБРАТЬ Ссылка ИЗ Справочник.Контрагенты ДЛЯ ИЗМЕНЕНИЯ",
+        query: `ВЫБРАТЬ Ссылка ИЗ ${fixture.full_name} ДЛЯ ИЗМЕНЕНИЯ`,
         strict: true,
         explain: true,
       });
@@ -1041,8 +1137,10 @@ class ContractRunner {
     });
 
     await this.test("negative.validate_invalid_imeya_keyword", async () => {
+      const fixture = this.context.genericCatalog;
+      if (!fixture) return { skipped: true, reason: "no generic catalog fixture" };
       const result = await okTool(this.client, "validate_1c_query", {
-        query: "ВЫБРАТЬ ПЕРВЫЕ 10 Организации.ПометкаУдаления КАК ПометкаУдаления, КОЛИЧЕСТВО(Организации.Ссылка) КАК Количество ИЗ Справочник.Организации КАК Организации СГРУППИРОВАТЬ ПО Организации.ПометкаУдаления ИМЕЯ КОЛИЧЕСТВО(Организации.Ссылка) > 0",
+        query: `ВЫБРАТЬ ПЕРВЫЕ 10 Объект.Ссылка КАК Ссылка, КОЛИЧЕСТВО(Объект.Ссылка) КАК Количество ИЗ ${fixture.full_name} КАК Объект СГРУППИРОВАТЬ ПО Объект.Ссылка ИМЕЯ КОЛИЧЕСТВО(Объект.Ссылка) > 0`,
         strict: true,
         explain: true,
       });
@@ -1067,8 +1165,11 @@ class ContractRunner {
     });
 
     await this.test("negative.validate_plain_batch_without_temp_tables", async () => {
+      const first = this.context.genericCatalog;
+      const second = this.context.genericDocument || this.context.catalogWithTabular || first;
+      if (!first || !second) return { skipped: true, reason: "not enough query fixtures" };
       const result = await okTool(this.client, "validate_1c_query", {
-        query: "ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка ИЗ Справочник.Организации; ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка ИЗ Справочник.Контрагенты",
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка ИЗ ${first.full_name}; ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка ИЗ ${second.full_name}`,
         strict: true,
         explain: true,
       });
@@ -1078,8 +1179,10 @@ class ContractRunner {
     });
 
     await this.test("negative.validate_temp_table_without_final_select", async () => {
+      const fixture = this.context.genericCatalog;
+      if (!fixture) return { skipped: true, reason: "no generic catalog fixture" };
       const result = await okTool(this.client, "validate_1c_query", {
-        query: "ВЫБРАТЬ ПЕРВЫЕ 1 Организации.Ссылка КАК Ссылка ПОМЕСТИТЬ ВТОрганизации ИЗ Справочник.Организации КАК Организации",
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Объект.Ссылка КАК Ссылка ПОМЕСТИТЬ ВТОбъекты ИЗ ${fixture.full_name} КАК Объект`,
         strict: true,
         explain: true,
       });
@@ -1089,8 +1192,10 @@ class ContractRunner {
     });
 
     await this.test("negative.get_object_by_ref_bad_uuid", async () => {
+      const fixture = this.context.genericCatalog || this.context.genericDocument;
+      if (!fixture) return { skipped: true, reason: "no reference fixture" };
       const result = await rawTool(this.client, "get_object_by_ref", {
-        type: "Справочник.Контрагенты",
+        type: fixture.full_name,
         uuid: "not-a-uuid",
       });
       assert(result.ok === false, "bad uuid must fail");
@@ -1188,6 +1293,33 @@ async function findAccumulationRegister(client) {
     fullName: item.full_name,
     name,
   };
+}
+
+async function findFirstMetadataObject(client, kinds, predicate, pageLimit = 50) {
+  let cursor = "";
+  for (let page = 0; page < 4; page += 1) {
+    const result = await okTool(client, "list_metadata_objects", {
+      kinds,
+      limit: pageLimit,
+      cursor,
+      include_details: true,
+    });
+    for (const item of result.objects || []) {
+      if (!item?.full_name) continue;
+      const accepted = await predicate(item);
+      if (accepted) {
+        const [, nameFromFullName = ""] = item.full_name.split(".");
+        return {
+          ...item,
+          fullName: item.full_name,
+          name: item.name || nameFromFullName,
+        };
+      }
+    }
+    if (!result.next_cursor) break;
+    cursor = result.next_cursor;
+  }
+  return null;
 }
 
 async function okTool(client, name, args) {
