@@ -1,5 +1,5 @@
 {
-  "_comment": "Тестовый dev allowlist для Universal 1C MCP. Скопируйте в константу MCP_Allowlist. По умолчанию все перечисленные виды метаданных доступны, denied_objects и hidden_fields пустые.",
+  "_comment": "Generic dev allowlist for Universal 1C MCP. Copy to the 1C constant MCP_Allowlist for an open test stand. It intentionally does not name application objects.",
 
   "restrict_data_access": false,
   "default_policy": "allow",
@@ -19,101 +19,11 @@
     "ПланОбмена",
     "БизнесПроцесс",
     "Задача",
-    "Отчет"
+    "Отчет",
+    "Обработка"
   ],
 
   "denied_objects": [],
-
-  "allowed_metadata": {
-    "Справочник.Номенклатура": {
-      "read": true,
-      "search_fields": ["Код", "Наименование", "Артикул"],
-      "default_fields": ["Код", "Наименование", "Артикул", "ЕдиницаИзмерения", "Производитель"],
-      "hidden_fields": [],
-      "sensitive": false
-    },
-    "Справочник.Контрагенты": {
-      "read": true,
-      "search_fields": ["Код", "Наименование", "ИНН", "КПП"],
-      "default_fields": ["Код", "Наименование", "ИНН", "КПП", "ЮридическоеФизическоеЛицо"],
-      "hidden_fields": [],
-      "sensitive": false
-    },
-    "Справочник.Договоры": {
-      "read": true,
-      "search_fields": ["Номер", "Наименование"],
-      "default_fields": ["Номер", "Дата", "Наименование", "Контрагент", "ВалютаРасчетов"],
-      "hidden_fields": [],
-      "sensitive": false
-    },
-    "Справочник.Организации": {
-      "read": true,
-      "search_fields": ["Наименование", "ИНН", "КПП"],
-      "default_fields": ["Наименование", "ИНН", "КПП", "ЮридическийАдрес"],
-      "hidden_fields": [],
-      "sensitive": false
-    },
-    "Справочник.Склады": {
-      "read": true,
-      "search_fields": ["Код", "Наименование"],
-      "default_fields": ["Код", "Наименование", "Группа"],
-      "hidden_fields": [],
-      "sensitive": false
-    },
-    "Документ.ЗаказКлиента": {
-      "read": true,
-      "search_fields": ["Номер"],
-      "default_fields": ["Номер", "Дата", "Контрагент", "Организация", "СуммаДокумента", "Проведен"],
-      "hidden_fields": [],
-      "sensitive": false
-    },
-    "Документ.РеализацияТоваровУслуг": {
-      "read": true,
-      "search_fields": ["Номер"],
-      "default_fields": ["Номер", "Дата", "Контрагент", "Организация", "СуммаДокумента", "Проведен"],
-      "hidden_fields": [],
-      "sensitive": false
-    },
-    "Документ.ПоступлениеТоваровУслуг": {
-      "read": true,
-      "search_fields": ["Номер"],
-      "default_fields": ["Номер", "Дата", "Контрагент", "Организация", "СуммаДокумента", "Проведен"],
-      "hidden_fields": [],
-      "sensitive": false
-    },
-    "РегистрНакопления.ТоварыНаСкладах": {
-      "read": true,
-      "supported_modes": ["records", "balance", "turnovers", "balance_and_turnovers"],
-      "default_fields": [],
-      "hidden_fields": [],
-      "sensitive": false
-    },
-    "РегистрНакопления.Продажи": {
-      "read": true,
-      "supported_modes": ["records", "turnovers"],
-      "default_fields": [],
-      "hidden_fields": [],
-      "sensitive": false
-    },
-    "РегистрСведений.ЦеныНоменклатуры": {
-      "read": true,
-      "supported_modes": ["records", "slice_first", "slice_last"],
-      "default_fields": [],
-      "hidden_fields": [],
-      "sensitive": false
-    },
-    "Перечисление.ВидыЦен": {
-      "read": true,
-      "sensitive": false
-    },
-    "Отчет.Продажи": {
-      "read": true,
-      "allowed_variants": ["*"],
-      "sensitive": false
-    }
-  },
-
-  "allowed_base_urls": [
-    "https://1c.example.com/erp"
-  ]
+  "allowed_metadata": {},
+  "allowed_base_urls": []
 }
