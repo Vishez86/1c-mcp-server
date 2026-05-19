@@ -2,12 +2,12 @@
 
 Универсальный MCP-сервер для безопасного read-only доступа к данным и метаданным 1С:Предприятия 8. Постоянные данные не изменяются; временные таблицы языка запросов 1С разрешены как рабочая область выполнения аналитического запроса.
 
-Сервер реализует протокол **Model Context Protocol (MCP) 2025-11-25** поверх HTTP-сервиса 1С и предоставляет LLM-агентам 20 read-only инструментов согласно спецификации `mcp_1c_tools_spec.md`.
+Сервер реализует протокол **Model Context Protocol (MCP) 2025-11-25** поверх HTTP-сервиса 1С и предоставляет LLM-агентам 21 read-only инструмент согласно спецификации `mcp_1c_tools_spec.md`.
 
 ## Возможности
 
 - Полностью read-only: создание/изменение/удаление объектов невозможно.
-- 20 tools: discovery → inspect → search → retrieve → explain → navigate → report → query guidance → data passport.
+- 21 tools: discovery → inspect → search → retrieve → explain → navigate → report → query guidance → data passport.
 - Allowlist/denylist типов метаданных и полей.
 - Лимиты строк, времени и размера результата.
 - Аудит всех вызовов с correlation_id.
@@ -25,20 +25,21 @@
 | 4 | `validate_1c_query` | Проверка запроса до выполнения |
 | 5 | `get_1c_query_guidance` | Универсальные подсказки по языку запросов 1С |
 | 6 | `get_accounting_accounts_map` | Карта счетов и субконто плана счетов |
-| 7 | `get_database_passport` | Паспорт фактических данных базы |
-| 8 | `get_object_by_ref` | Получение объекта по типу и UUID |
-| 9 | `find_object_by_id` | Поиск объекта по UUID без знания типа |
-| 10 | `search_objects` | Поиск по строке/коду/ИНН/артикулу |
-| 11 | `get_link_of_object` | Навигационная ссылка на объект |
-| 12 | `find_references_to_object` | Поиск ссылок на объект |
-| 13 | `get_enum_values` | Значения перечисления |
-| 14 | `get_register_records` | Записи / срезы / остатки / обороты |
-| 15 | `get_document_movements` | Движения документа по регистрам |
-| 16 | `list_reports` | Список отчётов |
-| 17 | `get_report_info` | Параметры и структура отчёта |
-| 18 | `run_1c_report` | Выполнение отчёта |
-| 19 | `get_object_history` | История объекта / журнал регистрации |
-| 20 | `get_current_user_context` | Контекст пользователя и базы |
+| 7 | `get_calculation_types_map` | Карта видов расчёта |
+| 8 | `get_database_passport` | Паспорт фактических данных базы |
+| 9 | `get_object_by_ref` | Получение объекта по типу и UUID |
+| 10 | `find_object_by_id` | Поиск объекта по UUID без знания типа |
+| 11 | `search_objects` | Поиск по строке/коду/ИНН/артикулу |
+| 12 | `get_link_of_object` | Навигационная ссылка на объект |
+| 13 | `find_references_to_object` | Поиск ссылок на объект |
+| 14 | `get_enum_values` | Значения перечисления |
+| 15 | `get_register_records` | Записи / срезы / остатки / обороты |
+| 16 | `get_document_movements` | Движения документа по регистрам |
+| 17 | `list_reports` | Список отчётов |
+| 18 | `get_report_info` | Параметры и структура отчёта |
+| 19 | `run_1c_report` | Выполнение отчёта |
+| 20 | `get_object_history` | История объекта / журнал регистрации |
+| 21 | `get_current_user_context` | Контекст пользователя и базы |
 
 ## Структура проекта
 
@@ -105,9 +106,10 @@ ping                 -- ping
 
 - tool `get_1c_query_guidance` возвращает короткие контекстные подсказки по теме или черновику запроса;
 - tool `get_accounting_accounts_map` читает live-таблицу `ПланСчетов.<Имя>.ВидыСубконто` и возвращает `accounts[].subconto[]`, чтобы агент не угадывал позиции `Субконто1/2/3`;
-- tool `get_database_passport` возвращает фактический срез данных: активные организации из бухгалтерских регистров, горизонт записей, закрытые периоды при наличии регистра дат запрета и заполненность регистров накопления; параметр `force_refresh` принудительно пересчитывает паспорт, а поля `cache_hit`/`cache_age_seconds` показывают состояние безопасного серверного кэша;
+- tool `get_calculation_types_map` читает `ПланВидовРасчета.<Имя>` и возвращает реальные виды расчёта для ЗУП-подобных конфигураций;
+- tool `get_database_passport` возвращает фактический срез данных: активные организации, горизонт записей, закрытые периоды при наличии регистра дат запрета и заполненность регистров накопления/сведений/расчёта; параметр `force_refresh` принудительно пересчитывает паспорт, а поля `cache_hit`/`cache_age_seconds` показывают состояние безопасного серверного кэша;
 - `validate_1c_query` и `run_1c_query` добавляют `query_guidance` и структурированные подсказки ошибок, если запрос содержит временные таблицы, агрегаты, субконто, составные ссылки, `NULL`, JOIN или другие рискованные конструкции;
-- resources `1c://knowledge/query/*` дают полную встроенную справку: syntax, functions, optimization, temporary-tables, compound-types, subconto.
+- resources `1c://knowledge/query/*` дают полную встроенную справку: syntax, functions, optimization, temporary-tables, compound-types, subconto, parameters, payroll.
 
 Главное правило этой базы знаний: сначала получить метаданные через `list_metadata_objects` / `get_metadata_structure`, затем писать запрос по фактическим именам объектов и полей текущей базы.
 
