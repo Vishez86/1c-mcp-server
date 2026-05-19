@@ -123,6 +123,7 @@ Dispatcher `Выполнить(ИмяТула, Аргументы, Контек�
 ### `MCP_Config`
 - Загрузка allowlist из константы / регистра / файла.
 - Лимиты по умолчанию (см. раздел 5 спецификации).
+- Runtime-настройки `MCP_ServerConfig`, включая `privacy.masked_fields` для маскирования полей перед выдачей MCP-клиенту.
 
 ## Поток выполнения tools/call
 
@@ -137,8 +138,9 @@ Dispatcher `Выполнить(ИмяТула, Аргументы, Контек�
    4.4. Вызов реализации из MCP_Tools_Impl.
    4.5. Реализация делегирует в Metadata / Query / ... .
    4.6. Результат кодируется в JSON через MCP_Values.
-   4.7. Audit запись.
-   4.8. Унифицированный MCP tool result.
+   4.7. MCP_Security маскирует поля из privacy.masked_fields.
+   4.8. Audit запись по уже замаскированному результату.
+   4.9. Унифицированный MCP tool result.
 5. JSON-RPC dispatcher формирует response.
 6. HTTP-сервис отдаёт ответ.
 ```
