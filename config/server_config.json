@@ -3,6 +3,10 @@
     "allowed_origins": []
   },
 
+  "privacy": {
+    "masked_fields": []
+  },
+
   "limits": {
     "max_limit": 1000,
     "max_query_rows": 1000,
