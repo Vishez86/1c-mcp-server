@@ -435,6 +435,19 @@ class ContractRunner {
       };
     });
 
+    await this.test("tool.validate_1c_query_rejects_main_register_subconto_dtkt", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) return { skipped: true, reason: "no accounting register" };
+      const result = await okTool(this.client, "validate_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Хозрасчетный.СубконтоДт1 КАК Субконто ИЗ ${accountingRegister.fullName} КАК Хозрасчетный`,
+        strict: true,
+        explain: true,
+      });
+      assert(result.valid === false, "main accounting register СубконтоДт1 must be invalid");
+      assert((result.errors || []).some((error) => error.code === "subconto_wrong_table"), `subconto_wrong_table error is missing: ${JSON.stringify(result.errors)}`);
+      return { errors: result.errors };
+    });
+
     await this.test("tool.validate_1c_query_having_keyword", async () => {
       const result = await okTool(this.client, "validate_1c_query", {
         query: "ВЫБРАТЬ ПЕРВЫЕ 10 Организации.ПометкаУдаления КАК ПометкаУдаления, КОЛИЧЕСТВО(Организации.Ссылка) КАК Количество ИЗ Справочник.Организации КАК Организации СГРУППИРОВАТЬ ПО Организации.ПометкаУдаления ИМЕЮЩИЕ КОЛИЧЕСТВО(Организации.Ссылка) > 0",
@@ -458,6 +471,13 @@ class ContractRunner {
       assert(hasGuidanceItem(result.guidance, "temporary_tables_read_only"), "must include temporary table guidance");
       assert(hasGuidanceItem(result.guidance, "subconto_generic"), "must include subconto guidance");
       assert(hasGuidanceItem(result.guidance, "grouping_having"), "must include grouping guidance");
+      const parameters = await okTool(this.client, "get_1c_query_guidance", {
+        topic: "parameters",
+        include_examples: true,
+        max_sections: 3,
+      });
+      assert(hasGuidanceItem(parameters.guidance, "query_parameters"), "parameters topic must include query_parameters guidance");
+      assert(JSON.stringify(parameters.guidance).includes("uuid"), "parameters guidance must mention UUID references");
       return { guidance: result.guidance.map((item) => item.id) };
     });
 
@@ -477,6 +497,7 @@ class ContractRunner {
       assert(Array.isArray(result.columns), "columns must be present");
       assert(Array.isArray(result.rows), "rows must be present");
       assert(Array.isArray(result.accounts), "accounts must be present");
+      assert("total_accounts" in result, "total_accounts must be present");
       if (result.accounts.length > 0) {
         assert(Array.isArray(result.accounts[0].subconto), "account.subconto must be an array");
       }
@@ -497,6 +518,8 @@ class ContractRunner {
       });
       assert(result.configuration_agnostic === true, "passport must be configuration agnostic");
       assert(result.read_only === true, "passport must be read-only");
+      assert(result.cache_hit === false || result.cache_hit === true, "cache_hit must be boolean");
+      assert(typeof result.cache_age_seconds === "number", "cache_age_seconds must be a number");
       assert(Array.isArray(result.organizations), "organizations must be an array");
       assert(result.data_period && typeof result.data_period === "object", "data_period must be present");
       assert(Array.isArray(result.accounting_registers), "accounting_registers must be an array");
@@ -911,6 +934,7 @@ class ContractRunner {
       });
       assert(result.report === report, "run_1c_report returned different report");
       assert("execution_supported" in result, "execution_supported must be present");
+      assert(result.parameters_used && typeof result.parameters_used === "object", "parameters_used must be present");
       assert(Array.isArray(result.rows), "rows must be an array even when unsupported");
       return {
         report: result.report,
@@ -969,6 +993,20 @@ class ContractRunner {
       assert(result.valid === false, "ИМЕЯ query must be invalid");
       assert((result.errors || []).some((error) => error.code === "invalid_1c_query_keyword"), "invalid_1c_query_keyword error is missing");
       return { errors: result.errors };
+    });
+
+    await this.test("negative.run_main_register_subconto_dtkt_is_smart_error", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) return { skipped: true, reason: "no accounting register" };
+      const result = await rawTool(this.client, "run_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Хозрасчетный.СубконтоДт1 КАК Субконто ИЗ ${accountingRegister.fullName} КАК Хозрасчетный`,
+        limit: 1,
+      });
+      assert(result.ok === false, "main accounting register СубконтоДт1 run must fail");
+      assert(result.error_code === "subconto_wrong_table" || result.error?.error_code === "subconto_wrong_table", `smart error_code is missing: ${JSON.stringify(result)}`);
+      assert((result.hint || result.error?.hint || "").includes("Субконто"), "smart hint must mention Субконто");
+      assert((result.see_also || result.error?.see_also || "").includes(".Субконто"), "see_also must point to .Субконто table");
+      return { errorCode: result.error_code || result.error?.error_code, hint: result.hint || result.error?.hint };
     });
 
     await this.test("negative.validate_plain_batch_without_temp_tables", async () => {
