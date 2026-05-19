@@ -445,6 +445,9 @@
 			КонецЕсли;
 		КонецЦикла;
 		AccumulationResult = Новый Структура;
+		AccumulationResult.Вставить("cache_hit", Ложь);
+		AccumulationResult.Вставить("cache_age_seconds", 0);
+		AccumulationResult.Вставить("checked", Checked);
 		AccumulationResult.Вставить("with_data", AccumulationWithData);
 		AccumulationResult.Вставить("empty", AccumulationEmpty);
 		Результат.Вставить("accumulation_registers", AccumulationResult);

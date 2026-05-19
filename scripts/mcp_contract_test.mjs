@@ -377,6 +377,24 @@ class ContractRunner {
       return { register: accountingRegister.fullName, virtualTables };
     });
 
+    await this.test("tool.get_metadata_structure_accumulation_resources_by_mode", async () => {
+      const accumulationRegister = await findAccumulationRegister(this.client);
+      if (!accumulationRegister) return { skipped: true, reason: "no accumulation register" };
+      this.context.accumulationRegister = accumulationRegister;
+      const result = await okTool(this.client, "get_metadata_structure", {
+        type: accumulationRegister.fullName,
+        include_standard_attributes: true,
+        include_tabular_sections: false,
+        include_virtual_tables: true,
+      });
+      const schema = result.metadata?.register_schema;
+      assert(schema, "register_schema must be present");
+      assert(schema.resources_by_mode && typeof schema.resources_by_mode === "object", "resources_by_mode must be present");
+      assert(Array.isArray(schema.resources_by_mode.records), "resources_by_mode.records must be an array");
+      assert(Array.isArray(schema.resources_by_mode.turnovers), "resources_by_mode.turnovers must be an array");
+      return { register: accumulationRegister.fullName, resourcesByMode: schema.resources_by_mode };
+    });
+
     await this.test("tool.validate_1c_query_existing_tabular_section", async () => {
       const result = await okTool(this.client, "validate_1c_query", {
         query: "ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка, Представление ИЗ Справочник.Контрагенты.КонтактнаяИнформация",
@@ -525,6 +543,9 @@ class ContractRunner {
       assert(Array.isArray(result.accounting_registers), "accounting_registers must be an array");
       assert(Array.isArray(result.closed_periods), "closed_periods must be an array");
       assert(result.accumulation_registers && typeof result.accumulation_registers === "object", "accumulation_registers must be an object");
+      assert(result.accumulation_registers.cache_hit === false || result.accumulation_registers.cache_hit === true, "accumulation_registers.cache_hit must be boolean");
+      assert(typeof result.accumulation_registers.cache_age_seconds === "number", "accumulation_registers.cache_age_seconds must be a number");
+      assert(typeof result.accumulation_registers.checked === "number", "accumulation_registers.checked must be a number");
       assert(Array.isArray(result.accumulation_registers.with_data), "accumulation_registers.with_data must be an array");
       assert(Array.isArray(result.accumulation_registers.empty), "accumulation_registers.empty must be an array");
       return {
@@ -913,12 +934,17 @@ class ContractRunner {
       const report = this.context.reportType || "Отчет.АнализВерсийОбъектов";
       const result = await okTool(this.client, "get_report_info", {
         report,
-        include_schema: false,
+        include_schema: true,
         include_variants: true,
-        include_default_settings: false,
+        include_default_settings: true,
       });
       assert(result.report === report, "report_info returned different report");
       assert(Array.isArray(result.variants), "variants must be an array");
+      assert(Array.isArray(result.parameters), "parameters must be an array");
+      if (result.parameters.length > 0) {
+        assert("name" in result.parameters[0], "report parameter must include name");
+        assert("type" in result.parameters[0] || "type_description" in result.parameters[0], "report parameter must include type");
+      }
       return { report: result.report, variants: result.variants };
     });
 
@@ -1006,6 +1032,7 @@ class ContractRunner {
       assert(result.error_code === "subconto_wrong_table" || result.error?.error_code === "subconto_wrong_table", `smart error_code is missing: ${JSON.stringify(result)}`);
       assert((result.hint || result.error?.hint || "").includes("Субконто"), "smart hint must mention Субконто");
       assert((result.see_also || result.error?.see_also || "").includes(".Субконто"), "see_also must point to .Субконто table");
+      assert(Array.isArray(result.validation_errors || result.error?.validation_errors), "validation_errors must be present");
       return { errorCode: result.error_code || result.error?.error_code, hint: result.hint || result.error?.hint };
     });
 
@@ -1102,6 +1129,23 @@ class ContractRunner {
 async function findAccountingRegister(client) {
   const result = await okTool(client, "list_metadata_objects", {
     kinds: ["РегистрБухгалтерии"],
+    limit: 1,
+    include_details: false,
+  });
+  const item = result.objects?.[0];
+  if (!item?.full_name) return null;
+  const [, nameFromFullName = ""] = item.full_name.split(".");
+  const name = item.name || nameFromFullName;
+  if (!name) return null;
+  return {
+    fullName: item.full_name,
+    name,
+  };
+}
+
+async function findAccumulationRegister(client) {
+  const result = await okTool(client, "list_metadata_objects", {
+    kinds: ["РегистрНакопления"],
     limit: 1,
     include_details: false,
   });
