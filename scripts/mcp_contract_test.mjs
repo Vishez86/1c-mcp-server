@@ -352,6 +352,7 @@ class ContractRunner {
         limit: 1,
       });
       assert(hasGuidance(sales, "returns_and_storno"), "sales/report discovery must include returns-and-storno guidance");
+      assert(hasGuidance(sales, "report_or_direct_query_choice"), "sales/report discovery must include report-or-query guidance");
 
       const materials = await okTool(this.client, "list_reports", {
         query: "остатки и поступление сырья материалов тмц возвраты поставщику",
@@ -470,6 +471,43 @@ class ContractRunner {
       return { detected: result.detected_objects };
     });
 
+    await this.test("tool.validate_1c_query_warns_document_tabular_register_fanout", async () => {
+      const documentWithTabular = await findFirstMetadataObject(this.client, ["Документ"], async (item) => {
+        const structure = await rawTool(this.client, "get_metadata_structure", {
+          type: item.full_name,
+          include_standard_attributes: true,
+          include_tabular_sections: true,
+        });
+        const sections = structure.metadata?.tabular_sections || [];
+        if (structure.ok === true && sections.length > 0) {
+          item.structure = structure.metadata;
+          item.tabularSection = sections[0];
+          return true;
+        }
+        return false;
+      });
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!documentWithTabular?.tabularSection?.name || !accountingRegister) {
+        return { skipped: true, reason: "no document tabular section or accounting register fixture" };
+      }
+
+      const result = await okTool(this.client, "validate_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 10 ТЧ.Ссылка КАК Документ, СУММА(ТЧ.Сумма) КАК Сумма ИЗ ${documentWithTabular.full_name}.${documentWithTabular.tabularSection.name} КАК ТЧ ВНУТРЕННЕЕ СОЕДИНЕНИЕ ${accountingRegister.fullName} КАК Рег ПО Рег.Регистратор = ТЧ.Ссылка СГРУППИРОВАТЬ ПО ТЧ.Ссылка`,
+        strict: true,
+        explain: true,
+      });
+      assert(result.valid === true, `fanout-risk query should remain valid, errors=${JSON.stringify(result.errors)}`);
+      assert((result.warnings || []).some((warning) => warning.includes("Риск умножения строк")), `fanout warning is missing: ${JSON.stringify(result.warnings)}`);
+      assert(hasGuidance(result, "document_tabular_register_join_fanout"), "fanout guidance is missing");
+      return {
+        document: documentWithTabular.full_name,
+        tabularSection: documentWithTabular.tabularSection.name,
+        register: accountingRegister.fullName,
+        warnings: result.warnings,
+        guidance: result.domain_guidance,
+      };
+    });
+
     await this.test("tool.validate_1c_query_returns_guidance_is_contextual", async () => {
       const fixture = this.context.genericCatalog;
       if (!fixture) return { skipped: true, reason: "no generic catalog fixture" };
@@ -479,6 +517,7 @@ class ContractRunner {
         explain: true,
       });
       assert(hasGuidance(sales, "returns_and_storno"), "sales-like query validation must include returns-and-storno guidance");
+      assert(hasGuidance(sales, "report_or_direct_query_choice"), "sales-like query validation must include report-or-query guidance");
 
       const assets = await okTool(this.client, "validate_1c_query", {
         query: `ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка КАК ОсновныеСредства ИЗ ${fixture.full_name}`,
@@ -570,6 +609,12 @@ class ContractRunner {
         max_sections: 3,
       });
       assert(hasGuidanceItem(payroll.guidance, "payroll_calculation_registers"), "payroll topic must include calculation register guidance");
+      const reportsVsQuery = await okTool(this.client, "get_1c_query_guidance", {
+        topic: "reports-vs-query",
+        include_examples: true,
+        max_sections: 3,
+      });
+      assert(hasGuidanceItem(reportsVsQuery.guidance, "report_or_direct_query_choice"), "reports-vs-query topic must include report-or-query guidance");
       return { guidance: result.guidance.map((item) => item.id) };
     });
 
@@ -1047,6 +1092,7 @@ class ContractRunner {
         limit: 5,
       });
       assert(result.reports?.length > 0, "expected reports");
+      assert(hasInteractionHint(result, "report_or_direct_query_choice"), "report discovery must include report-or-query interaction hint");
       const report = result.reports[0];
       assert(report.type?.startsWith("Отчет."), "report type must be full metadata name");
       this.context.reportType = report.type;
@@ -1395,6 +1441,10 @@ function hasQueryGuidance(result, id) {
 function hasGuidanceItem(items, id) {
   return Array.isArray(items)
     && items.some((item) => item?.id === id);
+}
+
+function hasInteractionHint(result, id) {
+  return result?.interaction_hint?.id === id;
 }
 
 function requireContextRef(ref, name) {
