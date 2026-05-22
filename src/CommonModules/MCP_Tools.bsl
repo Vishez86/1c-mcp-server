@@ -15,6 +15,7 @@
 	Результат.Добавить(Tool_validate_1c_query());
 	Результат.Добавить(Tool_get_1c_query_guidance());
 	Результат.Добавить(Tool_get_accounting_accounts_map());
+	Результат.Добавить(Tool_get_inventory_balances_by_item());
 	Результат.Добавить(Tool_get_calculation_types_map());
 	Результат.Добавить(Tool_get_database_passport());
 	Результат.Добавить(Tool_get_object_by_ref());
@@ -63,6 +64,8 @@
 			Данные = MCP_Tools_Impl.Get1CQueryGuidance(Аргументы);
 		ИначеЕсли ИмяТула = "get_accounting_accounts_map" Тогда
 			Данные = MCP_Tools_Impl.GetAccountingAccountsMap(Аргументы);
+		ИначеЕсли ИмяТула = "get_inventory_balances_by_item" Тогда
+			Данные = MCP_Tools_Impl.GetInventoryBalancesByItem(Аргументы);
 		ИначеЕсли ИмяТула = "get_calculation_types_map" Тогда
 			Данные = MCP_Tools_Impl.GetCalculationTypesMap(Аргументы);
 		ИначеЕсли ИмяТула = "get_database_passport" Тогда
@@ -574,6 +577,33 @@
 	Возврат _Tool("get_accounting_accounts_map",
 		"Получить карту счетов и субконто",
 		"Универсально читает ПланСчетов.<Имя> и табличную часть ВидыСубконто, чтобы LLM видел соответствие счёта позициям Субконто1/2/3 без угадывания структуры конкретной базы. Для скорости в отчетной аналитике передавайте account_code_prefix и небольшой limit вместо чтения всей карты.",
+		Props);
+КонецФункции
+
+Функция Tool_get_inventory_balances_by_item()
+	Props = Новый Структура;
+	Props.Вставить("item_query", _Схема("string", , "Строка поиска номенклатуры по коду/наименованию, если item_ref не передан."));
+	ItemRefProps = Новый Структура;
+	ItemRefProps.Вставить("type", _Схема("string", , "Полный тип ссылки, обычно Справочник.Номенклатура."));
+	ItemRefProps.Вставить("uuid", _Схема("string", , "UUID элемента номенклатуры."));
+	ItemRef = Новый Структура;
+	ItemRef.Вставить("type", "object");
+	ItemRef.Вставить("properties", ItemRefProps);
+	ItemRef.Вставить("required", _МассивСтрок("type,uuid"));
+	Props.Вставить("item_ref", ItemRef);
+	Props.Вставить("item_type", _Схема("string", , "Тип номенклатуры для поиска. По умолчанию Справочник.Номенклатура."));
+	Props.Вставить("as_of", _Схема("string", , "Дата остатков ISO 8601. Если не указана, используется текущая дата сервера."));
+	Props.Вставить("accounting_register", _Схема("string", , "Бухгалтерский регистр, например РегистрБухгалтерии.Хозрасчетный. Если не указан, выбирается доступный или Хозрасчетный."));
+	Props.Вставить("chart", _Схема("string", , "План счетов, например ПланСчетов.Хозрасчетный. Если не указан, выбирается доступный или Хозрасчетный."));
+	Props.Вставить("account_code_prefixes", _Схема("array", , "Префиксы счетов для поиска видов субконто. По умолчанию 41 и 43."));
+	Props.Вставить("item_subconto_name", _Схема("string", , "Имя вида субконто номенклатуры. По умолчанию Номенклатура."));
+	Props.Вставить("warehouse_subconto_name", _Схема("string", , "Имя вида субконто склада. По умолчанию Склады."));
+	Props.Вставить("include_zero", _Схема("boolean", , "Если true, не отбрасывать нулевые итоги."));
+	Props.Вставить("include_query", _Схема("boolean", , "Вернуть использованный read-only запрос."));
+	Props.Вставить("limit", _СхемаInt(1, 1000, 100));
+	Возврат _Tool("get_inventory_balances_by_item",
+		"Остатки товара по складам и организациям",
+		"Высокоуровневый быстрый tool для товарных остатков по бухгалтерскому регистру: за один MCP-вызов находит номенклатуру, определяет виды субконто Номенклатура/Склады через план счетов и выполняет агрегированный read-only запрос по Остатки в разрезе Организация + Склад. Используйте вместо ручной цепочки search_objects -> get_accounting_accounts_map -> run_1c_query для типовых вопросов об остатках товара.",
 		Props);
 КонецФункции
 

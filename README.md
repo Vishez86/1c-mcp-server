@@ -2,12 +2,12 @@
 
 Универсальный MCP-сервер для безопасного read-only доступа к данным и метаданным 1С:Предприятия 8. Постоянные данные не изменяются; временные таблицы языка запросов 1С разрешены как рабочая область выполнения аналитического запроса.
 
-Сервер реализует протокол **Model Context Protocol (MCP) 2025-11-25** поверх HTTP-сервиса 1С и предоставляет LLM-агентам 21 read-only инструмент согласно спецификации `mcp_1c_tools_spec.md`.
+Сервер реализует протокол **Model Context Protocol (MCP) 2025-11-25** поверх HTTP-сервиса 1С и предоставляет LLM-агентам 22 read-only инструмента согласно спецификации `mcp_1c_tools_spec.md`.
 
 ## Возможности
 
 - Полностью read-only: создание/изменение/удаление объектов невозможно.
-- 21 tools: discovery → inspect → search → retrieve → explain → navigate → report → query guidance → data passport.
+- 22 tools: discovery → inspect → search → retrieve → explain → navigate → report → query guidance → data passport.
 - Allowlist/denylist типов метаданных и полей.
 - Маскирование заданных полей перед передачей ответа в LLM.
 - Лимиты строк, времени и размера результата.
@@ -26,21 +26,22 @@
 | 4 | `validate_1c_query` | Проверка запроса до выполнения |
 | 5 | `get_1c_query_guidance` | Универсальные подсказки по языку запросов 1С |
 | 6 | `get_accounting_accounts_map` | Карта счетов и субконто плана счетов |
-| 7 | `get_calculation_types_map` | Карта видов расчёта |
-| 8 | `get_database_passport` | Паспорт фактических данных базы |
-| 9 | `get_object_by_ref` | Получение объекта по типу и UUID |
-| 10 | `find_object_by_id` | Поиск объекта по UUID без знания типа |
-| 11 | `search_objects` | Поиск по строке/коду/ИНН/артикулу |
-| 12 | `get_link_of_object` | Навигационная ссылка на объект |
-| 13 | `find_references_to_object` | Поиск ссылок на объект |
-| 14 | `get_enum_values` | Значения перечисления |
-| 15 | `get_register_records` | Записи / срезы / остатки / обороты |
-| 16 | `get_document_movements` | Движения документа по регистрам |
-| 17 | `list_reports` | Список отчётов |
-| 18 | `get_report_info` | Параметры и структура отчёта |
-| 19 | `run_1c_report` | Выполнение отчёта |
-| 20 | `get_object_history` | История объекта / журнал регистрации |
-| 21 | `get_current_user_context` | Контекст пользователя и базы |
+| 7 | `get_inventory_balances_by_item` | Быстрые остатки товара по складам и организациям |
+| 8 | `get_calculation_types_map` | Карта видов расчёта |
+| 9 | `get_database_passport` | Паспорт фактических данных базы |
+| 10 | `get_object_by_ref` | Получение объекта по типу и UUID |
+| 11 | `find_object_by_id` | Поиск объекта по UUID без знания типа |
+| 12 | `search_objects` | Поиск по строке/коду/ИНН/артикулу |
+| 13 | `get_link_of_object` | Навигационная ссылка на объект |
+| 14 | `find_references_to_object` | Поиск ссылок на объект |
+| 15 | `get_enum_values` | Значения перечисления |
+| 16 | `get_register_records` | Записи / срезы / остатки / обороты |
+| 17 | `get_document_movements` | Движения документа по регистрам |
+| 18 | `list_reports` | Список отчётов |
+| 19 | `get_report_info` | Параметры и структура отчёта |
+| 20 | `run_1c_report` | Выполнение отчёта |
+| 21 | `get_object_history` | История объекта / журнал регистрации |
+| 22 | `get_current_user_context` | Контекст пользователя и базы |
 
 ## Структура проекта
 
