@@ -12,6 +12,7 @@ const EXPECTED_TOOLS = [
   "validate_1c_query",
   "get_1c_query_guidance",
   "get_accounting_accounts_map",
+  "get_inventory_balances_by_item",
   "get_calculation_types_map",
   "get_database_passport",
   "get_object_by_ref",
