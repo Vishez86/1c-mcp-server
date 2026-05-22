@@ -1024,7 +1024,7 @@ live-таблицу `ПланСчетов.<ИмяПлана>.ВидыСубко�
   "properties": {
     "topic": {
       "type": "string",
-      "description": "Тема или auto: metadata-first, query-structure, virtual-tables, temporary-tables, joins, grouping-and-having, functions, compound-types, subconto, null-handling, parameters, performance-pitfalls, mcp-query-safety."
+      "description": "Тема или auto: metadata-first, query-structure, virtual-tables, temporary-tables, joins, grouping-and-having, functions, compound-types, subconto, null-handling, parameters, reports-vs-query, report-fast-path, performance-pitfalls, mcp-query-safety."
     },
     "query": {
       "type": "string",
@@ -1080,7 +1080,8 @@ live-таблицу `ПланСчетов.<ИмяПлана>.ВидыСубко�
 
 - Tool не обращается к данным конкретной базы и не зависит от структуры конфигурации.
 - Примеры должны быть шаблонными: `<Источник>`, `<ИмяРегистра>`, `<Реквизит>`.
-- Тема `parameters` должна явно показывать, что строки/числа/булево передаются напрямую, даты передаются ISO 8601, а ссылки передаются объектом `{"type":"<ПолныйТип>","uuid":"<UUID>"}`. UUID организаций берутся из `get_database_passport`, UUID счетов и видов субконто - из `get_accounting_accounts_map`.
+- Тема `parameters` должна явно показывать, что строки/числа/булево можно передавать напрямую, а даты/ссылки/перечисления/массивы передаются через `QueryParameterValue`: `{"kind":"datetime","value":"..."}`, `{"kind":"ref","type":"<ПолныйТип>","uuid":"<UUID>"}`, `{"kind":"enum","type":"<Тип>","name":"<Имя>"}`, `{"kind":"array","value":[...]}`.
+- Тема `report-fast-path` должна направлять агента к минимальному discovery для отчетной аналитики: узкие `search_objects`/`list_metadata_objects`, `list_reports` с малым `limit`, специализированные карты (`get_accounting_accounts_map`, `get_calculation_types_map`) и отказ от широкого `get_database_passport(force_refresh=true)` без необходимости.
 - Полная справка доступна также через resources `1c://knowledge/query/*`.
 
 ---
