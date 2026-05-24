@@ -4,7 +4,18 @@
   },
 
   "privacy": {
-    "masked_fields": []
+    "masked_fields": [],
+    "organization_aliases": {
+      "enabled": false,
+      "prefix": "Орг-",
+      "include_navigation_url": true
+    },
+    "person_aliases": {
+      "enabled": false,
+      "physical_person_prefix": "ФЛ-",
+      "employee_prefix": "Сотр-",
+      "include_navigation_url": true
+    }
   },
 
   "limits": {
