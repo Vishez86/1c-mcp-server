@@ -126,9 +126,13 @@ JSON-RPC error использовать только для ошибок про�
   "type": "Справочник.Номенклатура",
   "uuid": "550e8400-e29b-41d4-a716-446655440000",
   "presentation": "Товар 1",
-  "navigation_url": "e1cib/data/..."
+  "navigation_url": "https://1c.example.com/base/e1cib/data/...",
+  "navigation_url_kind": "web_client",
+  "e1cib_navigation_url": "e1cib/data/..."
 }
 ```
+
+Если `web_client.base_url` не настроен, `navigation_url` остаётся обычной `e1cib/data/...` ссылкой и `navigation_url_kind` равен `e1cib`.
 
 ### 4.3. EnumRef
 
@@ -1871,7 +1875,7 @@ live-таблицу `ПланСчетов.<ИмяПлана>.ВидыСубко�
     },
     "base_url": {
       "type": "string",
-      "description": "Базовый URL web-клиента из allowlist."
+      "description": "Базовый URL web-клиента из allowlist. Если не передан, используется web_client.base_url из MCP_ServerConfig."
     },
     "include_presentation": {
       "type": "boolean",
@@ -1923,7 +1927,10 @@ live-таблицу `ПланСчетов.<ИмяПлана>.ВидыСубко�
   "ref": {
     "type": "Документ.ЗаказКлиента",
     "uuid": "550e8400-e29b-41d4-a716-446655440000",
-    "presentation": "Заказ клиента 000000123 от 12.05.2026"
+    "presentation": "Заказ клиента 000000123 от 12.05.2026",
+    "navigation_url": "https://1c.example.com/erp/e1cib/data/%D0%94%D0%BE%D0%BA%D1%83%D0%BC%D0%B5%D0%BD%D1%82.%D0%97%D0%B0%D0%BA%D0%B0%D0%B7%D0%9A%D0%BB%D0%B8%D0%B5%D0%BD%D1%82%D0%B0?ref=...",
+    "navigation_url_kind": "web_client",
+    "e1cib_navigation_url": "e1cib/data/Документ.ЗаказКлиента?ref=..."
   },
   "links": [
     {
@@ -1933,7 +1940,7 @@ live-таблицу `ПланСчетов.<ИмяПлана>.ВидыСубко�
     },
     {
       "type": "web_client",
-      "url": "https://1c.example.com/erp/...",
+      "url": "https://1c.example.com/erp/e1cib/data/%D0%94%D0%BE%D0%BA%D1%83%D0%BC%D0%B5%D0%BD%D1%82.%D0%97%D0%B0%D0%BA%D0%B0%D0%B7%D0%9A%D0%BB%D0%B8%D0%B5%D0%BD%D1%82%D0%B0?ref=...",
       "description": "Ссылка для web-клиента"
     }
   ]
