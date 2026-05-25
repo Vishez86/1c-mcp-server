@@ -3,6 +3,10 @@
     "allowed_origins": []
   },
 
+  "web_client": {
+    "base_url": ""
+  },
+
   "privacy": {
     "masked_fields": [],
     "organization_aliases": {
