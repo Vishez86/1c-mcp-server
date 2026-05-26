@@ -1160,6 +1160,7 @@ class ContractRunner {
       assert(hasInteractionHint(result, "report_or_direct_query_choice"), "report discovery must include report-or-query interaction hint");
       const report = result.reports[0];
       assert(report.type?.startsWith("Отчет."), "report type must be full metadata name");
+      assert(typeof report.has_custom_pre_compose === "boolean", "report must expose has_custom_pre_compose flag");
       this.context.reportType = report.type;
       this.context.reportVariant = report.variants?.[0]?.name || "Основной";
       return { reports: result.reports.map((item) => item.type), firstVariant: this.context.reportVariant };
@@ -1177,6 +1178,8 @@ class ContractRunner {
       assert(result.report === report, "report_info returned different report");
       assert(Array.isArray(result.variants), "variants must be an array");
       assert(Array.isArray(result.parameters), "parameters must be an array");
+      assert(typeof result.has_custom_pre_compose === "boolean", "report_info must expose has_custom_pre_compose flag");
+      assert(typeof result.report_parameter_source === "string", "report_info must expose report_parameter_source");
       if (result.parameters.length > 0) {
         assert("name" in result.parameters[0], "report parameter must include name");
         assert("type" in result.parameters[0] || "type_description" in result.parameters[0], "report parameter must include type");
@@ -1198,6 +1201,7 @@ class ContractRunner {
       assert(result.report === report, "run_1c_report returned different report");
       assert("execution_supported" in result, "execution_supported must be present");
       assert(result.parameters_used && typeof result.parameters_used === "object", "parameters_used must be present");
+      assert("pre_compose_applied" in result || result.execution_supported === false, "pre_compose_applied must be present for supported report execution");
       assert(Array.isArray(result.rows), "rows must be an array even when unsupported");
       return {
         report: result.report,

@@ -446,7 +446,7 @@
 }
 ```
 
-**Выходящая схема:** `reports[] { type, name, synonym, description, allowed, execution_supported, execution_reason, variants? }`, `next_cursor`, `truncated`, `total_estimated`, опционально `interaction_hint` и `domain_guidance`.
+**Выходящая схема:** `reports[] { type, name, synonym, description, allowed, execution_supported, execution_reason, has_custom_pre_compose, variants? }`, `next_cursor`, `truncated`, `total_estimated`, опционально `interaction_hint` и `domain_guidance`.
 
 **Ограничения:** возвращает только метаданные отчётов, не выполняет их. Для отчётной аналитики сначала выберите отчёт/вариант, затем вызывайте `get_report_info`.
 
@@ -466,7 +466,7 @@
 }
 ```
 
-**Выходящая схема:** `report`, `synonym`, `variants[]`, `parameters[] { name, presentation, type_description, required, default_value }`, `output_formats[]`, `warnings[]`, опционально `domain_guidance`.
+**Выходящая схема:** `report`, `synonym`, `variants[]`, `has_custom_pre_compose`, `report_parameter_source`, `parameters[] { name, presentation, type_description, required, default_value }`, `output_formats[]`, `warnings[]`, опционально `domain_guidance`.
 
 **Ограничения:** подробная схема СКД в универсальном адаптере может не возвращаться даже при `include_schema=true`; тогда в `warnings` будет явное сообщение.
 
@@ -490,7 +490,7 @@
 }
 ```
 
-**Выходящая схема:** `report`, `variant`, `execution_supported`, `columns[]`, `rows[]`, `totals`, `row_count`, `truncated`, `next_cursor`, `total_estimated`, `duration_ms`, `warnings[]`, `parameters_used`.
+**Выходящая схема:** `report`, `variant`, `execution_supported`, `columns[]`, `rows[]`, `totals`, `row_count`, `truncated`, `next_cursor`, `total_estimated`, `duration_ms`, `pre_compose_applied`, `warnings[]`, `parameters_used`.
 
 **Ограничения:** отчёты СКД могут выполняться существенно дольше прямых узких запросов, особенно с широкими периодами и детализацией. Используйте параметры периода, небольшой `limit` и `timeout_seconds`.
 
