@@ -335,6 +335,22 @@ class ContractRunner {
       return { first: first.objects[0].full_name, second: second.objects[0].full_name };
     });
 
+    await this.test("tool.list_metadata_objects_does_not_mask_technical_metadata", async () => {
+      const result = await okTool(this.client, "list_metadata_objects", {
+        kinds: ["Справочник", "РегистрБухгалтерии", "ПланСчетов", "ПланВидовРасчета"],
+        limit: 50,
+        include_details: true,
+      });
+      assert(result.objects?.length > 0, "expected metadata objects");
+      for (const item of result.objects || []) {
+        assert(!String(item.full_name || "").includes("скрыто"), `full_name must not be privacy-masked: ${item.full_name}`);
+        assert(!String(item.kind || "").includes("скрыто"), `kind must not be privacy-masked: ${item.kind}`);
+        assert(!String(item.resource_uri || "").includes("скрыто"), `resource_uri must not be privacy-masked: ${item.resource_uri}`);
+        assert(typeof item.full_name === "string" && item.full_name.includes("."), `full_name must remain a metadata identifier: ${item.full_name}`);
+      }
+      return { checked: result.objects.length };
+    });
+
     await this.test("tool.list_metadata_objects_does_not_invent_missing_register", async () => {
       const result = await okTool(this.client, "list_metadata_objects", {
         query: "MCP_НесуществующийРегистр",
