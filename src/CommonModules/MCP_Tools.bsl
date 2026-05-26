@@ -15,6 +15,7 @@
 	Результат.Добавить(Tool_validate_1c_query());
 	Результат.Добавить(Tool_get_1c_query_guidance());
 	Результат.Добавить(Tool_get_accounting_accounts_map());
+	Результат.Добавить(Tool_get_accounting_entries());
 	Результат.Добавить(Tool_get_inventory_balances_by_item());
 	Результат.Добавить(Tool_get_calculation_types_map());
 	Результат.Добавить(Tool_get_database_passport());
@@ -64,6 +65,8 @@
 			Данные = MCP_Tools_Impl.Get1CQueryGuidance(Аргументы);
 		ИначеЕсли ИмяТула = "get_accounting_accounts_map" Тогда
 			Данные = MCP_Tools_Impl.GetAccountingAccountsMap(Аргументы);
+		ИначеЕсли ИмяТула = "get_accounting_entries" Тогда
+			Данные = MCP_Tools_Impl.GetAccountingEntries(Аргументы);
 		ИначеЕсли ИмяТула = "get_inventory_balances_by_item" Тогда
 			Данные = MCP_Tools_Impl.GetInventoryBalancesByItem(Аргументы);
 		ИначеЕсли ИмяТула = "get_calculation_types_map" Тогда
@@ -577,6 +580,27 @@
 	Возврат _Tool("get_accounting_accounts_map",
 		"Получить карту счетов и субконто",
 		"Универсально читает ПланСчетов.<Имя> и табличную часть ВидыСубконто, чтобы LLM видел соответствие счёта позициям Субконто1/2/3 без угадывания структуры конкретной базы. Для скорости в отчетной аналитике передавайте account_code_prefix и небольшой limit вместо чтения всей карты.",
+		Props);
+КонецФункции
+
+Функция Tool_get_accounting_entries()
+	Props = Новый Структура;
+	Props.Вставить("accounting_register", _Схема("string", , "Бухгалтерский регистр, например РегистрБухгалтерии.Хозрасчетный. Если не указан, выбирается доступный или Хозрасчетный."));
+	Props.Вставить("period_from", _Схема("string", , "Начало периода ISO 8601."));
+	Props.Вставить("period_to", _Схема("string", , "Конец периода ISO 8601."));
+	Props.Вставить("debit_account_code_prefixes", _Схема("array", , "Префиксы кодов счетов Дт, например [\"20\", \"26\"]."));
+	Props.Вставить("credit_account_code_prefixes", _Схема("array", , "Префиксы кодов счетов Кт, например [\"02\"]."));
+	Props.Вставить("subconto_side", _СхемаЕnum(СписокСтрок("debit,credit")));
+	Props.Вставить("subconto_kind", _СхемаОбъект());
+	Props.Вставить("subconto_value", _СхемаОбъект());
+	Props.Вставить("group_by", _Схема("array", , "Опциональные группировки: period_month, registrar, debit_account, credit_account, debit_subconto, credit_subconto, subconto_kind."));
+	Props.Вставить("include_zero", _Схема("boolean", , "Если false, строки с нулевой суммой не возвращаются."));
+	Props.Вставить("include_query", _Схема("boolean", , "Вернуть использованный read-only запрос."));
+	Props.Вставить("limit", _СхемаInt(1, 1000, 100));
+	Props.Вставить("cursor", _Схема("string", , "Offset cursor строк результата."));
+	Возврат _Tool("get_accounting_entries",
+		"Получить бухгалтерские проводки с субконто",
+		"Универсальный быстрый tool для чтения основной таблицы РегистрБухгалтерии.* и, при необходимости, join к таблице .Субконто. Поддерживает фильтры по периоду, префиксам счетов Дт/Кт, виду и значению субконто, а также агрегирование по типовым бухгалтерским разрезам. Не содержит предметной логики ОС, ТМЦ, НДС или зарплаты.",
 		Props);
 КонецФункции
 
