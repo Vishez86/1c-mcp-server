@@ -12,6 +12,7 @@ const EXPECTED_TOOLS = [
   "validate_1c_query",
   "get_1c_query_guidance",
   "get_accounting_accounts_map",
+  "get_accounting_entries",
   "get_inventory_balances_by_item",
   "get_calculation_types_map",
   "get_database_passport",
@@ -643,6 +644,69 @@ class ContractRunner {
       return { chart, rows: result.rows.length, subcontoAttributes: result.subconto_attributes };
     });
 
+    await this.test("tool.get_accounting_entries_grouped", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) {
+        return { skipped: true, reason: "no accounting register in metadata" };
+      }
+      const result = await okTool(this.client, "get_accounting_entries", {
+        accounting_register: accountingRegister.name,
+        period_from: { kind: "datetime", value: CONTRACT_PERIOD.start },
+        period_to: { kind: "datetime", value: CONTRACT_PERIOD.end },
+        credit_account_code_prefixes: ["02"],
+        group_by: ["period_month", "credit_account"],
+        include_query: true,
+        limit: 5,
+      });
+      const columnNames = (result.columns || []).map((item) => item.name);
+      assert(result.accounting_register === accountingRegister.fullName, "unexpected accounting register name");
+      assert(result.configuration_agnostic === true, "result must be configuration agnostic");
+      assert(result.mode === "entries_grouped", "grouped entries mode is expected");
+      assert(columnNames.includes("ПериодМесяц"), "period_month grouping column is missing");
+      assert(columnNames.includes("СчетКт"), "credit_account grouping column is missing");
+      assert(columnNames.includes("Сумма"), "amount aggregate column is missing");
+      assert(result.query_used?.includes(`${accountingRegister.fullName} КАК Рег`), "query must read main accounting register records");
+      assert(result.query_used?.includes("Рег.СчетКт.Код ПОДОБНО &CreditPrefix0"), "credit account prefix filter must be emitted");
+      return { register: accountingRegister.fullName, rows: result.rows?.length || 0, queryUsed: result.query_used };
+    });
+
+    await this.test("tool.get_accounting_entries_subconto_join", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) {
+        return { skipped: true, reason: "no accounting register in metadata" };
+      }
+      const charts = await okTool(this.client, "list_metadata_objects", {
+        kinds: ["ПланСчетов"],
+        limit: 1,
+      });
+      const chart = charts.objects?.[0]?.full_name;
+      if (!chart) return { skipped: true, reason: "no chart of accounts in metadata" };
+      const accountMap = await okTool(this.client, "get_accounting_accounts_map", {
+        chart,
+        include_empty_subconto: false,
+        limit: 20,
+      });
+      const account = (accountMap.accounts || []).find((item) => item.subconto?.[0]?.ref?.type && item.subconto?.[0]?.ref?.uuid);
+      const subconto = account?.subconto?.[0]?.ref;
+      if (!account?.code || !subconto) {
+        return { skipped: true, reason: "no account with subconto mapping", chart };
+      }
+      const result = await okTool(this.client, "get_accounting_entries", {
+        accounting_register: accountingRegister.name,
+        credit_account_code_prefixes: [String(account.code)],
+        subconto_side: "credit",
+        subconto_kind: toQueryRef(subconto),
+        group_by: ["credit_subconto"],
+        include_query: true,
+        limit: 5,
+      });
+      const columnNames = (result.columns || []).map((item) => item.name);
+      assert(columnNames.includes("СубконтоКт"), "credit subconto grouping column is missing");
+      assert(result.query_used?.includes(`${accountingRegister.fullName}.Субконто КАК СубконтоКт`), "query must join accounting register subconto table");
+      assert(result.query_used?.includes("СубконтоКт.Вид = &ВидСубконто"), "subconto kind filter must be emitted");
+      return { register: accountingRegister.fullName, account: account.code, subconto: subconto.presentation, rows: result.rows?.length || 0 };
+    });
+
     await this.test("tool.get_calculation_types_map", async () => {
       const plans = await okTool(this.client, "list_metadata_objects", {
         kinds: ["ПланВидовРасчета"],
@@ -1096,6 +1160,7 @@ class ContractRunner {
       assert(hasInteractionHint(result, "report_or_direct_query_choice"), "report discovery must include report-or-query interaction hint");
       const report = result.reports[0];
       assert(report.type?.startsWith("Отчет."), "report type must be full metadata name");
+      assert(typeof report.has_custom_pre_compose === "boolean", "report must expose has_custom_pre_compose flag");
       this.context.reportType = report.type;
       this.context.reportVariant = report.variants?.[0]?.name || "Основной";
       return { reports: result.reports.map((item) => item.type), firstVariant: this.context.reportVariant };
@@ -1113,6 +1178,8 @@ class ContractRunner {
       assert(result.report === report, "report_info returned different report");
       assert(Array.isArray(result.variants), "variants must be an array");
       assert(Array.isArray(result.parameters), "parameters must be an array");
+      assert(typeof result.has_custom_pre_compose === "boolean", "report_info must expose has_custom_pre_compose flag");
+      assert(typeof result.report_parameter_source === "string", "report_info must expose report_parameter_source");
       if (result.parameters.length > 0) {
         assert("name" in result.parameters[0], "report parameter must include name");
         assert("type" in result.parameters[0] || "type_description" in result.parameters[0], "report parameter must include type");
@@ -1134,6 +1201,7 @@ class ContractRunner {
       assert(result.report === report, "run_1c_report returned different report");
       assert("execution_supported" in result, "execution_supported must be present");
       assert(result.parameters_used && typeof result.parameters_used === "object", "parameters_used must be present");
+      assert("pre_compose_applied" in result || result.execution_supported === false, "pre_compose_applied must be present for supported report execution");
       assert(Array.isArray(result.rows), "rows must be an array even when unsupported");
       return {
         report: result.report,

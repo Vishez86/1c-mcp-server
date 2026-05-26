@@ -2,12 +2,12 @@
 
 Универсальный MCP-сервер для безопасного read-only доступа к данным и метаданным 1С:Предприятия 8. Постоянные данные не изменяются; временные таблицы языка запросов 1С разрешены как рабочая область выполнения аналитического запроса.
 
-Сервер реализует протокол **Model Context Protocol (MCP) 2025-11-25** поверх HTTP-сервиса 1С и предоставляет LLM-агентам 22 read-only инструмента согласно спецификации `mcp_1c_tools_spec.md`.
+Сервер реализует протокол **Model Context Protocol (MCP) 2025-11-25** поверх HTTP-сервиса 1С и предоставляет LLM-агентам 23 read-only инструмента согласно спецификации `mcp_1c_tools_spec.md`.
 
 ## Возможности
 
 - Полностью read-only: создание/изменение/удаление объектов невозможно.
-- 22 tools: discovery → inspect → search → retrieve → explain → navigate → report → query guidance → data passport.
+- 23 tools: discovery → inspect → search → retrieve → explain → navigate → report → query guidance → data passport.
 - Allowlist/denylist типов метаданных и полей.
 - Маскирование заданных полей перед передачей ответа в LLM.
 - Лимиты строк, времени и размера результата.
@@ -26,22 +26,23 @@
 | 4 | `validate_1c_query` | Проверка запроса до выполнения |
 | 5 | `get_1c_query_guidance` | Универсальные подсказки по языку запросов 1С |
 | 6 | `get_accounting_accounts_map` | Карта счетов и субконто плана счетов |
-| 7 | `get_inventory_balances_by_item` | Быстрые остатки товара по складам и организациям |
-| 8 | `get_calculation_types_map` | Карта видов расчёта |
-| 9 | `get_database_passport` | Паспорт фактических данных базы |
-| 10 | `get_object_by_ref` | Получение объекта по типу и UUID |
-| 11 | `find_object_by_id` | Поиск объекта по UUID без знания типа |
-| 12 | `search_objects` | Поиск по строке/коду/ИНН/артикулу |
-| 13 | `get_link_of_object` | Навигационная ссылка на объект |
-| 14 | `find_references_to_object` | Поиск ссылок на объект |
-| 15 | `get_enum_values` | Значения перечисления |
-| 16 | `get_register_records` | Записи / срезы / остатки / обороты |
-| 17 | `get_document_movements` | Движения документа по регистрам |
-| 18 | `list_reports` | Список отчётов |
-| 19 | `get_report_info` | Параметры и структура отчёта |
-| 20 | `run_1c_report` | Выполнение отчёта |
-| 21 | `get_object_history` | История объекта / журнал регистрации |
-| 22 | `get_current_user_context` | Контекст пользователя и базы |
+| 7 | `get_accounting_entries` | Бухгалтерские проводки с универсальным join к субконто |
+| 8 | `get_inventory_balances_by_item` | Быстрые остатки товара по складам и организациям |
+| 9 | `get_calculation_types_map` | Карта видов расчёта |
+| 10 | `get_database_passport` | Паспорт фактических данных базы |
+| 11 | `get_object_by_ref` | Получение объекта по типу и UUID |
+| 12 | `find_object_by_id` | Поиск объекта по UUID без знания типа |
+| 13 | `search_objects` | Поиск по строке/коду/ИНН/артикулу |
+| 14 | `get_link_of_object` | Навигационная ссылка на объект |
+| 15 | `find_references_to_object` | Поиск ссылок на объект |
+| 16 | `get_enum_values` | Значения перечисления |
+| 17 | `get_register_records` | Записи / срезы / остатки / обороты |
+| 18 | `get_document_movements` | Движения документа по регистрам |
+| 19 | `list_reports` | Список отчётов |
+| 20 | `get_report_info` | Параметры и структура отчёта |
+| 21 | `run_1c_report` | Выполнение отчёта |
+| 22 | `get_object_history` | История объекта / журнал регистрации |
+| 23 | `get_current_user_context` | Контекст пользователя и базы |
 
 ## Подробное описание tools
 
@@ -170,6 +171,29 @@
 **Выходящая схема:** `chart`, `filter`, `tabular_section`, `source_of_truth`, `accounts[] { code, name, ref?, subconto[] }`, `total_accounts`, `next_cursor`, `truncated`, `warnings[]`, `guidance`, опционально `query_used`.
 
 **Ограничения:** если доступно несколько планов счетов и `chart` не указан, tool вернёт `needs_chart=true`. На больших планах используйте `account_code_prefix` и пагинацию.
+
+### `get_accounting_entries`
+
+**Назначение:** быстрый универсальный путь для чтения проводок из основной таблицы `РегистрБухгалтерии.*` и, при необходимости, join к `РегистрБухгалтерии.*.Субконто`.
+
+**Параметры:** `accounting_register`; `period_from`; `period_to`; `debit_account_code_prefixes`; `credit_account_code_prefixes`; `subconto_side: debit|credit`; `subconto_kind { kind:"ref", type, uuid }`; `subconto_value { kind:"ref", type, uuid }`; `group_by: string[]`; `include_zero`; `include_query`; `limit`; `cursor`.
+
+**Пример:**
+
+```json
+{
+  "accounting_register": "Хозрасчетный",
+  "credit_account_code_prefixes": ["02"],
+  "subconto_side": "credit",
+  "group_by": ["period_month", "credit_subconto"],
+  "include_query": true,
+  "limit": 100
+}
+```
+
+**Выходящая схема:** стандартная табличная схема `columns[]`, `rows[]`, `row_count`, плюс `accounting_register`, `mode`, `group_by`, `subconto_side`, `configuration_agnostic`, `guidance`, опционально `query_used`.
+
+**Ограничения:** tool не содержит бизнес-логики ОС/ТМЦ/НДС. Для фильтра по виду субконто сначала получите реальный `subconto_kind` из `get_accounting_accounts_map` или metadata/query результата.
 
 ### `get_inventory_balances_by_item`
 
@@ -422,7 +446,7 @@
 }
 ```
 
-**Выходящая схема:** `reports[] { type, name, synonym, description, allowed, execution_supported, execution_reason, variants? }`, `next_cursor`, `truncated`, `total_estimated`, опционально `interaction_hint` и `domain_guidance`.
+**Выходящая схема:** `reports[] { type, name, synonym, description, allowed, execution_supported, execution_reason, has_custom_pre_compose, variants? }`, `next_cursor`, `truncated`, `total_estimated`, опционально `interaction_hint` и `domain_guidance`.
 
 **Ограничения:** возвращает только метаданные отчётов, не выполняет их. Для отчётной аналитики сначала выберите отчёт/вариант, затем вызывайте `get_report_info`.
 
@@ -442,7 +466,7 @@
 }
 ```
 
-**Выходящая схема:** `report`, `synonym`, `variants[]`, `parameters[] { name, presentation, type_description, required, default_value }`, `output_formats[]`, `warnings[]`, опционально `domain_guidance`.
+**Выходящая схема:** `report`, `synonym`, `variants[]`, `has_custom_pre_compose`, `report_parameter_source`, `parameters[] { name, presentation, type_description, required, default_value }`, `output_formats[]`, `warnings[]`, опционально `domain_guidance`.
 
 **Ограничения:** подробная схема СКД в универсальном адаптере может не возвращаться даже при `include_schema=true`; тогда в `warnings` будет явное сообщение.
 
@@ -466,7 +490,7 @@
 }
 ```
 
-**Выходящая схема:** `report`, `variant`, `execution_supported`, `columns[]`, `rows[]`, `totals`, `row_count`, `truncated`, `next_cursor`, `total_estimated`, `duration_ms`, `warnings[]`, `parameters_used`.
+**Выходящая схема:** `report`, `variant`, `execution_supported`, `columns[]`, `rows[]`, `totals`, `row_count`, `truncated`, `next_cursor`, `total_estimated`, `duration_ms`, `pre_compose_applied`, `warnings[]`, `parameters_used`.
 
 **Ограничения:** отчёты СКД могут выполняться существенно дольше прямых узких запросов, особенно с широкими периодами и детализацией. Используйте параметры периода, небольшой `limit` и `timeout_seconds`.
 
