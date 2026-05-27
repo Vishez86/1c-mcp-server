@@ -60,7 +60,18 @@ MCP-сервер предоставляет LLM-клиенту безопасн�
     }
   ],
   "structuredContent": {
-    "ok": true
+    "ok": true,
+    "auth_context": {
+      "user_name": "ivanov",
+      "infobase_name": "ERP",
+      "configuration_version": "2.5.19.123",
+      "identity_key": "ivanov@ERP#2.5.19.123",
+      "generated_at": "2026-05-27T12:00:00",
+      "cache_policy": {
+        "cacheable": false,
+        "revalidate_each_call": true
+      }
+    }
   },
   "isError": false
 }
@@ -78,6 +89,20 @@ MCP-сервер предоставляет LLM-клиенту безопасн�
   ],
   "structuredContent": {
     "ok": false,
+    "auth_context": {
+      "user_name": "ivanov",
+      "identity_key": "ivanov@ERP#2.5.19.123",
+      "cache_policy": {
+        "cacheable": false,
+        "revalidate_each_call": true
+      }
+    },
+    "authorization": {
+      "reason_code": "mcp_type_not_allowed",
+      "denied_operation": "tool_call",
+      "denied_type": "Документ.ЗарплатаКВыплате",
+      "retry_policy": "do_not_retry_same_request_without_reauth_or_permission_change"
+    },
     "error": {
       "code": "type_not_allowed",
       "message": "Доступ к типу запрещён.",
@@ -92,6 +117,8 @@ MCP-сервер предоставляет LLM-клиенту безопасн�
 ```
 
 JSON-RPC error использовать только для ошибок протокола: malformed JSON, неизвестный method, неизвестный tool name, ошибка авторизации транспорта, фатальная ошибка до запуска tool.
+
+Для ошибок прав доступа используется MCP tool error, а не JSON-RPC error. `error.code=access_denied` означает отказ платформенных прав 1С или coarse MCP-доступа; `authorization.retry_policy` всегда запрещает повтор того же запроса без перелогина или изменения прав. Диагностический JSON дублируется в `content[]` строкой `Диагностика JSON: ...`, чтобы LLM получила причину отказа даже через proxy, который не сохраняет `structuredContent`.
 
 ---
 
@@ -203,6 +230,17 @@ string, number, boolean, date, datetime, uuid, ref, enum, array, null
 8. Correlation ID для каждой операции.
 9. Маскирование персональных данных.
 10. Невозможность обойти allowlist через `run_1c_query`.
+
+При per-user proxy каждый HTTP-запрос к 1С считается отдельным сеансом текущей учетной записи. Сервер обязан проверять платформенные права 1С на каждом вызове и добавлять `auth_context.cache_policy.cacheable=false`; LLM не должна переносить результаты discovery или отказы доступа между разными логинами. Отказы платформы вида “Недостаточно прав”, “Отсутствуют права”, `Access denied` нормализуются в `access_denied`.
+
+`authorization.reason_code`:
+
+| Reason | Значение |
+|---|---|
+| `1c_access_denied` | отказ платформенных прав 1С / RLS / прикладной проверки |
+| `mcp_type_not_allowed` | тип запрещён allowlist/denylist MCP |
+| `mcp_field_not_allowed` | поле запрещено политикой MCP |
+| `mcp_tool_not_allowed` | tool запрещён политикой MCP |
 
 Маскирование персональных данных настраивается в `MCP_ServerConfig`:
 
@@ -3387,6 +3425,24 @@ Discovery tool для отчётов: возвращает доступные О
       "ПользовательMCP"
     ]
   },
+  "auth_context": {
+    "user_name": "ivanov",
+    "infobase_name": "ERP_Production",
+    "configuration_version": "2.5.19.123",
+    "identity_key": "ivanov@ERP_Production#2.5.19.123",
+    "generated_at": "2026-05-27T12:00:00",
+    "cache_policy": {
+      "cacheable": false,
+      "revalidate_each_call": true
+    }
+  },
+  "authorization_policy": {
+    "per_1c_session": true,
+    "rights_are_user_specific": true,
+    "cacheable": false,
+    "revalidate_each_call": true,
+    "access_denied_retry_policy": "do_not_retry_same_request_without_reauth_or_permission_change"
+  },
   "infobase": {
     "name": "ERP_Production",
     "configuration_name": "1C:ERP",
@@ -3508,6 +3564,29 @@ Knowledge resources возвращают встроенные правила и�
 | `register_mode_not_supported` | Регистр не поддерживает режим |
 | `history_not_supported` | История недоступна |
 | `internal_error` | Непредвиденная ошибка |
+
+Пример платформенного отказа прав:
+
+```json
+{
+  "ok": false,
+  "authorization": {
+    "reason_code": "1c_access_denied",
+    "denied_operation": "query_execute",
+    "retry_policy": "do_not_retry_same_request_without_reauth_or_permission_change",
+    "platform_message": "Недостаточно прав..."
+  },
+  "error": {
+    "code": "access_denied",
+    "message": "Ошибка выполнения запроса 1С: Недостаточно прав...",
+    "authorization": {
+      "reason_code": "1c_access_denied",
+      "denied_operation": "query_execute",
+      "retry_policy": "do_not_retry_same_request_without_reauth_or_permission_change"
+    }
+  }
+}
+```
 
 Для ошибок выполнения `run_1c_query` сервер должен возвращать структурированные поля в `structuredContent` и дублировать их в `error`, а исходную диагностику сохранять в `error.details.parsed_details.diagnostics`:
 
