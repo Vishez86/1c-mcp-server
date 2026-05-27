@@ -23,7 +23,7 @@
         +-----------+-------------+
                     |
         +-----------v-------------+      +---------------+
-        |   MCP_Tools dispatch    |----->| MCP_Tools_Impl|  (20 read-only tools)
+        |   MCP_Tools dispatch    |----->| MCP_Tools_Impl|  (23 read-only tools)
         +-----------+-------------+      +-------+-------+
                     |                            |
                     v                            v
@@ -55,11 +55,11 @@
 - `ping`.
 
 ### `MCP_Tools`
-Каталог всех 20 tools: описания (`name`, `title`, `description`, `inputSchema`).
+Каталог всех 23 tools: описания (`name`, `title`, `description`, `inputSchema`).
 Dispatcher `Выполнить(ИмяТула, Аргументы, Контекст)` → передача в реализацию.
 
 ### `MCP_Tools_Impl`
-Бизнес-логика всех 20 tools. Каждая функция:
+Бизнес-логика всех 23 tools. Каждая функция:
 1. Валидирует аргументы.
 2. Запрашивает у `MCP_Security` разрешение на тип/поле.
 3. Использует `MCP_Metadata`, `MCP_Query`, `MCP_Registers`, `MCP_Reports`, `MCP_History`.
@@ -139,13 +139,22 @@ Dispatcher `Выполнить(ИмяТула, Аргументы, Контек�
    4.4. Вызов реализации из MCP_Tools_Impl.
    4.5. Реализация делегирует в Metadata / Query / ... .
    4.6. Результат кодируется в JSON через MCP_Values.
-   4.7. MCP_Tools добавляет privacy-информацию, если маскирование или псевдонимы сущностей активны.
-   4.8. MCP_Security маскирует поля из privacy.masked_fields, заменяет названия организаций и ФИО физлиц/сотрудников стабильными псевдонимами, сохраняя UUID/type/navigation_url для открытия объекта в 1С.
-   4.9. Audit запись по уже замаскированному результату.
-   4.10. Унифицированный MCP tool result.
+   4.7. MCP_Tools добавляет `auth_context` с текущим пользователем 1С, базой, версией конфигурации, `identity_key` и `cache_policy.cacheable=false`.
+   4.8. MCP_Tools добавляет privacy-информацию, если маскирование или псевдонимы сущностей активны.
+   4.9. MCP_Security маскирует поля из privacy.masked_fields, заменяет названия организаций и ФИО физлиц/сотрудников стабильными псевдонимами, сохраняя UUID/type/navigation_url для открытия объекта в 1С.
+   4.10. Audit запись по уже замаскированному результату.
+   4.11. Унифицированный MCP tool result.
 5. JSON-RPC dispatcher формирует response.
 6. HTTP-сервис отдаёт ответ.
 ```
+
+## Ошибки прав доступа
+
+Все операции читают данные в текущем сеансе 1С, поэтому платформенные роли, RLS и прикладные проверки могут отказать отдельной учетной записи даже при разрешенном allowlist. Такие сбои нормализуются в MCP tool error: `isError=true`, `structuredContent.ok=false`, `error.code=access_denied`, `authorization.reason_code=1c_access_denied` и `authorization.retry_policy=do_not_retry_same_request_without_reauth_or_permission_change`.
+
+MCP-ограничения сервера тоже отражаются в `authorization`: `mcp_type_not_allowed`, `mcp_field_not_allowed`, `mcp_tool_not_allowed`. Для совместимости с промежуточными proxy, которые не передают `structuredContent`, тот же диагностический JSON дублируется в текстовом `content[]`.
+
+`tools/list`, описания tools и `get_current_user_context` явно предупреждают LLM: сведения о доступе зависят от текущей учетной записи 1С и не кэшируются между перелогинами.
 
 ## Read-only гарантии
 

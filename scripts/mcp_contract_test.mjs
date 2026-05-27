@@ -277,6 +277,7 @@ class ContractRunner {
       const extra = names.filter((name) => !EXPECTED_TOOLS.includes(name));
       assert(missing.length === 0, `missing tools: ${missing.join(", ")}`);
       assert(names.length === EXPECTED_TOOLS.length, `expected ${EXPECTED_TOOLS.length}, got ${names.length}; extra=${extra.join(", ")}`);
+      assert((result?.server_hints || []).some((hint) => String(hint).includes("access_denied")), "tools/list must warn about per-user access_denied retry policy");
       this.context.toolNames = names;
       return { count: names.length };
     });
@@ -1342,6 +1343,30 @@ class ContractRunner {
       assert(result.error?.code, "unknown tool error code must be present");
       return { error: result.error };
     });
+
+    if (process.env.MCP_DENIED_TYPE) {
+      await this.test("manual.denied_type_returns_access_denied", async () => {
+        const result = await rawTool(this.client, "get_metadata_structure", {
+          type: process.env.MCP_DENIED_TYPE,
+        });
+        assert(result.ok === false, "denied type must fail");
+        assert(result.error?.code === "access_denied", `expected access_denied, got ${result.error?.code}`);
+        assert(result.authorization?.retry_policy === "do_not_retry_same_request_without_reauth_or_permission_change", "missing retry policy");
+        return { type: process.env.MCP_DENIED_TYPE, authorization: result.authorization };
+      });
+    }
+
+    if (process.env.MCP_DENIED_REPORT) {
+      await this.test("manual.denied_report_returns_access_denied", async () => {
+        const result = await rawTool(this.client, "get_report_info", {
+          report: process.env.MCP_DENIED_REPORT,
+        });
+        assert(result.ok === false, "denied report must fail");
+        assert(result.error?.code === "access_denied", `expected access_denied, got ${result.error?.code}`);
+        assert(result.authorization?.retry_policy === "do_not_retry_same_request_without_reauth_or_permission_change", "missing retry policy");
+        return { report: process.env.MCP_DENIED_REPORT, authorization: result.authorization };
+      });
+    }
   }
 
   async crossChecks() {
@@ -1463,7 +1488,17 @@ async function okTool(client, name, args) {
 
 async function rawTool(client, name, args) {
   const { result } = await client.callTool(name, args);
-  return unwrapToolResult(result);
+  const unwrapped = unwrapToolResult(result);
+  assertAuthContext(unwrapped, name);
+  if (unwrapped?.ok === false) {
+    assertErrorDiagnosticText(result, name);
+    if (unwrapped.error?.code === "access_denied") {
+      assert(unwrapped.authorization?.retry_policy === "do_not_retry_same_request_without_reauth_or_permission_change"
+        || unwrapped.error?.authorization?.retry_policy === "do_not_retry_same_request_without_reauth_or_permission_change",
+        `${name} access_denied must include retry policy`);
+    }
+  }
+  return unwrapped;
 }
 
 function unwrapToolResult(result) {
@@ -1504,6 +1539,23 @@ function toQueryRef(ref) {
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
+}
+
+function assertAuthContext(result, toolName) {
+  if (!result || typeof result !== "object" || !("ok" in result)) return;
+  const ctx = result.auth_context;
+  assert(ctx && typeof ctx === "object", `${toolName} must include auth_context`);
+  assert(typeof ctx.user_name === "string", `${toolName} auth_context.user_name is missing`);
+  assert(typeof ctx.identity_key === "string" && ctx.identity_key.length > 0, `${toolName} auth_context.identity_key is missing`);
+  assert(ctx.cache_policy?.cacheable === false, `${toolName} auth_context.cache_policy.cacheable must be false`);
+  assert(ctx.cache_policy?.revalidate_each_call === true, `${toolName} auth_context.cache_policy.revalidate_each_call must be true`);
+}
+
+function assertErrorDiagnosticText(toolResult, toolName) {
+  const texts = (toolResult?.content || [])
+    .filter((item) => item?.type === "text" && typeof item.text === "string")
+    .map((item) => item.text);
+  assert(texts.some((text) => text.includes("Диагностика JSON:")), `${toolName} error content must include JSON diagnostics`);
 }
 
 function assertRef(value, label) {

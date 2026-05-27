@@ -46,9 +46,31 @@
 
 ## Подробное описание tools
 
-Все инструменты вызываются через MCP `tools/call`. В `arguments` передаются только параметры конкретного tool; `additionalProperties=false`, поэтому лишние поля лучше не отправлять. Успешный ответ всегда содержит `structuredContent.ok=true`; при ошибке возвращается `isError=true`, `structuredContent.ok=false` и блок `error { code, message, details, correlation_id }`. Если включён privacy-режим, в ответ добавляется `privacy`, совпадающие поля заменяются маской, а организации могут отображаться псевдонимами.
+Все инструменты вызываются через MCP `tools/call`. В `arguments` передаются только параметры конкретного tool; `additionalProperties=false`, поэтому лишние поля лучше не отправлять. Успешный ответ всегда содержит `structuredContent.ok=true`; при ошибке возвращается `isError=true`, `structuredContent.ok=false` и блок `error { code, message, details, correlation_id }`. Каждый ответ содержит `auth_context` с текущим пользователем 1С, базой, версией конфигурации, `identity_key` и `cache_policy.cacheable=false`: сведения о правах нельзя переносить между перелогинами. Если включён privacy-режим, в ответ добавляется `privacy`, совпадающие поля заменяются маской, а организации могут отображаться псевдонимами.
 
-Общие ограничения для всех tools: учитываются права текущего пользователя 1С, allowlist/denylist метаданных, field-level ограничения, лимиты строк/таймаутов/размера JSON из `MCP_ServerConfig`. Имена объектов и полей нельзя угадывать: сначала используйте `list_metadata_objects`, `get_metadata_structure`, карту счетов или результат предыдущего вызова.
+Общие ограничения для всех tools: учитываются права текущего пользователя 1С, allowlist/denylist метаданных, field-level ограничения, лимиты строк/таймаутов/размера JSON из `MCP_ServerConfig`. Имена объектов и полей нельзя угадывать: сначала используйте `list_metadata_objects`, `get_metadata_structure`, карту счетов или результат предыдущего вызова. Если вернулся `error.code=access_denied`, LLM должна объяснить пользователю нехватку прав и не повторять тот же запрос без перелогина или изменения прав.
+
+Пример отказа доступа:
+
+```json
+{
+  "isError": true,
+  "structuredContent": {
+    "ok": false,
+    "auth_context": {
+      "user_name": "ivanov",
+      "identity_key": "ivanov@ERP#2.5.19.123",
+      "cache_policy": { "cacheable": false, "revalidate_each_call": true }
+    },
+    "authorization": {
+      "reason_code": "1c_access_denied",
+      "denied_operation": "query_execute",
+      "retry_policy": "do_not_retry_same_request_without_reauth_or_permission_change"
+    },
+    "error": { "code": "access_denied", "message": "Недостаточно прав текущей учетной записи 1С." }
+  }
+}
+```
 
 ### `list_metadata_objects`
 
@@ -535,7 +557,7 @@
 }
 ```
 
-**Выходящая схема:** `user { name, full_name, roles? }`, `infobase { name, synonym, configuration_name, configuration_version, platform_version, host }`, `mcp_server { name, version, read_only, tools[] }`, `limits`, `privacy`, `allowed_metadata_summary { objects_count, kinds }`.
+**Выходящая схема:** `user { name, full_name, roles? }`, `auth_context { user_name, infobase_name, configuration_version, identity_key, generated_at, cache_policy }`, `authorization_policy`, `infobase { name, synonym, configuration_name, configuration_version, platform_version, host }`, `mcp_server { name, version, read_only, tools[] }`, `limits`, `privacy`, `allowed_metadata_summary { objects_count, kinds }`.
 
 **Ограничения:** не заменяет `list_metadata_objects`, потому что возвращает только summary. Роли и сведения о пользователе могут быть ограничены правами и политикой безопасности.
 
@@ -667,6 +689,12 @@ ping                 -- ping
 Когда privacy-режим включен, сервер явно сообщает об этом LLM: добавляет `privacy` в каждый tool-result, возвращает `privacy` в `get_current_user_context`, а также добавляет короткую подсказку в `tools/list`/описания tools. Агент должен считать перечисленные поля, названия организаций и ФИО/персональные реквизиты намеренно недоступными и не пытаться обходить политику альтернативными запросами.
 
 Форма служебного блока: `{ "enabled": true, "masked_fields": [...], "string_mask": "XXXXXXX", "date_mask": "1900-01-01T00:00:00", "organization_aliases": {"enabled": true, "prefix": "Орг-", "resolution": "open_navigation_url_in_1c"}, "person_aliases": {"enabled": true, "physical_person_prefix": "ФЛ-", "employee_prefix": "Сотр-", "resolution": "open_navigation_url_in_1c"}, "guidance": "..." }`.
+
+### Per-user права и кэширование
+
+При работе через промежуточный Python-сервер с per-session учетными данными каждый HTTP-запрос к 1С выполняется в контексте текущего пользователя 1С. Поэтому права проверяются на каждом вызове tool и в каждом ответе возвращается `auth_context.cache_policy.cacheable=false`. Если клиент перелогинился, прежние сведения о доступных объектах, отчетах и полях надо считать устаревшими.
+
+Ошибки прав возвращаются как обычный MCP tool result с `isError=true`, `error.code=access_denied` и блоком `authorization`. Критичная диагностика также дублируется в `content[]` строкой `Диагностика JSON: ...`, потому что некоторые proxy-реализации MCP передают LLM только текстовый content и теряют `structuredContent`.
 
 Минимальный allowlist для полного тестового доступа:
 
