@@ -182,10 +182,12 @@
 	КонецЕсли;
 
 	Если ПсевдонимыПерсон.enabled Тогда
-		Части.Добавить("Активны privacy-псевдонимы физических лиц и сотрудников: ФИО и чувствительные персональные реквизиты не передаются в чат, вместо ссылок возвращаются стабильные коды вида "
+		Части.Добавить("Активны privacy-псевдонимы физических лиц, сотрудников и пользователей: ФИО и чувствительные персональные реквизиты не передаются в чат, вместо ссылок возвращаются стабильные коды вида "
 			+ ПсевдонимыПерсон.physical_person_prefix
 			+ "XXXXXX или "
 			+ ПсевдонимыПерсон.employee_prefix
+			+ "XXXXXX или "
+			+ ПсевдонимыПерсон.user_prefix
 			+ "XXXXXX. Для расшифровки пользователь открывает navigation_url в web-клиенте 1С, если настроен web_client.base_url, иначе в 1С.");
 	КонецЕсли;
 
@@ -262,6 +264,7 @@
 	Результат.Вставить("enabled", Ложь);
 	Результат.Вставить("physical_person_prefix", "ФЛ-");
 	Результат.Вставить("employee_prefix", "Сотр-");
+	Результат.Вставить("user_prefix", "Польз-");
 	Результат.Вставить("include_navigation_url", Истина);
 	Результат.Вставить("hidden_alias", "ФЛ-скрыто");
 	Результат.Вставить("resolution", "open_navigation_url_in_1c");
@@ -291,12 +294,16 @@
 		Результат.enabled = БулевоИзЗначения(ЗначениеJSON(Aliases, "enabled", Ложь), Ложь);
 		PhysicalPrefix = НепустойПрефиксПсевдонима(Aliases, "physical_person_prefix", Результат.physical_person_prefix);
 		EmployeePrefix = НепустойПрефиксПсевдонима(Aliases, "employee_prefix", Результат.employee_prefix);
+		UserPrefix = НепустойПрефиксПсевдонима(Aliases, "user_prefix", Результат.user_prefix);
 		Если НЕ ПустаяСтрока(PhysicalPrefix) Тогда
 			Результат.physical_person_prefix = PhysicalPrefix;
 			Результат.hidden_alias = PhysicalPrefix + "скрыто";
 		КонецЕсли;
 		Если НЕ ПустаяСтрока(EmployeePrefix) Тогда
 			Результат.employee_prefix = EmployeePrefix;
+		КонецЕсли;
+		Если НЕ ПустаяСтрока(UserPrefix) Тогда
+			Результат.user_prefix = UserPrefix;
 		КонецЕсли;
 		Результат.include_navigation_url = БулевоИзЗначения(
 			ЗначениеJSON(Aliases, "include_navigation_url", Истина), Истина);
@@ -318,6 +325,7 @@
 	Результат.Вставить("enabled", ПсевдонимыПерсон.enabled);
 	Результат.Вставить("physical_person_prefix", ПсевдонимыПерсон.physical_person_prefix);
 	Результат.Вставить("employee_prefix", ПсевдонимыПерсон.employee_prefix);
+	Результат.Вставить("user_prefix", ПсевдонимыПерсон.user_prefix);
 	Результат.Вставить("hidden_alias", ПсевдонимыПерсон.hidden_alias);
 	Результат.Вставить("include_navigation_url", ПсевдонимыПерсон.include_navigation_url);
 	Результат.Вставить("sensitive_fields", ПсевдонимыПерсон.sensitive_fields);

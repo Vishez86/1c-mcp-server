@@ -18,6 +18,7 @@
       "enabled": false,
       "physical_person_prefix": "ФЛ-",
       "employee_prefix": "Сотр-",
+      "user_prefix": "Польз-",
       "include_navigation_url": true
     }
   },
