@@ -117,6 +117,15 @@ Every 1C metadata object has a fixed query-name pattern. Use exact names from `g
 
 Virtual tables are computed on-the-fly from real register data. **Always pass filter conditions as virtual table parameters, NOT in WHERE** — this is critical for performance.
 
+Choose the virtual table by business meaning:
+- Use `Остатки(&Дата, ...)` for balance/state at a point in time: debt, receivable/payable balance, stock, cash, account balance, or "as of/end of" wording.
+- Use `Обороты(&Нач, &Кон, ...)` for movement during a period only: debit/credit turnover, sales movement, received/paid/accrued during the interval.
+- Use `ОстаткиИОбороты(&Нач, &Кон, ...)` when the answer needs opening balance, period movement, and closing balance together.
+
+Do not infer "debt at end of period" from turnovers alone: turnovers ignore the opening balance before `&Нач`. In 1C reports, "at the end of 2024" is usually queried as the balance at `ДАТАВРЕМЯ(2025, 1, 1)` so all movements on 31.12.2024 are included.
+
+Payroll-specific accounting fallback: if the user asks for accrued salary for a period and no payroll calculation register/report is available, account 70 is usually a passive payroll liability account. Accruals are normally credit turnover of 70 (`СуммаОборотКт`) for the period, while debit turnover of 70 is payments, withholdings, or settlement of the liability. Prefer payroll reports/calculation registers first; use `РегистрБухгалтерии.<Имя>.Обороты(&Нач, &Кон, , Счет = &Счет70, ...)` only as the accounting fallback, after resolving account/subconto mapping via `get_accounting_accounts_map`.
+
 **Accumulation register (Регистр накопления):**
 
 ```

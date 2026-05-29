@@ -1,0 +1,960 @@
+{
+  "target": "https://laba-1c.astondevs.ru/BUH_KORP/hs/mcp/rpc",
+  "startedAt": "2026-05-27T13:14:18.437Z",
+  "finishedAt": "2026-05-27T13:16:32.188Z",
+  "total": 56,
+  "passed": 56,
+  "failed": 0,
+  "tests": [
+    {
+      "name": "protocol.initialize",
+      "status": "PASS",
+      "elapsedMs": 528,
+      "details": {
+        "server": {
+          "name": "universal-1c-mcp",
+          "version": "0.1.0"
+        }
+      }
+    },
+    {
+      "name": "protocol.tools_list_has_expected_tools",
+      "status": "PASS",
+      "elapsedMs": 330,
+      "details": {
+        "count": 23
+      }
+    },
+    {
+      "name": "protocol.resources_list_and_read",
+      "status": "PASS",
+      "elapsedMs": 15906,
+      "details": {
+        "resources": [
+          "1c://metadata",
+          "1c://context/current-user",
+          "1c://knowledge/query",
+          "1c://knowledge/query/syntax",
+          "1c://knowledge/query/functions",
+          "1c://knowledge/query/optimization",
+          "1c://knowledge/query/temporary-tables",
+          "1c://knowledge/query/compound-types",
+          "1c://knowledge/query/subkonto",
+          "1c://knowledge/query/parameters",
+          "1c://knowledge/query/reports-vs-query",
+          "1c://knowledge/query/report-fast-path",
+          "1c://knowledge/query/payroll"
+        ]
+      }
+    },
+    {
+      "name": "fixtures.discover_generic_metadata",
+      "status": "PASS",
+      "elapsedMs": 21375,
+      "details": {
+        "catalog": "Справочник.АвансовыйОтчетПрисоединенныеФайлы",
+        "document": "Документ.АвансовыйОтчет",
+        "catalogWithTabular": "Документ.АвансовыйОтчет",
+        "infoRegister": "РегистрСведений.АбонентыЭДО",
+        "enumType": "Перечисление.CMSИнтернетМагазина"
+      }
+    },
+    {
+      "name": "tool.get_current_user_context",
+      "status": "PASS",
+      "elapsedMs": 15845,
+      "details": {
+        "user": "web",
+        "objects": 5668,
+        "tools": 23
+      }
+    },
+    {
+      "name": "tool.list_metadata_objects_pagination",
+      "status": "PASS",
+      "elapsedMs": 4447,
+      "details": {
+        "first": "Справочник.АвансовыйОтчетПрисоединенныеФайлы",
+        "second": "Справочник.АвансовыйПлатежИностранцаПоНДФЛПрисоединенныеФайлы"
+      }
+    },
+    {
+      "name": "tool.list_metadata_objects_does_not_mask_technical_metadata",
+      "status": "PASS",
+      "elapsedMs": 3036,
+      "details": {
+        "checked": 50
+      }
+    },
+    {
+      "name": "tool.list_metadata_objects_does_not_invent_missing_register",
+      "status": "PASS",
+      "elapsedMs": 469,
+      "details": {
+        "found": 0
+      }
+    },
+    {
+      "name": "tool.discovery_returns_guidance_is_contextual",
+      "status": "PASS",
+      "elapsedMs": 6280,
+      "details": {
+        "salesGuidance": [
+          {
+            "id": "returns_and_storno",
+            "applies_to": "Аналитика продаж, закупок, складских движений, ТМЦ, материалов, сырья, МБП, НМА, основных средств, себестоимости, прибыли и рентабельности.",
+            "instruction": "Для аналитики движений, стоимости, остатков, закупок, продаж, себестоимости, прибыли и рентабельности считайте показатели с учётом возвратов и сторно. Не суммируйте только документы поступления/реализации/принятия к учёту или только положительные движения: используйте отчёты/регистры, где обороты уже имеют знак, или явно учитывайте возвраты поставщику, возвраты покупателей, сторнирующие документы, ВидДвижения/ПриходРасход и отрицательные количества/суммы. Если структура конфигурации неизвестна, сначала исследуйте метаданные, регистры и движения документов.",
+            "configuration_agnostic": true
+          },
+          {
+            "id": "report_or_direct_query_choice",
+            "applies_to": "Отчетные и аналитические задачи, для которых в конфигурации может существовать готовый отчет или вариант отчета.",
+            "instruction": "Если пользовательская задача похожа на отчет/аналитику и перед прямым run_1c_query есть возможность подобрать готовый отчет, сначала вызовите list_reports с текстом намерения и include_variants=true. Если list_reports вернул релевантные кандидаты, не выполняйте прямой запрос молча: спросите пользователя, использовать готовый отчет/вариант через get_report_info -> run_1c_report или идти прямым read-only запросом. Если пользователь явно просит прямой запрос, готовый отчет не подходит по смыслу или нужно диагностировать расхождение, можно продолжать run_1c_query после validate_1c_query.",
+            "configuration_agnostic": true
+          }
+        ],
+        "materialsGuidance": [
+          {
+            "id": "returns_and_storno",
+            "applies_to": "Аналитика продаж, закупок, складских движений, ТМЦ, материалов, сырья, МБП, НМА, основных средств, себестоимости, прибыли и рентабельности.",
+            "instruction": "Для аналитики движений, стоимости, остатков, закупок, продаж, себестоимости, прибыли и рентабельности считайте показатели с учётом возвратов и сторно. Не суммируйте только документы поступления/реализации/принятия к учёту или только положительные движения: используйте отчёты/регистры, где обороты уже имеют знак, или явно учитывайте возвраты поставщику, возвраты покупателей, сторнирующие документы, ВидДвижения/ПриходРасход и отрицательные количества/суммы. Если структура конфигурации неизвестна, сначала исследуйте метаданные, регистры и движения документов.",
+            "configuration_agnostic": true
+          },
+          {
+            "id": "report_or_direct_query_choice",
+            "applies_to": "Отчетные и аналитические задачи, для которых в конфигурации может существовать готовый отчет или вариант отчета.",
+            "instruction": "Если пользовательская задача похожа на отчет/аналитику и перед прямым run_1c_query есть возможность подобрать готовый отчет, сначала вызовите list_reports с текстом намерения и include_variants=true. Если list_reports вернул релевантные кандидаты, не выполняйте прямой запрос молча: спросите пользователя, использовать готовый отчет/вариант через get_report_info -> run_1c_report или идти прямым read-only запросом. Если пользователь явно просит прямой запрос, готовый отчет не подходит по смыслу или нужно диагностировать расхождение, можно продолжать run_1c_query после validate_1c_query.",
+            "configuration_agnostic": true
+          }
+        ],
+        "hrGuidanceCount": 0
+      }
+    },
+    {
+      "name": "tool.get_metadata_structure_generic_reference_object",
+      "status": "PASS",
+      "elapsedMs": 2131,
+      "details": {
+        "attributes": 28,
+        "tabularSections": [
+          "ВыданныеАвансы",
+          "Товары",
+          "ВозвратнаяТара",
+          "ОплатаПоставщикам",
+          "Прочее",
+          "Билеты",
+          "Суточные"
+        ]
+      }
+    },
+    {
+      "name": "tool.get_metadata_structure_information_register_schema",
+      "status": "PASS",
+      "elapsedMs": 250,
+      "details": {
+        "periodicity": null,
+        "dimensions": 1,
+        "resources": 8
+      }
+    },
+    {
+      "name": "tool.get_metadata_structure_accounting_register_virtual_tables",
+      "status": "PASS",
+      "elapsedMs": 1015,
+      "details": {
+        "register": "РегистрБухгалтерии.Хозрасчетный",
+        "virtualTables": [
+          {
+            "name": "Остатки",
+            "query_table": "РегистрБухгалтерии.Хозрасчетный.Остатки(&Период)",
+            "mode": "balance",
+            "description": "Остатки по счетам и субконто на дату. Значения аналитик доступны в Субконто1/2/3; соответствие позиции и вида аналитики определяется настройками счёта в плане счетов, обычно через табличную часть ПланСчетов.<ИмяПлана>.ВидыСубконто. В сложных JOIN между независимыми подзапросами сопоставляйте субконто через УникальныйИдентификатор(СубконтоN).",
+            "parameters": [
+              "Период"
+            ],
+            "common_fields": [
+              "Счет",
+              "Субконто1",
+              "Субконто2",
+              "Субконто3",
+              "СуммаОстаток",
+              "ВалютнаяСуммаОстаток",
+              "КоличествоОстаток",
+              "СуммаНУОстаток",
+              "СуммаПРОстаток",
+              "СуммаВРОстаток"
+            ]
+          },
+          {
+            "name": "Обороты",
+            "query_table": "РегистрБухгалтерии.Хозрасчетный.Обороты(&ПериодНачало, &ПериодКонец)",
+            "mode": "turnovers",
+            "description": "Обороты по счету и субконто. Для аналитики субконто используйте эту таблицу, а не основную таблицу движений. Значения аналитик доступны в Субконто1/2/3; соответствие позиции и вида аналитики определяется настройками счёта в плане счетов, обычно через табличную часть ПланСчетов.<ИмяПлана>.ВидыСубконто. В сложных JOIN между независимыми подзапросами сопоставляйте субконто через УникальныйИдентификатор(СубконтоN).",
+            "parameters": [
+              "ПериодНачало",
+              "ПериодКонец"
+            ],
+            "common_fields": [
+              "Счет",
+              "Субконто1",
+              "Субконто2",
+              "Субконто3",
+              "СуммаОборот",
+              "ВалютнаяСуммаОборот",
+              "КоличествоОборот",
+              "СуммаНУОборот",
+              "СуммаПРОборот",
+              "СуммаВРОборот"
+            ]
+          },
+          {
+            "name": "ОборотыДтКт",
+            "query_table": "РегистрБухгалтерии.Хозрасчетный.ОборотыДтКт(&ПериодНачало, &ПериодКонец)",
+            "mode": "turnovers_debit_credit",
+            "description": "Корреспонденция Дт/Кт с отдельными полями СубконтоДт1..3 и СубконтоКт1..3. Соответствие позиции и вида аналитики определяется настройками счёта Дт/Кт в плане счетов, обычно через табличную часть ПланСчетов.<ИмяПлана>.ВидыСубконто. В сложных JOIN между независимыми подзапросами сопоставляйте субконто через УникальныйИдентификатор(СубконтоДтN/СубконтоКтN).",
+            "parameters": [
+              "ПериодНачало",
+              "ПериодКонец"
+            ],
+            "common_fields": [
+              "СчетДт",
+              "СчетКт",
+              "СубконтоДт1",
+              "СубконтоДт2",
+              "СубконтоДт3",
+              "СубконтоКт1",
+              "СубконтоКт2",
+              "СубконтоКт3",
+              "СуммаОборот",
+              "ВалютнаяСуммаОборот",
+              "КоличествоОборот",
+              "СуммаНУОборот",
+              "СуммаПРОборот",
+              "СуммаВРОборот"
+            ]
+          },
+          {
+            "name": "ОстаткиИОбороты",
+            "query_table": "РегистрБухгалтерии.Хозрасчетный.ОстаткиИОбороты(&ПериодНачало, &ПериодКонец)",
+            "mode": "balance_and_turnovers",
+            "description": "Начальные/конечные остатки и обороты по счетам и субконто за период. Значения аналитик доступны в Субконто1/2/3; соответствие позиции и вида аналитики определяется настройками счёта в плане счетов, обычно через табличную часть ПланСчетов.<ИмяПлана>.ВидыСубконто. В сложных JOIN между независимыми подзапросами сопоставляйте субконто через УникальныйИдентификатор(СубконтоN).",
+            "parameters": [
+              "ПериодНачало",
+              "ПериодКонец"
+            ],
+            "common_fields": [
+              "Счет",
+              "Субконто1",
+              "Субконто2",
+              "Субконто3",
+              "СуммаНачальныйОстаток",
+              "СуммаОборот",
+              "СуммаКонечныйОстаток",
+              "ВалютнаяСуммаНачальныйОстаток",
+              "ВалютнаяСуммаОборот",
+              "ВалютнаяСуммаКонечныйОстаток",
+              "КоличествоНачальныйОстаток",
+              "КоличествоОборот",
+              "КоличествоКонечныйОстаток",
+              "СуммаНУНачальныйОстаток",
+              "СуммаНУОборот",
+              "СуммаНУКонечныйОстаток",
+              "СуммаПРНачальныйОстаток",
+              "СуммаПРОборот",
+              "СуммаПРКонечныйОстаток",
+              "СуммаВРНачальныйОстаток",
+              "СуммаВРОборот",
+              "СуммаВРКонечныйОстаток"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "tool.get_metadata_structure_accumulation_resources_by_mode",
+      "status": "PASS",
+      "elapsedMs": 1110,
+      "details": {
+        "register": "РегистрНакопления.АвансовыеПлатежиИностранцевПоНДФЛ",
+        "resourcesByMode": {
+          "records": [
+            "Сумма"
+          ],
+          "turnovers": [
+            "СуммаОборот"
+          ],
+          "balance": [
+            "СуммаОстаток"
+          ],
+          "balance_and_turnovers": [
+            "СуммаНачальныйОстаток",
+            "СуммаОборот",
+            "СуммаКонечныйОстаток"
+          ],
+          "guidance": "В виртуальных таблицах имена ресурсов зависят от режима: Оборот для turnovers, Остаток для balance, НачальныйОстаток/Оборот/КонечныйОстаток для balance_and_turnovers."
+        }
+      }
+    },
+    {
+      "name": "tool.validate_1c_query_existing_tabular_section",
+      "status": "PASS",
+      "elapsedMs": 197,
+      "details": {
+        "detected": [
+          "Документ.АвансовыйОтчет"
+        ]
+      }
+    },
+    {
+      "name": "tool.validate_1c_query_warns_document_tabular_register_fanout",
+      "status": "PASS",
+      "elapsedMs": 4580,
+      "details": {
+        "document": "Документ.АвансовыйОтчет",
+        "tabularSection": "ВыданныеАвансы",
+        "register": "РегистрБухгалтерии.Хозрасчетный",
+        "warnings": [
+          "Риск умножения строк: табличная часть Документ.АвансовыйОтчет.ВыданныеАвансы соединяется с регистром РегистрБухгалтерии.Хозрасчетный по Регистратор = Ссылка. Если затем суммируются поля табличной части (Количество, Сумма), они могут умножиться на число движений регистра по документу. Используйте РАЗЛИЧНЫЕ регистраторы, СУЩЕСТВУЕТ/В для проверки наличия движения, либо связывайте движение с конкретной строкой/аналитикой."
+        ],
+        "guidance": [
+          {
+            "id": "subconto_join_by_uuid",
+            "applies_to": "Бухгалтерские регистры и аналитика по Субконто1/2/3, СубконтоДт1/2/3 и СубконтоКт1/2/3.",
+            "instruction": "Поля Субконто в бухгалтерских регистрах имеют обобщённый ссылочный тип. Они уже доступны через бухгалтерские виртуальные таблицы; отдельного открытия вида субконто в MCP не требуется. Чтобы понять, какая позиция Субконто1/2/3 соответствует нужной аналитике для конкретного счёта, сначала исследуйте план счетов и его табличную часть ВидыСубконто. При соединении независимых подзапросов по субконто выводите стабильный ключ УникальныйИдентификатор(Субконто...) КАК ...UUID и соединяйте по этому UUID; саму ссылку оставляйте отдельным полем для представления.",
+            "configuration_agnostic": true
+          },
+          {
+            "id": "document_tabular_register_join_fanout",
+            "applies_to": "Аналитика документов и движений регистров, где табличные части документов соединяются с регистрами по Регистратор/Ссылка.",
+            "instruction": "Не соединяйте табличную часть документа с регистром движений только по Регистратор = Ссылка, если суммируете поля табличной части. У одного документа может быть несколько движений регистра, поэтому Количество/Сумма табличной части умножатся на число подходящих движений. Для проверки наличия движения используйте подзапрос РАЗЛИЧНЫЕ Регистратор, СУЩЕСТВУЕТ или В; для детальной сверки связывайте движение с конкретной строкой/аналитикой (например НомерСтроки, субконто, номенклатура) или запускайте типовой отчет/вариант отчета.",
+            "configuration_agnostic": true
+          },
+          {
+            "id": "report_or_direct_query_choice",
+            "applies_to": "Отчетные и аналитические задачи, для которых в конфигурации может существовать готовый отчет или вариант отчета.",
+            "instruction": "Если пользовательская задача похожа на отчет/аналитику и перед прямым run_1c_query есть возможность подобрать готовый отчет, сначала вызовите list_reports с текстом намерения и include_variants=true. Если list_reports вернул релевантные кандидаты, не выполняйте прямой запрос молча: спросите пользователя, использовать готовый отчет/вариант через get_report_info -> run_1c_report или идти прямым read-only запросом. Если пользователь явно просит прямой запрос, готовый отчет не подходит по смыслу или нужно диагностировать расхождение, можно продолжать run_1c_query после validate_1c_query.",
+            "configuration_agnostic": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "tool.validate_1c_query_returns_guidance_is_contextual",
+      "status": "PASS",
+      "elapsedMs": 857,
+      "details": {
+        "salesValid": true,
+        "assetsValid": true,
+        "hrValid": true,
+        "salesGuidance": [
+          {
+            "id": "returns_and_storno",
+            "applies_to": "Аналитика продаж, закупок, складских движений, ТМЦ, материалов, сырья, МБП, НМА, основных средств, себестоимости, прибыли и рентабельности.",
+            "instruction": "Для аналитики движений, стоимости, остатков, закупок, продаж, себестоимости, прибыли и рентабельности считайте показатели с учётом возвратов и сторно. Не суммируйте только документы поступления/реализации/принятия к учёту или только положительные движения: используйте отчёты/регистры, где обороты уже имеют знак, или явно учитывайте возвраты поставщику, возвраты покупателей, сторнирующие документы, ВидДвижения/ПриходРасход и отрицательные количества/суммы. Если структура конфигурации неизвестна, сначала исследуйте метаданные, регистры и движения документов.",
+            "configuration_agnostic": true
+          },
+          {
+            "id": "report_or_direct_query_choice",
+            "applies_to": "Отчетные и аналитические задачи, для которых в конфигурации может существовать готовый отчет или вариант отчета.",
+            "instruction": "Если пользовательская задача похожа на отчет/аналитику и перед прямым run_1c_query есть возможность подобрать готовый отчет, сначала вызовите list_reports с текстом намерения и include_variants=true. Если list_reports вернул релевантные кандидаты, не выполняйте прямой запрос молча: спросите пользователя, использовать готовый отчет/вариант через get_report_info -> run_1c_report или идти прямым read-only запросом. Если пользователь явно просит прямой запрос, готовый отчет не подходит по смыслу или нужно диагностировать расхождение, можно продолжать run_1c_query после validate_1c_query.",
+            "configuration_agnostic": true
+          }
+        ],
+        "assetsGuidance": [
+          {
+            "id": "returns_and_storno",
+            "applies_to": "Аналитика продаж, закупок, складских движений, ТМЦ, материалов, сырья, МБП, НМА, основных средств, себестоимости, прибыли и рентабельности.",
+            "instruction": "Для аналитики движений, стоимости, остатков, закупок, продаж, себестоимости, прибыли и рентабельности считайте показатели с учётом возвратов и сторно. Не суммируйте только документы поступления/реализации/принятия к учёту или только положительные движения: используйте отчёты/регистры, где обороты уже имеют знак, или явно учитывайте возвраты поставщику, возвраты покупателей, сторнирующие документы, ВидДвижения/ПриходРасход и отрицательные количества/суммы. Если структура конфигурации неизвестна, сначала исследуйте метаданные, регистры и движения документов.",
+            "configuration_agnostic": true
+          },
+          {
+            "id": "report_or_direct_query_choice",
+            "applies_to": "Отчетные и аналитические задачи, для которых в конфигурации может существовать готовый отчет или вариант отчета.",
+            "instruction": "Если пользовательская задача похожа на отчет/аналитику и перед прямым run_1c_query есть возможность подобрать готовый отчет, сначала вызовите list_reports с текстом намерения и include_variants=true. Если list_reports вернул релевантные кандидаты, не выполняйте прямой запрос молча: спросите пользователя, использовать готовый отчет/вариант через get_report_info -> run_1c_report или идти прямым read-only запросом. Если пользователь явно просит прямой запрос, готовый отчет не подходит по смыслу или нужно диагностировать расхождение, можно продолжать run_1c_query после validate_1c_query.",
+            "configuration_agnostic": true
+          }
+        ],
+        "subcontoGuidance": [
+          {
+            "id": "subconto_join_by_uuid",
+            "applies_to": "Бухгалтерские регистры и аналитика по Субконто1/2/3, СубконтоДт1/2/3 и СубконтоКт1/2/3.",
+            "instruction": "Поля Субконто в бухгалтерских регистрах имеют обобщённый ссылочный тип. Они уже доступны через бухгалтерские виртуальные таблицы; отдельного открытия вида субконто в MCP не требуется. Чтобы понять, какая позиция Субконто1/2/3 соответствует нужной аналитике для конкретного счёта, сначала исследуйте план счетов и его табличную часть ВидыСубконто. При соединении независимых подзапросов по субконто выводите стабильный ключ УникальныйИдентификатор(Субконто...) КАК ...UUID и соединяйте по этому UUID; саму ссылку оставляйте отдельным полем для представления.",
+            "configuration_agnostic": true
+          },
+          {
+            "id": "report_or_direct_query_choice",
+            "applies_to": "Отчетные и аналитические задачи, для которых в конфигурации может существовать готовый отчет или вариант отчета.",
+            "instruction": "Если пользовательская задача похожа на отчет/аналитику и перед прямым run_1c_query есть возможность подобрать готовый отчет, сначала вызовите list_reports с текстом намерения и include_variants=true. Если list_reports вернул релевантные кандидаты, не выполняйте прямой запрос молча: спросите пользователя, использовать готовый отчет/вариант через get_report_info -> run_1c_report или идти прямым read-only запросом. Если пользователь явно просит прямой запрос, готовый отчет не подходит по смыслу или нужно диагностировать расхождение, можно продолжать run_1c_query после validate_1c_query.",
+            "configuration_agnostic": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "tool.validate_1c_query_rejects_main_register_subconto_dtkt",
+      "status": "PASS",
+      "elapsedMs": 225,
+      "details": {
+        "errors": [
+          {
+            "code": "subconto_wrong_table",
+            "message": "Поля СубконтоДт1/2/3 и СубконтоКт1/2/3 недоступны в основной таблице РегистрБухгалтерии.Хозрасчетный. Используйте РегистрБухгалтерии.Хозрасчетный.Субконто с полями Период, Регистратор, НомерСтроки, ВидДвижения, Вид, Значение, или виртуальную таблицу бухгалтерского регистра. Для определения позиций аналитик сначала вызовите get_accounting_accounts_map.",
+            "location": "РегистрБухгалтерии.Хозрасчетный.Субконто"
+          }
+        ]
+      }
+    },
+    {
+      "name": "tool.validate_1c_query_having_keyword",
+      "status": "PASS",
+      "elapsedMs": 242,
+      "details": {
+        "detected": [
+          "Справочник.АвансовыйОтчетПрисоединенныеФайлы"
+        ]
+      }
+    },
+    {
+      "name": "tool.get_1c_query_guidance_contextual",
+      "status": "PASS",
+      "elapsedMs": 1108,
+      "details": {
+        "guidance": [
+          "temporary_tables_read_only",
+          "grouping_having",
+          "subconto_generic",
+          "accounting_register_patterns",
+          "accounting-register-turnovers-fields",
+          "report_fast_path",
+          "report_or_direct_query_choice",
+          "virtual_table_parameters"
+        ]
+      }
+    },
+    {
+      "name": "tool.get_accounting_accounts_map",
+      "status": "PASS",
+      "elapsedMs": 1605,
+      "details": {
+        "chart": "ПланСчетов.Хозрасчетный",
+        "rows": 5
+      }
+    },
+    {
+      "name": "tool.get_accounting_entries_grouped",
+      "status": "PASS",
+      "elapsedMs": 388,
+      "details": {
+        "register": "РегистрБухгалтерии.Хозрасчетный",
+        "rows": 5,
+        "queryUsed": "ВЫБРАТЬ НАЧАЛОПЕРИОДА(Рег.Период, МЕСЯЦ) КАК ПериодМесяц, Рег.СчетКт КАК СчетКт, СУММА(Рег.Сумма) КАК Сумма, КОЛИЧЕСТВО(Рег.Регистратор) КАК КоличествоСтрок\nИЗ РегистрБухгалтерии.Хозрасчетный КАК Рег\nГДЕ Рег.Период >= &ПериодНачало И Рег.Период <= &ПериодКонец И (Рег.СчетКт.Код ПОДОБНО &CreditPrefix0)\nСГРУППИРОВАТЬ ПО НАЧАЛОПЕРИОДА(Рег.Период, МЕСЯЦ), Рег.СчетКт\nИМЕЮЩИЕ СУММА(Рег.Сумма) <> 0\nУПОРЯДОЧИТЬ ПО ПериодМесяц, СчетКт"
+      }
+    },
+    {
+      "name": "tool.get_accounting_entries_subconto_join",
+      "status": "PASS",
+      "elapsedMs": 2467,
+      "details": {
+        "register": "РегистрБухгалтерии.Хозрасчетный",
+        "account": "01",
+        "subconto": "Основные средства",
+        "rows": 0
+      }
+    },
+    {
+      "name": "tool.get_calculation_types_map",
+      "status": "PASS",
+      "elapsedMs": 1217,
+      "details": {
+        "plan": "ПланВидовРасчета.Начисления",
+        "rows": 5,
+        "total": 27
+      }
+    },
+    {
+      "name": "tool.get_database_passport",
+      "status": "PASS",
+      "elapsedMs": 10624,
+      "details": {
+        "organizations": 5,
+        "accountingRegisters": 1,
+        "accumulationChecked": 5
+      }
+    },
+    {
+      "name": "tool.run_1c_query_temporary_table_package",
+      "status": "PASS",
+      "elapsedMs": 503,
+      "details": {
+        "skipped": true,
+        "reason": "generic catalog fixture has no rows",
+        "catalog": "Справочник.АвансовыйОтчетПрисоединенныеФайлы"
+      }
+    },
+    {
+      "name": "tool.run_1c_query_counterparty_contact_info",
+      "status": "PASS",
+      "elapsedMs": 258,
+      "details": {
+        "rows": 1,
+        "firstRef": {
+          "type": "Документ.АвансовыйОтчет",
+          "uuid": "896e2496-9561-11f0-8ea2-fa163e0988d1",
+          "presentation": "Авансовый отчет КП00-000002 от 08.11.2024 12:00:00",
+          "navigation_url": "https://laba-1c.astondevs.ru/BUH_KORP/#e1cib/data/%D0%94%D0%BE%D0%BA%D1%83%D0%BC%D0%B5%D0%BD%D1%82.%D0%90%D0%B2%D0%B0%D0%BD%D1%81%D0%BE%D0%B2%D1%8B%D0%B9%D0%9E%D1%82%D1%87%D0%B5%D1%82?ref=8ea2fa163e0988d111f09561896e2496",
+          "navigation_url_kind": "web_client",
+          "e1cib_navigation_url": "e1cib/data/Документ.АвансовыйОтчет?ref=8ea2fa163e0988d111f09561896e2496"
+        }
+      }
+    },
+    {
+      "name": "tool.run_1c_query_reference_encoding",
+      "status": "PASS",
+      "elapsedMs": 228,
+      "details": {
+        "skipped": true,
+        "reason": "generic catalog fixture has no rows",
+        "catalog": "Справочник.АвансовыйОтчетПрисоединенныеФайлы"
+      }
+    },
+    {
+      "name": "tool.run_1c_query_accounting_debit_credit_subconto",
+      "status": "PASS",
+      "elapsedMs": 437,
+      "details": {
+        "register": "РегистрБухгалтерии.Хозрасчетный",
+        "columns": [
+          "СчетДт",
+          "СчетКт",
+          "СубконтоДт1",
+          "СубконтоКт1",
+          "СуммаОборот"
+        ],
+        "rows": 1
+      }
+    },
+    {
+      "name": "tool.run_1c_query_accounting_balance_subconto",
+      "status": "PASS",
+      "elapsedMs": 482,
+      "details": {
+        "register": "РегистрБухгалтерии.Хозрасчетный",
+        "columns": [
+          "Счет",
+          "Субконто1",
+          "КоличествоОстаток",
+          "СуммаОстаток"
+        ],
+        "rows": 5
+      }
+    },
+    {
+      "name": "tool.search_objects_returns_structured_refs",
+      "status": "PASS",
+      "elapsedMs": 159,
+      "details": {
+        "skipped": true,
+        "reason": "sample reference presentation is not searchable for this type",
+        "query": "Авансовый отчет КП00-000002 от 08.11.2024 12:00:00",
+        "type": "Документ.АвансовыйОтчет"
+      }
+    },
+    {
+      "name": "tool.get_object_by_ref_with_tabular_section",
+      "status": "PASS",
+      "elapsedMs": 373,
+      "details": {
+        "ref": {
+          "type": "Документ.АвансовыйОтчет",
+          "uuid": "896e2496-9561-11f0-8ea2-fa163e0988d1",
+          "presentation": "Авансовый отчет КП00-000002 от 08.11.2024 12:00:00",
+          "navigation_url": "https://laba-1c.astondevs.ru/BUH_KORP/#e1cib/data/%D0%94%D0%BE%D0%BA%D1%83%D0%BC%D0%B5%D0%BD%D1%82.%D0%90%D0%B2%D0%B0%D0%BD%D1%81%D0%BE%D0%B2%D1%8B%D0%B9%D0%9E%D1%82%D1%87%D0%B5%D1%82?ref=8ea2fa163e0988d111f09561896e2496",
+          "navigation_url_kind": "web_client",
+          "e1cib_navigation_url": "e1cib/data/Документ.АвансовыйОтчет?ref=8ea2fa163e0988d111f09561896e2496"
+        },
+        "fields": [],
+        "tabularSections": [
+          "ВыданныеАвансы"
+        ]
+      }
+    },
+    {
+      "name": "tool.find_object_by_id",
+      "status": "PASS",
+      "elapsedMs": 6373,
+      "details": {
+        "searchedTypes": 1,
+        "matches": 1
+      }
+    },
+    {
+      "name": "tool.get_link_of_object",
+      "status": "PASS",
+      "elapsedMs": 184,
+      "details": {
+        "links": [
+          {
+            "type": "e1cib",
+            "url": "e1cib/data/Документ.АвансовыйОтчет?ref=8ea2fa163e0988d111f09561896e2496",
+            "description": "Навигационная ссылка 1С"
+          },
+          {
+            "type": "web_client",
+            "url": "https://laba-1c.astondevs.ru/BUH_KORP/#e1cib/data/%D0%94%D0%BE%D0%BA%D1%83%D0%BC%D0%B5%D0%BD%D1%82.%D0%90%D0%B2%D0%B0%D0%BD%D1%81%D0%BE%D0%B2%D1%8B%D0%B9%D0%9E%D1%82%D1%87%D0%B5%D1%82?ref=8ea2fa163e0988d111f09561896e2496",
+            "description": "Ссылка для web-клиента"
+          }
+        ]
+      }
+    },
+    {
+      "name": "tool.find_references_to_object",
+      "status": "PASS",
+      "elapsedMs": 7186,
+      "details": {
+        "groups": 2,
+        "searchedTypes": 2,
+        "truncated": false
+      }
+    },
+    {
+      "name": "tool.get_object_history_graceful",
+      "status": "PASS",
+      "elapsedMs": 163,
+      "details": {
+        "supported": false,
+        "events": 0,
+        "capabilities": {
+          "versions": false,
+          "event_log": false,
+          "diff": false
+        }
+      }
+    },
+    {
+      "name": "tool.get_enum_values",
+      "status": "PASS",
+      "elapsedMs": 166,
+      "details": {
+        "values": [
+          "ПустаяСсылка",
+          "Bitrix",
+          "UMI",
+          "Другая"
+        ]
+      }
+    },
+    {
+      "name": "tool.get_register_records_records_mode",
+      "status": "PASS",
+      "elapsedMs": 214,
+      "details": {
+        "rows": 0,
+        "truncated": false,
+        "nextCursor": null
+      }
+    },
+    {
+      "name": "tool.get_register_records_accounting_debit_credit_mode",
+      "status": "PASS",
+      "elapsedMs": 307,
+      "details": {
+        "register": "РегистрБухгалтерии.Хозрасчетный",
+        "columns": [
+          "СчетДт",
+          "СчетКт",
+          "СубконтоДт1",
+          "СубконтоКт1",
+          "СуммаОборот"
+        ],
+        "rows": 1,
+        "queryUsed": "ВЫБРАТЬ ПЕРВЫЕ 2 СчетДт, СчетКт, СубконтоДт1, СубконтоКт1, СуммаОборот\nИЗ РегистрБухгалтерии.Хозрасчетный.ОборотыДтКт(&ПериодНачало, &ПериодКонец)"
+      }
+    },
+    {
+      "name": "tool.get_register_records_accounting_debit_credit_filter",
+      "status": "PASS",
+      "elapsedMs": 448,
+      "details": {
+        "register": "РегистрБухгалтерии.Хозрасчетный",
+        "account": "09",
+        "rows": 1,
+        "queryUsed": "ВЫБРАТЬ ПЕРВЫЕ 6 СчетДт, СчетКт, СуммаОборот\nИЗ РегистрБухгалтерии.Хозрасчетный.ОборотыДтКт(&ПериодНачало, &ПериодКонец)\nГДЕ СчетДт = &Filter_СчетДт"
+      }
+    },
+    {
+      "name": "tool.get_register_records_accounting_turnovers_filter",
+      "status": "PASS",
+      "elapsedMs": 670,
+      "details": {
+        "register": "РегистрБухгалтерии.Хозрасчетный",
+        "account": "60.01",
+        "turnoversRows": 1,
+        "balanceAndTurnoversRows": 1,
+        "turnoversQueryUsed": "ВЫБРАТЬ ПЕРВЫЕ 6 Счет, СуммаОборот\nИЗ РегистрБухгалтерии.Хозрасчетный.Обороты(&ПериодНачало, &ПериодКонец)\nГДЕ Счет = &Filter_Счет",
+        "balanceAndTurnoversQueryUsed": "ВЫБРАТЬ ПЕРВЫЕ 6 Счет, СуммаОборот\nИЗ РегистрБухгалтерии.Хозрасчетный.ОстаткиИОбороты(&ПериодНачало, &ПериодКонец)\nГДЕ Счет = &Filter_Счет"
+      }
+    },
+    {
+      "name": "tool.get_register_records_bad_mode_is_diagnostic",
+      "status": "PASS",
+      "elapsedMs": 199,
+      "details": {
+        "error": {
+          "code": "register_mode_not_supported",
+          "message": "Режим balance не поддерживается для РегистрСведений",
+          "details": {
+            "diagnostic_mode": true,
+            "correlation_id": "2c09ef54-6414-4c4d-b446-e72887f6c6d6",
+            "raw_exception": "{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [register_mode_not_supported] Режим balance не поддерживается для РегистрСведений",
+            "parsed_details": {}
+          },
+          "correlation_id": "2c09ef54-6414-4c4d-b446-e72887f6c6d6"
+        }
+      }
+    },
+    {
+      "name": "fixture.query_document_with_movements",
+      "status": "PASS",
+      "elapsedMs": 239,
+      "details": {
+        "ref": {
+          "type": "Документ.АвансовыйОтчет",
+          "uuid": "896e2496-9561-11f0-8ea2-fa163e0988d1",
+          "presentation": "Авансовый отчет КП00-000002 от 08.11.2024 12:00:00",
+          "navigation_url": "https://laba-1c.astondevs.ru/BUH_KORP/#e1cib/data/%D0%94%D0%BE%D0%BA%D1%83%D0%BC%D0%B5%D0%BD%D1%82.%D0%90%D0%B2%D0%B0%D0%BD%D1%81%D0%BE%D0%B2%D1%8B%D0%B9%D0%9E%D1%82%D1%87%D0%B5%D1%82?ref=8ea2fa163e0988d111f09561896e2496",
+          "navigation_url_kind": "web_client",
+          "e1cib_navigation_url": "e1cib/data/Документ.АвансовыйОтчет?ref=8ea2fa163e0988d111f09561896e2496"
+        }
+      }
+    },
+    {
+      "name": "tool.get_document_movements",
+      "status": "PASS",
+      "elapsedMs": 1740,
+      "details": {
+        "registers": [
+          "РегистрНакопления.НДСПредъявленный"
+        ],
+        "truncated": false
+      }
+    },
+    {
+      "name": "tool.list_reports",
+      "status": "PASS",
+      "elapsedMs": 2950,
+      "details": {
+        "reports": [
+          "Отчет.АнализВерсийОбъектов",
+          "Отчет.АнализВзносовВФонды",
+          "Отчет.АнализДвиженийДенежныхСредств",
+          "Отчет.АнализЖурналаРегистрации",
+          "Отчет.АнализИзмененийЛичныхДанныхСотрудников"
+        ],
+        "firstVariant": "Основной"
+      }
+    },
+    {
+      "name": "tool.get_report_info",
+      "status": "PASS",
+      "elapsedMs": 232,
+      "details": {
+        "report": "Отчет.АнализВерсийОбъектов",
+        "variants": [
+          {
+            "name": "Основной",
+            "presentation": "Основной"
+          }
+        ]
+      }
+    },
+    {
+      "name": "tool.run_1c_report_graceful",
+      "status": "PASS",
+      "elapsedMs": 228,
+      "details": {
+        "report": "Отчет.АнализВерсийОбъектов",
+        "executionSupported": false,
+        "rows": 0,
+        "warnings": [
+          "Отчёт не может быть выведен в коллекцию значений универсальным адаптером. Чаще всего причина в таблицах/диаграммах СКД. Нужен отдельный адаптер отчёта или fallback в ТабличныйДокумент.",
+          "raw_exception: {MCP ОбщийМодуль.MCP_Reports.Модуль(618)}: Ошибка при вызове метода контекста (Выполнить): Ошибка компоновки макета: Ошибка генерации макета: Не поддерживается вывод таблиц и диаграмм в универсальную коллекцию значений"
+        ]
+      }
+    },
+    {
+      "name": "negative.validate_missing_metadata_is_invalid",
+      "status": "PASS",
+      "elapsedMs": 193,
+      "details": {
+        "errors": [
+          {
+            "code": "metadata_not_found",
+            "message": "Объект метаданных не найден: РегистрСведений.MCP_НесуществующийРегистр",
+            "location": "РегистрСведений.MCP_НесуществующийРегистр"
+          }
+        ]
+      }
+    },
+    {
+      "name": "negative.run_missing_metadata_is_diagnostic",
+      "status": "PASS",
+      "elapsedMs": 260,
+      "details": {
+        "errorCode": "query_validation_failed",
+        "message": "Запрос не прошёл проверку.",
+        "parsedDetails": {
+          "validation_errors": [
+            {
+              "code": "metadata_not_found",
+              "message": "Объект метаданных не найден: РегистрСведений.MCP_НесуществующийРегистр",
+              "location": "РегистрСведений.MCP_НесуществующийРегистр"
+            }
+          ],
+          "validation_warnings": [],
+          "detected_objects": [
+            "РегистрСведений.MCP_НесуществующийРегистр"
+          ],
+          "detected_parameters": [],
+          "estimated_risk": "blocked",
+          "query_guidance": [
+            {
+              "id": "metadata_first",
+              "title": "Сначала проверьте метаданные",
+              "instruction": "Не угадывайте имена объектов, реквизитов, табличных частей, регистров и ресурсов. Начинайте с узкого discovery: list_metadata_objects с query/kinds/limit или специализированная карта вроде get_accounting_accounts_map/get_calculation_types_map. get_metadata_structure вызывайте только для уже выбранного объекта и только с нужными include_* флагами.",
+              "resource_uri": "1c://knowledge/query",
+              "severity": "high",
+              "configuration_agnostic": true
+            },
+            {
+              "id": "mcp_query_safety",
+              "title": "Граница read-only",
+              "instruction": "Сервер не изменяет постоянные данные: запрещены запись, проведение, удаление и DDL/DML. Исключение - временные таблицы языка запросов 1С внутри выполнения запроса пользователя.",
+              "resource_uri": "1c://knowledge/query",
+              "severity": "high",
+              "configuration_agnostic": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "negative.validate_forbidden_keyword",
+      "status": "PASS",
+      "elapsedMs": 206,
+      "details": {
+        "errors": [
+          {
+            "code": "forbidden_keyword",
+            "message": "Запрещённая конструкция: ДЛЯ ИЗМЕНЕНИЯ",
+            "location": "ДЛЯ ИЗМЕНЕНИЯ"
+          }
+        ]
+      }
+    },
+    {
+      "name": "negative.validate_invalid_imeya_keyword",
+      "status": "PASS",
+      "elapsedMs": 246,
+      "details": {
+        "errors": [
+          {
+            "code": "invalid_1c_query_keyword",
+            "message": "ИМЕЯ не является ключевым словом языка запросов 1С. Для условий по агрегатам используйте ИМЕЮЩИЕ.",
+            "location": "ИМЕЯ"
+          }
+        ]
+      }
+    },
+    {
+      "name": "negative.run_main_register_subconto_dtkt_is_smart_error",
+      "status": "PASS",
+      "elapsedMs": 388,
+      "details": {
+        "errorCode": "subconto_wrong_table",
+        "hint": "Используйте таблицу РегистрБухгалтерии.Хозрасчетный.Субконто с полями: Период, Регистратор, НомерСтроки, ВидДвижения, Вид, Значение. Соединяйте с основной таблицей по Регистратор и НомерСтроки."
+      }
+    },
+    {
+      "name": "negative.validate_plain_batch_without_temp_tables",
+      "status": "PASS",
+      "elapsedMs": 240,
+      "details": {
+        "errors": [
+          {
+            "code": "batch_query_forbidden",
+            "message": "Пакетные запросы разрешены только для создания, индексации, чтения или уничтожения временных таблиц.",
+            "location": ";"
+          }
+        ]
+      }
+    },
+    {
+      "name": "negative.validate_temp_table_without_final_select",
+      "status": "PASS",
+      "elapsedMs": 219,
+      "details": {
+        "errors": [
+          {
+            "code": "temporary_table_package_required",
+            "message": "Временные таблицы должны использоваться в пакетном запросе с финальным SELECT/ВЫБРАТЬ, чтобы сервер вернул табличный результат.",
+            "location": "ПОМЕСТИТЬ"
+          }
+        ]
+      }
+    },
+    {
+      "name": "negative.get_object_by_ref_bad_uuid",
+      "status": "PASS",
+      "elapsedMs": 184,
+      "details": {
+        "error": {
+          "code": "invalid_arguments",
+          "message": "Некорректный UUID: not-a-uuid",
+          "details": {
+            "diagnostic_mode": true,
+            "correlation_id": "ec0e31a6-5957-4139-ab74-dfbe3a3d6982",
+            "raw_exception": "{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [invalid_arguments] Некорректный UUID: not-a-uuid",
+            "parsed_details": {}
+          },
+          "correlation_id": "ec0e31a6-5957-4139-ab74-dfbe3a3d6982"
+        }
+      }
+    },
+    {
+      "name": "negative.unknown_tool",
+      "status": "PASS",
+      "elapsedMs": 156,
+      "details": {
+        "error": {
+          "code": "unknown_tool",
+          "message": "Unknown tool: definitely_not_a_tool",
+          "details": {
+            "tool": "definitely_not_a_tool"
+          },
+          "correlation_id": "1be2bd28-0dd5-406c-93be-606aec056869"
+        }
+      }
+    },
+    {
+      "name": "crosscheck.every_listed_query_object_has_basic_structure_sample",
+      "status": "PASS",
+      "elapsedMs": 11684,
+      "details": {
+        "checked": [
+          "Документ.АвансовыйОтчет",
+          "Документ.АвансовыйПлатежИностранцаПоНДФЛ",
+          "Документ.АвизоМПЗВходящее",
+          "Документ.АвизоМПЗИсходящее",
+          "Документ.АвизоОСВходящее",
+          "Документ.АвизоОСИсходящее",
+          "Документ.АвизоПрочееВходящее",
+          "Документ.АвизоПрочееИсходящее",
+          "Документ.АвизоРасчетыВходящее",
+          "Документ.АвизоРасчетыИсходящее",
+          "Документ.АктИнвентаризацииСАТУРН",
+          "Документ.АктОбОказанииПроизводственныхУслуг"
+        ]
+      }
+    }
+  ]
+}
