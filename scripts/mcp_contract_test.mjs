@@ -527,6 +527,22 @@ class ContractRunner {
       };
     });
 
+    await this.test("tool.validate_1c_query_warns_accounting_subconto_fanout", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) {
+        return { skipped: true, reason: "no accounting register in metadata" };
+      }
+      const result = await okTool(this.client, "validate_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 10 Рег.Регистратор КАК Регистратор, Субконто.Значение КАК Субконто ИЗ ${accountingRegister.fullName} КАК Рег ЛЕВОЕ СОЕДИНЕНИЕ ${accountingRegister.fullName}.Субконто КАК Субконто ПО Рег.Период = Субконто.Период И Рег.Регистратор = Субконто.Регистратор И Рег.НомерСтроки = Субконто.НомерСтроки`,
+        strict: true,
+        explain: true,
+      });
+      assert(result.valid === true, `subconto join warning query must remain valid, errors=${JSON.stringify(result.errors)}`);
+      assert((result.warnings || []).some((warning) => warning.includes("без отбора по Вид")), `subconto kind fanout warning is missing: ${JSON.stringify(result.warnings)}`);
+      assert((result.warnings || []).some((warning) => warning.includes("ВидДвижения")), `subconto movement warning is missing: ${JSON.stringify(result.warnings)}`);
+      return { register: accountingRegister.fullName, warnings: result.warnings };
+    });
+
     await this.test("tool.validate_1c_query_returns_guidance_is_contextual", async () => {
       const fixture = this.context.genericCatalog;
       if (!fixture) return { skipped: true, reason: "no generic catalog fixture" };
@@ -1305,6 +1321,26 @@ class ContractRunner {
       return { errors: result.errors };
     });
 
+    await this.test("negative.get_accounting_entries_rejects_subconto_value_without_kind", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      const fixture = this.context.genericCatalog || this.context.genericDocument;
+      if (!accountingRegister || !fixture) {
+        return { skipped: true, reason: "no accounting register or reference fixture" };
+      }
+      const ref = await firstRefFromType(this.client, fixture.full_name);
+      if (!ref) return { skipped: true, reason: "no reference row" };
+      const result = await rawTool(this.client, "get_accounting_entries", {
+        accounting_register: accountingRegister.name,
+        subconto_side: "debit",
+        subconto_value: toQueryRef(ref),
+        limit: 5,
+      });
+      assert(result.ok === false, "subconto_value without subconto_kind must fail");
+      assert(result.error?.code === "invalid_arguments", `unexpected code: ${result.error?.code}`);
+      assert(String(result.error?.message || "").includes("subconto_kind"), "error must point to subconto_kind");
+      return { error: result.error };
+    });
+
     await this.test("negative.run_main_register_subconto_dtkt_is_smart_error", async () => {
       const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
       if (!accountingRegister) return { skipped: true, reason: "no accounting register" };
@@ -1557,6 +1593,14 @@ function toQueryRef(ref) {
     type: ref.type,
     uuid: ref.uuid,
   };
+}
+
+async function firstRefFromType(client, fullName) {
+  const result = await rawTool(client, "run_1c_query", {
+    query: `ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка ИЗ ${fullName}`,
+    limit: 1,
+  });
+  return result.rows?.[0]?.Ссылка || null;
 }
 
 function assert(condition, message) {

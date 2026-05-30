@@ -361,6 +361,10 @@
 		MCP_Errors.ВозбудитьОшибку(MCP_Errors.Код_InvalidArguments(),
 			"Для subconto_kind/subconto_value укажите subconto_side: debit или credit.");
 	КонецЕсли;
+	Если ЕстьФильтрЗначенияСубконто И НЕ ЕстьФильтрВидаСубконто Тогда
+		MCP_Errors.ВозбудитьОшибку(MCP_Errors.Код_InvalidArguments(),
+			"subconto_value без subconto_kind неоднозначен: одна проводка может иметь несколько аналитик с разными видами. Сначала вызовите get_accounting_accounts_map и передайте выбранный вид субконто в subconto_kind.");
+	КонецЕсли;
 
 	Параметры = Новый Структура;
 	Если PeriodFrom <> Неопределено Тогда
