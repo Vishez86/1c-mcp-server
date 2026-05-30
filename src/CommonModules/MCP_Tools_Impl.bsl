@@ -2000,7 +2000,7 @@
 Функция ЗапросБухгалтерскихПроводок(AccountingRegister, GroupBy, SubcontoSide,
 	HasSubcontoKindFilter, HasSubcontoValueFilter, HasPeriodFrom, HasPeriodTo, DebitPrefixes, CreditPrefixes, IncludeZero)
 
-	ПроверитьГруппировкиПроводок(GroupBy, SubcontoSide);
+	ПроверитьГруппировкиПроводок(GroupBy, SubcontoSide, HasSubcontoKindFilter);
 
 	JoinDebit = МассивСодержитСтроку(GroupBy, "debit_subconto")
 		ИЛИ SubcontoSide = "debit" И (HasSubcontoKindFilter ИЛИ HasSubcontoValueFilter ИЛИ МассивСодержитСтроку(GroupBy, "subconto_kind"));
@@ -2082,7 +2082,7 @@
 
 КонецФункции
 
-Процедура ПроверитьГруппировкиПроводок(GroupBy, SubcontoSide)
+Процедура ПроверитьГруппировкиПроводок(GroupBy, SubcontoSide, HasSubcontoKindFilter)
 
 	Для Каждого ИмяГруппировки Из GroupBy Цикл
 		Имя = НРег(Строка(ИмяГруппировки));
@@ -2097,6 +2097,14 @@
 	Если МассивСодержитСтроку(GroupBy, "subconto_kind") И ПустаяСтрока(SubcontoSide) Тогда
 		MCP_Errors.ВозбудитьОшибку(MCP_Errors.Код_InvalidArguments(),
 			"Для group_by=subconto_kind укажите subconto_side: debit или credit.");
+	КонецЕсли;
+	ГруппировкаПоЗначениюСубконто = МассивСодержитСтроку(GroupBy, "debit_subconto")
+		ИЛИ МассивСодержитСтроку(GroupBy, "credit_subconto");
+	Если ГруппировкаПоЗначениюСубконто
+		И НЕ HasSubcontoKindFilter
+		И НЕ МассивСодержитСтроку(GroupBy, "subconto_kind") Тогда
+		MCP_Errors.ВозбудитьОшибку(MCP_Errors.Код_InvalidArguments(),
+			"Группировка по debit_subconto/credit_subconto без subconto_kind неоднозначна: в поле попадают разные виды аналитики, например Контрагенты, Договоры и Документы расчетов. Сначала вызовите get_accounting_accounts_map, выберите нужный вид субконто и передайте его в subconto_kind либо добавьте group_by=subconto_kind.");
 	КонецЕсли;
 
 КонецПроцедуры

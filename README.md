@@ -215,7 +215,7 @@
 
 **Выходящая схема:** стандартная табличная схема `columns[]`, `rows[]`, `row_count`, плюс `accounting_register`, `mode`, `group_by`, `subconto_side`, `configuration_agnostic`, `guidance`, опционально `query_used`.
 
-**Ограничения:** tool не содержит бизнес-логики ОС/ТМЦ/НДС. Для фильтра по виду субконто сначала получите реальный `subconto_kind` из `get_accounting_accounts_map` или metadata/query результата.
+**Ограничения:** tool не содержит бизнес-логики ОС/ТМЦ/НДС. Для фильтра или группировки по виду субконто сначала получите реальный `subconto_kind` из `get_accounting_accounts_map` или metadata/query результата. Группировка по `debit_subconto`/`credit_subconto` без `subconto_kind` или `group_by=subconto_kind` отклоняется как неоднозначная: в одном поле могут смешаться контрагенты, договоры и документы расчетов. Для долга, задолженности и сальдо на дату используйте `Остатки`/`ОстаткиИОбороты`, а не проводки.
 
 ### `get_inventory_balances_by_item`
 
