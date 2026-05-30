@@ -634,7 +634,13 @@ class ContractRunner {
         max_sections: 3,
       });
       assert(hasGuidanceItem(reportsVsQuery.guidance, "report_or_direct_query_choice"), "reports-vs-query topic must include report-or-query guidance");
-      return { guidance: result.guidance.map((item) => item.id) };
+      const debtors = await okTool(this.client, "get_1c_query_guidance", {
+        intent: "отчет по дебиторам: долг на начало 2025, отгрузки за 2024, оплаты за 2024, долг на текущий момент",
+        include_examples: true,
+        max_sections: 8,
+      });
+      assert(hasGuidanceItem(debtors.guidance, "debtors_report_pattern"), "debtor report guidance must include deterministic pattern");
+      return { guidance: result.guidance.map((item) => item.id), debtorsGuidance: debtors.guidance.map((item) => item.id) };
     });
 
     await this.test("tool.get_accounting_accounts_map", async () => {
@@ -722,6 +728,22 @@ class ContractRunner {
       assert(result.query_used?.includes(`${accountingRegister.fullName}.Субконто КАК СубконтоКт`), "query must join accounting register subconto table");
       assert(result.query_used?.includes("СубконтоКт.Вид = &ВидСубконто"), "subconto kind filter must be emitted");
       return { register: accountingRegister.fullName, account: account.code, subconto: subconto.presentation, rows: result.rows?.length || 0 };
+    });
+
+    await this.test("tool.get_accounting_entries_rejects_ambiguous_subconto_grouping", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) {
+        return { skipped: true, reason: "no accounting register in metadata" };
+      }
+      const result = await rawTool(this.client, "get_accounting_entries", {
+        accounting_register: accountingRegister.name,
+        group_by: ["credit_subconto"],
+        limit: 5,
+      });
+      assert(result.ok === false, "ambiguous subconto grouping must fail");
+      assert(result.error?.code === "invalid_arguments", `unexpected code: ${result.error?.code}`);
+      assert(String(result.error?.message || "").includes("subconto_kind"), "error must point to subconto_kind");
+      return { error: result.error };
     });
 
     await this.test("tool.get_calculation_types_map", async () => {
