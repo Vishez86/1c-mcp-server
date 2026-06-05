@@ -1,26 +1,63 @@
 # TC-019 - get_enum_values
 
-Tool: `get_enum_values`
+Инструмент: `get_enum_values`
 
-Goal: verify enumeration value retrieval and pagination.
+Цель: проверить получение значений перечисления и пагинацию.
 
-Prerequisites:
-- An accessible enum full name from TC-001, for example `Перечисление.<Name>`.
+## Предусловия
 
-Steps:
-1. Call:
-   ```json
-   {"type": "<enum_full_name>", "limit": 2}
-   ```
-2. If truncated, call with `cursor`.
-3. Repeat with:
-   ```json
-   {"type": "<enum_full_name>", "limit": 5, "include_order": true, "include_empty": true}
-   ```
+- MCP-сервер 1С развернут и подключен к LLM-чату.
+- Пользователь в чате имеет права, достаточные для сценария.
+- Значения в угловых скобках нужно заменить реальными данными целевой базы.
 
-Expected result:
-- Response returns `values` and paging metadata.
-- Default response omits order details and empty value unless requested.
-- Cursor page continues enumeration values.
-- Non-enum type returns a structured validation or metadata error.
+## Диалоговый сценарий
+
+### Шаг 1
+
+**Сообщение пользователя:**
+
+> Покажи первые 2 значения перечисления <enum_full_name>.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_enum_values",
+  "arguments": {"type":"<enum_full_name>","limit":2}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент вызывает `get_enum_values`, возвращает не более 2 значений и сообщает о продолжении, если оно есть.
+
+### Шаг 2
+
+**Сообщение пользователя:**
+
+> Покажи следующую страницу значений.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_enum_values",
+  "arguments": {"type":"<enum_full_name>","limit":2,"cursor":"<next_cursor>"}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент использует курсор.
+
+## Дополнительная проверка
+
+Попросить «добавь порядок и пустое значение». Ожидаются `include_order=true`, `include_empty=true`.
+
+## Общие критерии приемки
+
+- Ассистент не выдумывает имена объектов, полей, регистров или отчетов; при нехватке данных сначала использует обнаружение tools.
+- Ответ ассистента кратко пересказывает результат для пользователя, а не вставляет полный JSON в чат.
+- Если tool возвращает `truncated=true`, ассистент предлагает продолжить и использует `next_cursor` в следующем шаге.
+- Ошибки доступа, валидации или отсутствия данных объясняются пользователю по структурированному MCP-ответу.
 

@@ -1,26 +1,63 @@
 # TC-022 - list_reports
 
-Tool: `list_reports`
+Инструмент: `list_reports`
 
-Goal: verify compact report discovery and optional variants/guidance.
+Цель: проверить список отчетов, компактные дефолты и пагинацию.
 
-Prerequisites:
-- Target infobase has at least one accessible report.
+## Предусловия
 
-Steps:
-1. Call:
-   ```json
-   {"limit": 2}
-   ```
-2. If truncated, call with `cursor`.
-3. Repeat with:
-   ```json
-   {"query": "<report_name_fragment>", "include_variants": true, "include_guidance": true, "limit": 5}
-   ```
+- MCP-сервер 1С развернут и подключен к LLM-чату.
+- Пользователь в чате имеет права, достаточные для сценария.
+- Значения в угловых скобках нужно заменить реальными данными целевой базы.
 
-Expected result:
-- Default response returns no more than 2 reports and omits variants/guidance.
-- Cursor page continues the list.
-- Opt-in call includes variants and guidance.
-- Inaccessible reports are excluded unless allowed admin flags are used.
+## Диалоговый сценарий
+
+### Шаг 1
+
+**Сообщение пользователя:**
+
+> Покажи первые 2 доступных отчета.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "list_reports",
+  "arguments": {"limit":2}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент вызывает `list_reports`, показывает не более 2 отчетов без вариантов и guidance по умолчанию.
+
+### Шаг 2
+
+**Сообщение пользователя:**
+
+> Найди отчеты по строке «<report_name_fragment>» и покажи варианты.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "list_reports",
+  "arguments": {"query":"<report_name_fragment>","include_variants":true,"limit":5}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент включает варианты, потому что пользователь попросил.
+
+## Дополнительная проверка
+
+Попросить «дай подсказку по выбору отчета». Ожидается `include_guidance=true`.
+
+## Общие критерии приемки
+
+- Ассистент не выдумывает имена объектов, полей, регистров или отчетов; при нехватке данных сначала использует обнаружение tools.
+- Ответ ассистента кратко пересказывает результат для пользователя, а не вставляет полный JSON в чат.
+- Если tool возвращает `truncated=true`, ассистент предлагает продолжить и использует `next_cursor` в следующем шаге.
+- Ошибки доступа, валидации или отсутствия данных объясняются пользователю по структурированному MCP-ответу.
 

@@ -1,35 +1,64 @@
 # TC-004 - run_1c_query
 
-Tool: `run_1c_query`
+Инструмент: `run_1c_query`
 
-Goal: verify safe read-only query execution, compact column output, and row pagination.
+Цель: проверить выполнение запроса только для чтения, компактные колонки и пагинацию строк.
 
-Prerequisites:
-- A queryable metadata object and at least one query field discovered via TC-001 or TC-002.
+## Предусловия
 
-Steps:
-1. Call with a read-only query limited by the tool:
-   ```json
-   {
-     "query": "ВЫБРАТЬ Ссылка, Наименование ИЗ Справочник.<Name>",
-     "limit": 2
-   }
-   ```
-2. If `truncated=true`, call with `cursor` from step 1.
-3. Repeat with:
-   ```json
-   {
-     "query": "ВЫБРАТЬ Ссылка, Наименование ИЗ Справочник.<Name>",
-     "limit": 2,
-     "include_column_types": true,
-     "include_navigation_url": true,
-     "include_guidance": true
-   }
-   ```
+- MCP-сервер 1С развернут и подключен к LLM-чату.
+- Пользователь в чате имеет права, достаточные для сценария.
+- Значения в угловых скобках нужно заменить реальными данными целевой базы.
 
-Expected result:
-- Read-only query returns `rows`, `columns`, `row_count`, `truncated`, and `next_cursor`.
-- Default `columns` are compact names; `include_column_types=true` returns type details.
-- Default references do not include navigation URLs; opt-in call includes them where supported.
-- Non-read-only query text is rejected with a structured error.
+## Диалоговый сценарий
+
+### Шаг 1
+
+**Сообщение пользователя:**
+
+> Выполни безопасный запрос: выбери строки из Справочник.<Name>, поля Ссылка и Наименование, лимит 2.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "run_1c_query",
+  "arguments": {"query":"ВЫБРАТЬ Ссылка, Наименование ИЗ Справочник.<Name>","limit":2}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент вызывает `run_1c_query`, возвращает не более 2 строк, кратко описывает результат и сообщает о `next_cursor`, если есть продолжение.
+
+### Шаг 2
+
+**Сообщение пользователя:**
+
+> Покажи следующую страницу строк.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "run_1c_query",
+  "arguments": {"query":"ВЫБРАТЬ Ссылка, Наименование ИЗ Справочник.<Name>","limit":2,"cursor":"<next_cursor>"}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент использует курсор и продолжает результат.
+
+## Дополнительная проверка
+
+Попросить «добавь типы колонок и ссылки навигации». Ожидаются `include_column_types=true` и `include_navigation_url=true`. Попытка UPDATE/DELETE должна быть отклонена.
+
+## Общие критерии приемки
+
+- Ассистент не выдумывает имена объектов, полей, регистров или отчетов; при нехватке данных сначала использует обнаружение tools.
+- Ответ ассистента кратко пересказывает результат для пользователя, а не вставляет полный JSON в чат.
+- Если tool возвращает `truncated=true`, ассистент предлагает продолжить и использует `next_cursor` в следующем шаге.
+- Ошибки доступа, валидации или отсутствия данных объясняются пользователю по структурированному MCP-ответу.
+
 

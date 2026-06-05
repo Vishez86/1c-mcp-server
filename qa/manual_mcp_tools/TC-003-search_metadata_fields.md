@@ -1,27 +1,63 @@
 # TC-003 - search_metadata_fields
 
-Tool: `search_metadata_fields`
+Инструмент: `search_metadata_fields`
 
-Goal: verify field-level discovery without fetching full metadata structures.
+Цель: проверить поиск полей без выгрузки полной структуры метаданных.
 
-Prerequisites:
-- At least one accessible metadata object with attributes, dimensions, resources, or tabular sections.
+## Предусловия
 
-Steps:
-1. Call the tool with:
-   ```json
-   {"query": "", "limit": 3}
-   ```
-2. If truncated, call with the returned `next_cursor`.
-3. Call with a filter from a discovered object:
-   ```json
-   {"types": ["<metadata_full_name>"], "field_kinds": ["attributes"], "limit": 5}
-   ```
+- MCP-сервер 1С развернут и подключен к LLM-чату.
+- Пользователь в чате имеет права, достаточные для сценария.
+- Значения в угловых скобках нужно заменить реальными данными целевой базы.
 
-Expected result:
-- Response contains `fields`, `field_count`, `truncated`, `next_cursor`, and `total_estimated`.
-- Every field includes owner/type context and a field path.
-- Permission-denied fields are not returned.
-- Pagination works without losing results.
-- Response stays compact and does not include full object structures.
+## Диалоговый сценарий
+
+### Шаг 1
+
+**Сообщение пользователя:**
+
+> Найди поля с названием или синонимом, похожим на «ИНН».
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "search_metadata_fields",
+  "arguments": {"query":"ИНН","limit":5}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент вызывает `search_metadata_fields`, показывает найденные поля с владельцем, путем и типом поля, не выгружая полные структуры объектов.
+
+### Шаг 2
+
+**Сообщение пользователя:**
+
+> Покажи следующую страницу найденных полей.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "search_metadata_fields",
+  "arguments": {"query":"ИНН","limit":5,"cursor":"<next_cursor>"}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Если был `next_cursor`, ассистент использует его и продолжает список.
+
+## Дополнительная проверка
+
+Проверить фильтр: попросить «Ищи только в справочниках». Ожидается аргумент `kinds:["Справочник"]`.
+
+## Общие критерии приемки
+
+- Ассистент не выдумывает имена объектов, полей, регистров или отчетов; при нехватке данных сначала использует обнаружение tools.
+- Ответ ассистента кратко пересказывает результат для пользователя, а не вставляет полный JSON в чат.
+- Если tool возвращает `truncated=true`, ассистент предлагает продолжить и использует `next_cursor` в следующем шаге.
+- Ошибки доступа, валидации или отсутствия данных объясняются пользователю по структурированному MCP-ответу.
 

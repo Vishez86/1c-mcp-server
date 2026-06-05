@@ -1,38 +1,63 @@
 # TC-010 - get_accounting_entries
 
-Tool: `get_accounting_entries`
+Инструмент: `get_accounting_entries`
 
-Goal: verify accounting entries retrieval, grouping, and optional query/guidance output.
+Цель: проверить получение бухгалтерских проводок и группировок.
 
-Prerequisites:
-- An accounting register from TC-007.
+## Предусловия
 
-Steps:
-1. Call:
-   ```json
-   {
-     "accounting_register": "<accounting_register_full_name>",
-     "period_from": "2025-01-01T00:00:00",
-     "period_to": "2025-12-31T23:59:59",
-     "limit": 5
-   }
-   ```
-2. Call grouped mode:
-   ```json
-   {
-     "accounting_register": "<accounting_register_full_name>",
-     "period_from": "2025-01-01T00:00:00",
-     "period_to": "2025-12-31T23:59:59",
-     "group_by": ["debit_account", "credit_account"],
-     "include_query": true,
-     "include_guidance": true,
-     "limit": 5
-   }
-   ```
+- MCP-сервер 1С развернут и подключен к LLM-чату.
+- Пользователь в чате имеет права, достаточные для сценария.
+- Значения в угловых скобках нужно заменить реальными данными целевой базы.
 
-Expected result:
-- Ungrouped call returns `mode=entries`; grouped call returns `mode=entries_grouped`.
-- `query_used` and guidance appear only in the opt-in call.
-- Rows obey the requested limit and include paging fields.
-- Invalid subconto filters return a clear validation error.
+## Диалоговый сценарий
+
+### Шаг 1
+
+**Сообщение пользователя:**
+
+> Покажи 5 бухгалтерских проводок за 2025 год по регистру <accounting_register_full_name>.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_accounting_entries",
+  "arguments": {"accounting_register":"<accounting_register_full_name>","period_from":"2025-01-01T00:00:00","period_to":"2025-12-31T23:59:59","limit":5}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент вызывает `get_accounting_entries`, возвращает `mode=entries` и не добавляет `query_used` без запроса пользователя.
+
+### Шаг 2
+
+**Сообщение пользователя:**
+
+> Сгруппируй проводки по счету Дт и Кт, покажи использованный запрос и пояснение.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_accounting_entries",
+  "arguments": {"accounting_register":"<accounting_register_full_name>","period_from":"2025-01-01T00:00:00","period_to":"2025-12-31T23:59:59","group_by":["debit_account","credit_account"],"include_query":true,"include_guidance":true,"limit":5}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент возвращает `mode=entries_grouped`, включает `query_used`/`guidance` только во втором шаге.
+
+## Дополнительная проверка
+
+Проверить невалидный subconto filter: ассистент должен получить и объяснить структурированную ошибку.
+
+## Общие критерии приемки
+
+- Ассистент не выдумывает имена объектов, полей, регистров или отчетов; при нехватке данных сначала использует обнаружение tools.
+- Ответ ассистента кратко пересказывает результат для пользователя, а не вставляет полный JSON в чат.
+- Если tool возвращает `truncated=true`, ассистент предлагает продолжить и использует `next_cursor` в следующем шаге.
+- Ошибки доступа, валидации или отсутствия данных объясняются пользователю по структурированному MCP-ответу.
 

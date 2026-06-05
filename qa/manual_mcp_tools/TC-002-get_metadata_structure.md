@@ -1,27 +1,63 @@
 # TC-002 - get_metadata_structure
 
-Tool: `get_metadata_structure`
+Инструмент: `get_metadata_structure`
 
-Goal: verify section-based metadata retrieval and section pagination.
+Цель: проверить получение структуры выбранного объекта метаданных по секциям.
 
-Prerequisites:
-- A valid metadata full name from TC-001, for example a catalog, document, or register.
+## Предусловия
 
-Steps:
-1. Call the tool with:
-   ```json
-   {"type": "<metadata_full_name>", "section": "attributes", "limit": 2}
-   ```
-2. If `truncated=true`, call the same section with `cursor` from step 1.
-3. Call the tool with:
-   ```json
-   {"type": "<metadata_full_name>", "section": "all"}
-   ```
+- MCP-сервер 1С развернут и подключен к LLM-чату.
+- Пользователь в чате имеет права, достаточные для сценария.
+- Значения в угловых скобках нужно заменить реальными данными целевой базы.
 
-Expected result:
-- Section call returns `metadata`, `section`, `items`, `item_count`, `truncated`, `next_cursor`, and `total_estimated`.
-- `items.length` is no more than the requested limit.
-- Cursor page continues the same section.
-- `section=all` returns the full `metadata` object with defaults kept compact.
-- Unknown or inaccessible `type` returns a structured MCP error, not a platform exception dump.
+## Диалоговый сценарий
+
+### Шаг 1
+
+**Сообщение пользователя:**
+
+> Покажи первые 2 реквизита объекта <metadata_full_name>.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_metadata_structure",
+  "arguments": {"type":"<metadata_full_name>","section":"attributes","limit":2}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент вызывает `get_metadata_structure`, передает `section=attributes`, возвращает не более 2 реквизитов и говорит о наличии следующей страницы, если `truncated=true`.
+
+### Шаг 2
+
+**Сообщение пользователя:**
+
+> Покажи следующую страницу реквизитов этого же объекта.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_metadata_structure",
+  "arguments": {"type":"<metadata_full_name>","section":"attributes","limit":2,"cursor":"<next_cursor>"}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент использует курсор той же секции и возвращает следующие реквизиты.
+
+## Дополнительная проверка
+
+Отдельно проверить запрос пользователя: «Покажи полную структуру <metadata_full_name>». Ожидается вызов с `section=all` и компактными дефолтами без лишних форм/команд, если они не запрошены.
+
+## Общие критерии приемки
+
+- Ассистент не выдумывает имена объектов, полей, регистров или отчетов; при нехватке данных сначала использует обнаружение tools.
+- Ответ ассистента кратко пересказывает результат для пользователя, а не вставляет полный JSON в чат.
+- Если tool возвращает `truncated=true`, ассистент предлагает продолжить и использует `next_cursor` в следующем шаге.
+- Ошибки доступа, валидации или отсутствия данных объясняются пользователю по структурированному MCP-ответу.
 

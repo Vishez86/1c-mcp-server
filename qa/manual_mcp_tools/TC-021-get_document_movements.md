@@ -1,31 +1,63 @@
 # TC-021 - get_document_movements
 
-Tool: `get_document_movements`
+Инструмент: `get_document_movements`
 
-Goal: verify document movement summary defaults and row-level pagination.
+Цель: проверить движения документа: summary по умолчанию и строки по запросу.
 
-Prerequisites:
-- A posted document `document_type` and `uuid` with movements.
+## Предусловия
 
-Steps:
-1. Call:
-   ```json
-   {"document_type": "<document_type>", "uuid": "<uuid>"}
-   ```
-2. Call detailed rows:
-   ```json
-   {
-     "document_type": "<document_type>",
-     "uuid": "<uuid>",
-     "summary_only": false,
-     "row_limit_per_register": 2
-   }
-   ```
-3. If registers or rows are truncated, repeat with `cursor` and/or `row_cursor`.
+- MCP-сервер 1С развернут и подключен к LLM-чату.
+- Пользователь в чате имеет права, достаточные для сценария.
+- Значения в угловых скобках нужно заменить реальными данными целевой базы.
 
-Expected result:
-- Default response summarizes movement registers without row payloads.
-- Detailed call returns movement rows limited per register.
-- Register and row cursors page through remaining data.
-- Empty movements are omitted unless `include_empty_registers=true`.
+## Диалоговый сценарий
+
+### Шаг 1
+
+**Сообщение пользователя:**
+
+> Покажи движения документа <document_type> UUID <uuid>.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_document_movements",
+  "arguments": {"document_type":"<document_type>","uuid":"<uuid>"}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент вызывает `get_document_movements`, возвращает summary без массивов rows по умолчанию.
+
+### Шаг 2
+
+**Сообщение пользователя:**
+
+> Покажи строки движений, по 2 строки на регистр.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_document_movements",
+  "arguments": {"document_type":"<document_type>","uuid":"<uuid>","summary_only":false,"row_limit_per_register":2}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент возвращает rows с лимитом и row cursor, если строк больше.
+
+## Дополнительная проверка
+
+Проверить отдельную реплику «следующая страница регистров/строк» с передачей `cursor` или `row_cursor`.
+
+## Общие критерии приемки
+
+- Ассистент не выдумывает имена объектов, полей, регистров или отчетов; при нехватке данных сначала использует обнаружение tools.
+- Ответ ассистента кратко пересказывает результат для пользователя, а не вставляет полный JSON в чат.
+- Если tool возвращает `truncated=true`, ассистент предлагает продолжить и использует `next_cursor` в следующем шаге.
+- Ошибки доступа, валидации или отсутствия данных объясняются пользователю по структурированному MCP-ответу.
 

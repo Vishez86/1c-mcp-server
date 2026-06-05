@@ -1,29 +1,63 @@
 # TC-017 - get_link_of_object
 
-Tool: `get_link_of_object`
+Инструмент: `get_link_of_object`
 
-Goal: verify link generation for a known object.
+Цель: проверить генерацию ссылок на объект.
 
-Prerequisites:
-- A valid object `type` and `uuid` from TC-016.
+## Предусловия
 
-Steps:
-1. Call without link type:
-   ```json
-   {"type": "<object_type>", "uuid": "<uuid>"}
-   ```
-2. Call explicit auto:
-   ```json
-   {"type": "<object_type>", "uuid": "<uuid>", "link_type": "auto"}
-   ```
-3. Call web link if a base URL is available:
-   ```json
-   {"type": "<object_type>", "uuid": "<uuid>", "link_type": "web_client", "base_url": "<web_client_base_url>"}
-   ```
+- MCP-сервер 1С развернут и подключен к LLM-чату.
+- Пользователь в чате имеет права, достаточные для сценария.
+- Значения в угловых скобках нужно заменить реальными данными целевой базы.
 
-Expected result:
-- Default call returns a single best link.
-- `link_type=auto` returns all supported link variants.
-- Presentation appears by default and can be disabled with `include_presentation=false`.
-- Invalid object identity returns a structured error.
+## Диалоговый сценарий
+
+### Шаг 1
+
+**Сообщение пользователя:**
+
+> Дай ссылку на объект <object_type> с UUID <uuid>.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_link_of_object",
+  "arguments": {"type":"<object_type>","uuid":"<uuid>"}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент вызывает `get_link_of_object`, возвращает одну лучшую ссылку, а не все варианты.
+
+### Шаг 2
+
+**Сообщение пользователя:**
+
+> Покажи все варианты ссылок для этого объекта.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_link_of_object",
+  "arguments": {"type":"<object_type>","uuid":"<uuid>","link_type":"auto"}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент возвращает доступные варианты ссылок.
+
+## Дополнительная проверка
+
+Для web_client проверить передачу `base_url`, если пользователь указал адрес веб-клиента.
+
+## Общие критерии приемки
+
+- Ассистент не выдумывает имена объектов, полей, регистров или отчетов; при нехватке данных сначала использует обнаружение tools.
+- Ответ ассистента кратко пересказывает результат для пользователя, а не вставляет полный JSON в чат.
+- Если tool возвращает `truncated=true`, ассистент предлагает продолжить и использует `next_cursor` в следующем шаге.
+- Ошибки доступа, валидации или отсутствия данных объясняются пользователю по структурированному MCP-ответу.
 

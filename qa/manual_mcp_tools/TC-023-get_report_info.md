@@ -1,33 +1,63 @@
 # TC-023 - get_report_info
 
-Tool: `get_report_info`
+Инструмент: `get_report_info`
 
-Goal: verify report metadata retrieval and parameter pagination.
+Цель: проверить информацию об отчете и пагинацию параметров.
 
-Prerequisites:
-- An accessible report full name from TC-022.
+## Предусловия
 
-Steps:
-1. Call:
-   ```json
-   {"report": "<report_full_name>", "limit": 5}
-   ```
-2. If `parameters_paging.truncated=true`, call with `cursor`.
-3. Repeat with:
-   ```json
-   {
-     "report": "<report_full_name>",
-     "include_schema": true,
-     "include_variants": true,
-     "include_default_settings": true,
-     "include_guidance": true,
-     "limit": 5
-   }
-   ```
+- MCP-сервер 1С развернут и подключен к LLM-чату.
+- Пользователь в чате имеет права, достаточные для сценария.
+- Значения в угловых скобках нужно заменить реальными данными целевой базы.
 
-Expected result:
-- Default response is compact and does not include schema, variants, defaults, or guidance.
-- Parameters are paginated with `parameters_paging`.
-- Opt-in call includes requested details.
-- Invalid report name returns a structured error.
+## Диалоговый сценарий
+
+### Шаг 1
+
+**Сообщение пользователя:**
+
+> Покажи первые 5 параметров отчета <report_full_name>.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_report_info",
+  "arguments": {"report":"<report_full_name>","limit":5}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент вызывает `get_report_info`, возвращает компактную информацию и `parameters_paging`, без schema/variants/defaults/guidance по умолчанию.
+
+### Шаг 2
+
+**Сообщение пользователя:**
+
+> Покажи следующую страницу параметров.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_report_info",
+  "arguments": {"report":"<report_full_name>","limit":5,"cursor":"<next_cursor>"}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент использует cursor параметров.
+
+## Дополнительная проверка
+
+Попросить schema, variants, default settings и guidance. Все соответствующие include-флаги должны стать true.
+
+## Общие критерии приемки
+
+- Ассистент не выдумывает имена объектов, полей, регистров или отчетов; при нехватке данных сначала использует обнаружение tools.
+- Ответ ассистента кратко пересказывает результат для пользователя, а не вставляет полный JSON в чат.
+- Если tool возвращает `truncated=true`, ассистент предлагает продолжить и использует `next_cursor` в следующем шаге.
+- Ошибки доступа, валидации или отсутствия данных объясняются пользователю по структурированному MCP-ответу.
 

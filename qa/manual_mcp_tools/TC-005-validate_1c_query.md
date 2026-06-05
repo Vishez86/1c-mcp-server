@@ -1,26 +1,63 @@
 # TC-005 - validate_1c_query
 
-Tool: `validate_1c_query`
+Инструмент: `validate_1c_query`
 
-Goal: verify query validation without execution.
+Цель: проверить валидацию запроса без выполнения.
 
-Prerequisites:
-- A valid queryable metadata object from TC-001.
+## Предусловия
 
-Steps:
-1. Call with a safe read-only query:
-   ```json
-   {"query": "ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка ИЗ Справочник.<Name>"}
-   ```
-2. Call with the same query and:
-   ```json
-   {"explain": true}
-   ```
-3. Call with a prohibited write or unsafe query text.
+- MCP-сервер 1С развернут и подключен к LLM-чату.
+- Пользователь в чате имеет права, достаточные для сценария.
+- Значения в угловых скобках нужно заменить реальными данными целевой базы.
 
-Expected result:
-- Safe query returns validation success and does not execute data retrieval.
-- `explain=true` adds diagnostic explanation.
-- Unsafe query is rejected with `isError=true` and a clear validation error.
-- Error response includes `correlation_id` in compact text.
+## Диалоговый сценарий
+
+### Шаг 1
+
+**Сообщение пользователя:**
+
+> Проверь, безопасен ли запрос: ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка ИЗ Справочник.<Name>.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "validate_1c_query",
+  "arguments": {"query":"ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка ИЗ Справочник.<Name>"}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент вызывает `validate_1c_query`, сообщает, что запрос допустим, и не выполняет выборку данных.
+
+### Шаг 2
+
+**Сообщение пользователя:**
+
+> Объясни результат проверки подробнее.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "validate_1c_query",
+  "arguments": {"query":"ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка ИЗ Справочник.<Name>","explain":true}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент возвращает объяснение проверки.
+
+## Дополнительная проверка
+
+Проверить опасный запрос. Ожидается структурированная ошибка с понятной причиной запрета.
+
+## Общие критерии приемки
+
+- Ассистент не выдумывает имена объектов, полей, регистров или отчетов; при нехватке данных сначала использует обнаружение tools.
+- Ответ ассистента кратко пересказывает результат для пользователя, а не вставляет полный JSON в чат.
+- Если tool возвращает `truncated=true`, ассистент предлагает продолжить и использует `next_cursor` в следующем шаге.
+- Ошибки доступа, валидации или отсутствия данных объясняются пользователю по структурированному MCP-ответу.
 

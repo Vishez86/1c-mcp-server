@@ -1,36 +1,63 @@
 # TC-025 - get_object_history
 
-Tool: `get_object_history`
+Инструмент: `get_object_history`
 
-Goal: verify object history retrieval with compact default limit and pagination.
+Цель: проверить историю объекта с компактным лимитом и пагинацией.
 
-Prerequisites:
-- A valid object reference from TC-016.
-- History/versioning/event-log support may vary by configuration.
+## Предусловия
 
-Steps:
-1. Call:
-   ```json
-   {
-     "target": {"type": "<object_type>", "uuid": "<uuid>"},
-     "mode": "auto",
-     "limit": 5
-   }
-   ```
-2. If truncated, call with `cursor`.
-3. Repeat with:
-   ```json
-   {
-     "target": {"type": "<object_type>", "uuid": "<uuid>"},
-     "mode": "event_log",
-     "include_diff": true,
-     "limit": 5
-   }
-   ```
+- MCP-сервер 1С развернут и подключен к LLM-чату.
+- Пользователь в чате имеет права, достаточные для сценария.
+- Значения в угловых скобках нужно заменить реальными данными целевой базы.
 
-Expected result:
-- Tool returns available history/events or a clear explanation when history is unavailable.
-- Default limit is compact.
-- Cursor pagination works when enough events exist.
-- Diff payload is included only when requested and supported.
+## Диалоговый сценарий
+
+### Шаг 1
+
+**Сообщение пользователя:**
+
+> Покажи историю объекта <object_type> UUID <uuid>, лимит 5.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_object_history",
+  "arguments": {"target":{"type":"<object_type>","uuid":"<uuid>"},"mode":"auto","limit":5}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент вызывает `get_object_history`, возвращает события/версии или объясняет, что история недоступна.
+
+### Шаг 2
+
+**Сообщение пользователя:**
+
+> Покажи следующую страницу истории.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_object_history",
+  "arguments": {"target":{"type":"<object_type>","uuid":"<uuid>"},"mode":"auto","limit":5,"cursor":"<next_cursor>"}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент использует cursor, если он был.
+
+## Дополнительная проверка
+
+Попросить diff. Ожидается `include_diff=true`; если diff не поддержан, ассистент объясняет ограничение.
+
+## Общие критерии приемки
+
+- Ассистент не выдумывает имена объектов, полей, регистров или отчетов; при нехватке данных сначала использует обнаружение tools.
+- Ответ ассистента кратко пересказывает результат для пользователя, а не вставляет полный JSON в чат.
+- Если tool возвращает `truncated=true`, ассистент предлагает продолжить и использует `next_cursor` в следующем шаге.
+- Ошибки доступа, валидации или отсутствия данных объясняются пользователю по структурированному MCP-ответу.
 

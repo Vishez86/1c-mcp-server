@@ -1,36 +1,63 @@
 # TC-018 - find_references_to_object
 
-Tool: `find_references_to_object`
+Инструмент: `find_references_to_object`
 
-Goal: verify reverse-reference discovery with compact defaults and opt-in samples.
+Цель: проверить поиск обратных ссылок с компактными дефолтами.
 
-Prerequisites:
-- A valid object reference likely to be used by other objects.
+## Предусловия
 
-Steps:
-1. Call:
-   ```json
-   {
-     "target": {"type": "<object_type>", "uuid": "<uuid>"},
-     "max_types": 5,
-     "limit_per_type": 5
-   }
-   ```
-2. Repeat with:
-   ```json
-   {
-     "target": {"type": "<object_type>", "uuid": "<uuid>"},
-     "include_samples": true,
-     "include_counts": true,
-     "max_types": 5,
-     "limit_per_type": 3
-   }
-   ```
-3. If group pagination is truncated, call with `cursor`.
+- MCP-сервер 1С развернут и подключен к LLM-чату.
+- Пользователь в чате имеет права, достаточные для сценария.
+- Значения в угловых скобках нужно заменить реальными данными целевой базы.
 
-Expected result:
-- Default response does not include sample rows.
-- Opt-in response includes counts and samples where references exist.
-- `max_types`, `limit_per_type`, and cursor are respected.
-- Inaccessible metadata is skipped or reported safely.
+## Диалоговый сценарий
+
+### Шаг 1
+
+**Сообщение пользователя:**
+
+> Найди, где используется объект <object_type> UUID <uuid>, проверь максимум 5 типов.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "find_references_to_object",
+  "arguments": {"target":{"type":"<object_type>","uuid":"<uuid>"},"max_types":5,"limit_per_type":5}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент вызывает `find_references_to_object`, возвращает группы ссылок или сообщает, что ссылок не найдено, без примеров строк по умолчанию.
+
+### Шаг 2
+
+**Сообщение пользователя:**
+
+> Покажи примеры ссылок и счетчики.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "find_references_to_object",
+  "arguments": {"target":{"type":"<object_type>","uuid":"<uuid>"},"include_samples":true,"include_counts":true,"max_types":5,"limit_per_type":3}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент включает samples/counts только по явной просьбе.
+
+## Дополнительная проверка
+
+Если есть cursor по группам, следующая реплика должна использовать его.
+
+## Общие критерии приемки
+
+- Ассистент не выдумывает имена объектов, полей, регистров или отчетов; при нехватке данных сначала использует обнаружение tools.
+- Ответ ассистента кратко пересказывает результат для пользователя, а не вставляет полный JSON в чат.
+- Если tool возвращает `truncated=true`, ассистент предлагает продолжить и использует `next_cursor` в следующем шаге.
+- Ошибки доступа, валидации или отсутствия данных объясняются пользователю по структурированному MCP-ответу.
 
