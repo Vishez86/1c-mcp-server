@@ -1,40 +1,63 @@
 # TC-024 - run_1c_report
 
-Tool: `run_1c_report`
+Инструмент: `run_1c_report`
 
-Goal: verify report execution with compact defaults, row pagination, and column selection.
+Цель: проверить запуск отчета, пагинацию строк и выбор колонок.
 
-Prerequisites:
-- An accessible report from TC-022 and valid parameters from TC-023.
+## Предусловия
 
-Steps:
-1. Call:
-   ```json
-   {
-     "report": "<report_full_name>",
-     "parameters": {},
-     "output_format": "table",
-     "limit": 5
-   }
-   ```
-2. If truncated, call with `cursor`.
-3. Repeat with:
-   ```json
-   {
-     "report": "<report_full_name>",
-     "parameters": {},
-     "output_format": "table",
-     "columns": ["<column_name>"],
-     "include_parameters_used": true,
-     "include_navigation_url": true,
-     "include_guidance": true,
-     "limit": 5
-   }
-   ```
+- MCP-сервер 1С развернут и подключен к LLM-чату.
+- Пользователь в чате имеет права, достаточные для сценария.
+- Значения в угловых скобках нужно заменить реальными данными целевой базы.
 
-Expected result:
-- Default execution returns table rows and paging fields without echoing parameters or guidance.
-- Cursor returns next report rows.
-- Column selector limits returned columns.
-- Opt-in fields appear only when requested.
+## Диалоговый сценарий
+
+### Шаг 1
+
+**Сообщение пользователя:**
+
+> Сформируй отчет <report_full_name> в табличном виде, лимит 5 строк.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "run_1c_report",
+  "arguments": {"report":"<report_full_name>","parameters":{},"output_format":"table","limit":5}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент вызывает `run_1c_report`, возвращает не более 5 строк без echo parameters/guidance по умолчанию.
+
+### Шаг 2
+
+**Сообщение пользователя:**
+
+> Покажи следующую страницу отчета.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "run_1c_report",
+  "arguments": {"report":"<report_full_name>","parameters":{},"output_format":"table","limit":5,"cursor":"<next_cursor>"}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент использует cursor отчета.
+
+## Дополнительная проверка
+
+Попросить «оставь только колонку <column_name> и покажи использованные параметры». Ожидаются `columns:[...]` и `include_parameters_used=true`.
+
+## Общие критерии приемки
+
+- Ассистент не выдумывает имена объектов, полей, регистров или отчетов; при нехватке данных сначала использует обнаружение tools.
+- Ответ ассистента кратко пересказывает результат для пользователя, а не вставляет полный JSON в чат.
+- Если tool возвращает `truncated=true`, ассистент предлагает продолжить и использует `next_cursor` в следующем шаге.
+- Ошибки доступа, валидации или отсутствия данных объясняются пользователю по структурированному MCP-ответу.
 

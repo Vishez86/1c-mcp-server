@@ -1,40 +1,63 @@
 # TC-020 - get_register_records
 
-Tool: `get_register_records`
+Инструмент: `get_register_records`
 
-Goal: verify generic register reads with compact defaults and pagination.
+Цель: проверить универсальное чтение записей/виртуальных таблиц регистров.
 
-Prerequisites:
-- A register from TC-007 and supported mode from its `supported_modes`.
+## Предусловия
 
-Steps:
-1. Call:
-   ```json
-   {
-     "register_type": "<register_kind>",
-     "register": "<register_name_without_kind>",
-     "mode": "records",
-     "limit": 5
-   }
-   ```
-2. If truncated, call with `cursor`.
-3. Repeat with:
-   ```json
-   {
-     "register_type": "<register_kind>",
-     "register": "<register_name_without_kind>",
-     "mode": "<supported_virtual_mode>",
-     "period": "2025-12-31T23:59:59",
-     "include_query": true,
-     "include_column_types": true,
-     "include_navigation_url": true,
-     "limit": 5
-   }
-   ```
+- MCP-сервер 1С развернут и подключен к LLM-чату.
+- Пользователь в чате имеет права, достаточные для сценария.
+- Значения в угловых скобках нужно заменить реальными данными целевой базы.
 
-Expected result:
-- Rows and paging fields are returned.
-- Default response omits `query_used`, column type details, and navigation URLs.
-- Opt-in flags add those fields.
-- Unsupported mode for the selected register returns a clear error.
+## Диалоговый сценарий
+
+### Шаг 1
+
+**Сообщение пользователя:**
+
+> Покажи 5 записей регистра <register_kind>.<register_name>.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_register_records",
+  "arguments": {"register_type":"<register_kind>","register":"<register_name>","mode":"records","limit":5}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент вызывает `get_register_records`, возвращает строки и paging, без `query_used`/типов колонок/nav URL по умолчанию.
+
+### Шаг 2
+
+**Сообщение пользователя:**
+
+> Для этого регистра покажи режим <supported_virtual_mode> с query и типами колонок.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_register_records",
+  "arguments": {"register_type":"<register_kind>","register":"<register_name>","mode":"<supported_virtual_mode>","period":"2025-12-31T23:59:59","include_query":true,"include_column_types":true,"limit":5}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент добавляет query/column types только по запросу.
+
+## Дополнительная проверка
+
+Неподдерживаемый mode должен вернуть понятную структурированную ошибку.
+
+## Общие критерии приемки
+
+- Ассистент не выдумывает имена объектов, полей, регистров или отчетов; при нехватке данных сначала использует обнаружение tools.
+- Ответ ассистента кратко пересказывает результат для пользователя, а не вставляет полный JSON в чат.
+- Если tool возвращает `truncated=true`, ассистент предлагает продолжить и использует `next_cursor` в следующем шаге.
+- Ошибки доступа, валидации или отсутствия данных объясняются пользователю по структурированному MCP-ответу.
 

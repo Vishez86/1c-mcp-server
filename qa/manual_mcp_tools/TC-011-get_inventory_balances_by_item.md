@@ -1,36 +1,63 @@
 # TC-011 - get_inventory_balances_by_item
 
-Tool: `get_inventory_balances_by_item`
+Инструмент: `get_inventory_balances_by_item`
 
-Goal: verify the inventory fast path by item search or item reference.
+Цель: проверить быстрый путь остатков товаров по номенклатуре.
 
-Prerequisites:
-- Target infobase has item catalog data and accounting setup compatible with inventory subconto.
-- A known item name/code or item ref.
+## Предусловия
 
-Steps:
-1. Call by search string:
-   ```json
-   {
-     "item_query": "<item_name_or_code>",
-     "as_of": "2025-12-31T23:59:59",
-     "limit": 5
-   }
-   ```
-2. Repeat with explicit verbose flags:
-   ```json
-   {
-     "item_query": "<item_name_or_code>",
-     "as_of": "2025-12-31T23:59:59",
-     "include_query": true,
-     "include_guidance": true,
-     "limit": 5
-   }
-   ```
+- MCP-сервер 1С развернут и подключен к LLM-чату.
+- Пользователь в чате имеет права, достаточные для сценария.
+- Значения в угловых скобках нужно заменить реальными данными целевой базы.
 
-Expected result:
-- Response contains selected `item`, `item_search`, register/chart context, and balance rows or a clean empty result.
-- Warnings explain ambiguous or fallback behavior.
-- `query_used` and guidance appear only when requested.
-- Missing item search returns a structured error or no-candidate response, not an unhandled exception.
+## Диалоговый сценарий
+
+### Шаг 1
+
+**Сообщение пользователя:**
+
+> Найди остатки товара «<item_name_or_code>» на 2025-12-31, лимит 5.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_inventory_balances_by_item",
+  "arguments": {"item_query":"<item_name_or_code>","as_of":"2025-12-31T23:59:59","limit":5}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент вызывает `get_inventory_balances_by_item`, показывает найденную номенклатуру, контекст регистра/плана счетов и строки остатков либо корректное пустое состояние.
+
+### Шаг 2
+
+**Сообщение пользователя:**
+
+> Повтори и покажи использованный запрос с пояснением.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_inventory_balances_by_item",
+  "arguments": {"item_query":"<item_name_or_code>","as_of":"2025-12-31T23:59:59","include_query":true,"include_guidance":true,"limit":5}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент включает `query_used`/`guidance` только по явному запросу.
+
+## Дополнительная проверка
+
+Если найдено несколько товаров, ассистент должен попросить уточнить, а не угадывать.
+
+## Общие критерии приемки
+
+- Ассистент не выдумывает имена объектов, полей, регистров или отчетов; при нехватке данных сначала использует обнаружение tools.
+- Ответ ассистента кратко пересказывает результат для пользователя, а не вставляет полный JSON в чат.
+- Если tool возвращает `truncated=true`, ассистент предлагает продолжить и использует `next_cursor` в следующем шаге.
+- Ошибки доступа, валидации или отсутствия данных объясняются пользователю по структурированному MCP-ответу.
 

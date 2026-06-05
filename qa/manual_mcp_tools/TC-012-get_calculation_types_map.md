@@ -1,26 +1,63 @@
 # TC-012 - get_calculation_types_map
 
-Tool: `get_calculation_types_map`
+Инструмент: `get_calculation_types_map`
 
-Goal: verify compact calculation type discovery and raw-row opt-in.
+Цель: проверить карту видов расчета и компактный ответ.
 
-Prerequisites:
-- Target infobase has at least one accessible calculation type plan, or QA expects a clean not-found response.
+## Предусловия
 
-Steps:
-1. Call:
-   ```json
-   {"limit": 5}
-   ```
-2. If multiple plans are returned, repeat with selected `plan`.
-3. Call:
-   ```json
-   {"plan": "<calculation_plan_full_name>", "limit": 5, "include_raw_rows": true, "include_query": true}
-   ```
+- MCP-сервер 1С развернут и подключен к LLM-чату.
+- Пользователь в чате имеет права, достаточные для сценария.
+- Значения в угловых скобках нужно заменить реальными данными целевой базы.
 
-Expected result:
-- Default response returns `calculation_types` without technical `rows` and `columns`.
-- Cursor pagination works if truncated.
-- Raw rows and query text appear only in the opt-in call.
-- Multiple-plan ambiguity is reported explicitly.
+## Диалоговый сценарий
+
+### Шаг 1
+
+**Сообщение пользователя:**
+
+> Покажи первые 5 видов расчета.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_calculation_types_map",
+  "arguments": {"limit":5}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент вызывает `get_calculation_types_map`, возвращает `calculation_types` без технических rows/columns по умолчанию.
+
+### Шаг 2
+
+**Сообщение пользователя:**
+
+> Покажи следующую страницу видов расчета.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_calculation_types_map",
+  "arguments": {"limit":5,"cursor":"<next_cursor>"}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент использует курсор, если доступен.
+
+## Дополнительная проверка
+
+Если несколько планов видов расчета, ассистент должен показать варианты и попросить выбрать. При просьбе о технических строках ожидается `include_raw_rows=true`.
+
+## Общие критерии приемки
+
+- Ассистент не выдумывает имена объектов, полей, регистров или отчетов; при нехватке данных сначала использует обнаружение tools.
+- Ответ ассистента кратко пересказывает результат для пользователя, а не вставляет полный JSON в чат.
+- Если tool возвращает `truncated=true`, ассистент предлагает продолжить и использует `next_cursor` в следующем шаге.
+- Ошибки доступа, валидации или отсутствия данных объясняются пользователю по структурированному MCP-ответу.
 

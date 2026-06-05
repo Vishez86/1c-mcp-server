@@ -1,30 +1,63 @@
 # TC-001 - list_metadata_objects
 
-Tool: `list_metadata_objects`
+Инструмент: `list_metadata_objects`
 
-Goal: verify compact metadata discovery and cursor pagination.
+Цель: проверить обнаружение метаданных, компактный ответ и курсорную пагинацию.
 
-Prerequisites:
-- MCP client is connected as a user with access to at least one metadata object.
+## Предусловия
 
-Steps:
-1. Call the tool with:
-   ```json
-   {"limit": 2}
-   ```
-2. If `structuredContent.truncated=true`, call it again with:
-   ```json
-   {"limit": 2, "cursor": "<next_cursor_from_step_1>"}
-   ```
-3. Call it with:
-   ```json
-   {"limit": 2, "response_profile": "standard"}
-   ```
+- MCP-сервер 1С развернут и подключен к LLM-чату.
+- Пользователь в чате имеет права, достаточные для сценария.
+- Значения в угловых скобках нужно заменить реальными данными целевой базы.
 
-Expected result:
-- `isError=false` and `structuredContent.ok=true`.
-- Step 1 returns `objects` with no more than 2 items.
-- When truncated, `next_cursor` is present and step 2 returns the next page, not the same objects.
-- Compact profile omits verbose fields such as `resource_uri`; standard profile includes additional metadata.
-- `content[0].text` is a short summary, while full data is in `structuredContent`.
+## Диалоговый сценарий
+
+### Шаг 1
+
+**Сообщение пользователя:**
+
+> Покажи первые 2 объекта метаданных, доступные текущему пользователю.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "list_metadata_objects",
+  "arguments": {"limit":2}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент вызывает `list_metadata_objects` с `limit=2`, отвечает кратким списком не более чем из 2 объектов и, если есть продолжение, явно сообщает, что доступна следующая страница.
+
+### Шаг 2
+
+**Сообщение пользователя:**
+
+> Покажи следующую страницу.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "list_metadata_objects",
+  "arguments": {"limit":2,"cursor":"<next_cursor>"}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент использует `next_cursor` из предыдущего результата, не повторяет первую страницу и кратко перечисляет следующие объекты.
+
+## Дополнительная проверка
+
+Проверить, что полный JSON не дублируется в текстовом сообщении: данные находятся в `structuredContent`, а текст ответа компактный.
+
+## Общие критерии приемки
+
+- Ассистент не выдумывает имена объектов, полей, регистров или отчетов; при нехватке данных сначала использует обнаружение tools.
+- Ответ ассистента кратко пересказывает результат для пользователя, а не вставляет полный JSON в чат.
+- Если tool возвращает `truncated=true`, ассистент предлагает продолжить и использует `next_cursor` в следующем шаге.
+- Ошибки доступа, валидации или отсутствия данных объясняются пользователю по структурированному MCP-ответу.
 

@@ -1,16 +1,18 @@
-# Manual QA Coverage - MCP Tools
+# Ручные QA-сценарии MCP-инструментов
 
-Use these cases with an MCP client connected to a deployed 1C MCP server. Each file covers one tool and includes checks for compact responses, pagination where applicable, and permission-safe behavior.
+Набор предназначен для проверки через обычный LLM-чат, подключенный к MCP-серверу 1С. Каждый сценарий описывает реплики пользователя, ожидаемый MCP-вызов и ожидаемый ответ ассистента после каждого шага.
 
-Before running object-specific cases, use the discovery cases to collect real values from the target infobase:
+Перед объектными сценариями соберите реальные значения из целевой базы:
 
-- Metadata type: `list_metadata_objects`
-- Field names: `get_metadata_structure` or `search_metadata_fields`
-- Register names: `list_registers`
-- Report names: `list_reports`
-- Object UUIDs: `search_objects`
+- `<metadata_full_name>` через `list_metadata_objects`.
+- `<field_name>` через `get_metadata_structure` или `search_metadata_fields`.
+- `<register_kind>` и `<register_name>` через `list_registers`.
+- `<report_full_name>` через `list_reports`.
+- `<object_type>` и `<uuid>` через `search_objects`.
 
-| ID | Tool | Case |
+## Покрытие
+
+| ID | Инструмент | Файл |
 | --- | --- | --- |
 | TC-001 | `list_metadata_objects` | [TC-001-list_metadata_objects.md](TC-001-list_metadata_objects.md) |
 | TC-002 | `get_metadata_structure` | [TC-002-get_metadata_structure.md](TC-002-get_metadata_structure.md) |

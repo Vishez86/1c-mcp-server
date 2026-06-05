@@ -1,26 +1,63 @@
 # TC-015 - find_object_by_id
 
-Tool: `find_object_by_id`
+Инструмент: `find_object_by_id`
 
-Goal: verify object lookup by UUID across filtered metadata types.
+Цель: проверить поиск объекта по UUID с фильтрами типов/видов.
 
-Prerequisites:
-- A known UUID from TC-016.
+## Предусловия
 
-Steps:
-1. Call:
-   ```json
-   {"uuid": "<uuid>", "types": ["<object_type>"], "limit": 5}
-   ```
-2. Call wider search:
-   ```json
-   {"uuid": "<uuid>", "kinds": ["Справочник", "Документ"], "limit": 2}
-   ```
-3. If truncated, call with `cursor`.
+- MCP-сервер 1С развернут и подключен к LLM-чату.
+- Пользователь в чате имеет права, достаточные для сценария.
+- Значения в угловых скобках нужно заменить реальными данными целевой базы.
 
-Expected result:
-- Matching candidates include type and reference data.
-- Tool respects type/kind filters and pagination.
-- Deleted objects are excluded by default.
-- `include_deleted=true` changes behavior only if the platform/user can see deleted objects.
+## Диалоговый сценарий
+
+### Шаг 1
+
+**Сообщение пользователя:**
+
+> Найди объект с UUID <uuid> только среди <object_type>.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "find_object_by_id",
+  "arguments": {"uuid":"<uuid>","types":["<object_type>"],"limit":5}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент вызывает `find_object_by_id`, показывает кандидатов с типом и ссылкой.
+
+### Шаг 2
+
+**Сообщение пользователя:**
+
+> Поищи этот UUID среди справочников и документов, лимит 2.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "find_object_by_id",
+  "arguments": {"uuid":"<uuid>","kinds":["Справочник","Документ"],"limit":2}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент использует фильтр видов и сообщает о следующей странице, если поиск усечен.
+
+## Дополнительная проверка
+
+Удаленные объекты не должны включаться по умолчанию; `include_deleted=true` только по явной просьбе.
+
+## Общие критерии приемки
+
+- Ассистент не выдумывает имена объектов, полей, регистров или отчетов; при нехватке данных сначала использует обнаружение tools.
+- Ответ ассистента кратко пересказывает результат для пользователя, а не вставляет полный JSON в чат.
+- Если tool возвращает `truncated=true`, ассистент предлагает продолжить и использует `next_cursor` в следующем шаге.
+- Ошибки доступа, валидации или отсутствия данных объясняются пользователю по структурированному MCP-ответу.
 

@@ -1,29 +1,63 @@
 # TC-006 - get_1c_query_guidance
 
-Tool: `get_1c_query_guidance`
+Инструмент: `get_1c_query_guidance`
 
-Goal: verify compact knowledge guidance retrieval.
+Цель: проверить получение кратких подсказок по построению запросов 1С.
 
-Prerequisites:
-- None.
+## Предусловия
 
-Steps:
-1. Call:
-   ```json
-   {
-     "topic": "metadata-first",
-     "intent": "Build a query for catalog balances",
-     "max_sections": 2
-   }
-   ```
-2. Repeat with:
-   ```json
-   {"topic": "virtual-tables", "include_examples": true, "max_sections": 3}
-   ```
+- MCP-сервер 1С развернут и подключен к LLM-чату.
+- Пользователь в чате имеет права, достаточные для сценария.
+- Значения в угловых скобках нужно заменить реальными данными целевой базы.
 
-Expected result:
-- Response returns no more sections than requested.
-- Guidance is relevant to the selected topic.
-- Examples appear only when `include_examples=true`.
-- Tool does not return broad unrelated knowledge blocks.
+## Диалоговый сценарий
+
+### Шаг 1
+
+**Сообщение пользователя:**
+
+> Подскажи, как правильно строить запросы в этой MCP базе: тема metadata-first, максимум 2 секции.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_1c_query_guidance",
+  "arguments": {"topic":"metadata-first","max_sections":2}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент вызывает `get_1c_query_guidance`, возвращает не более 2 релевантных секций и не перегружает ответ.
+
+### Шаг 2
+
+**Сообщение пользователя:**
+
+> Теперь дай подсказки по виртуальным таблицам с примерами, максимум 3 секции.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_1c_query_guidance",
+  "arguments": {"topic":"virtual-tables","include_examples":true,"max_sections":3}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент возвращает подсказки по виртуальным таблицам, примеры появляются только потому, что они явно запрошены.
+
+## Дополнительная проверка
+
+Проверить, что ассистент не подменяет этот tool широким metadata обнаружение.
+
+## Общие критерии приемки
+
+- Ассистент не выдумывает имена объектов, полей, регистров или отчетов; при нехватке данных сначала использует обнаружение tools.
+- Ответ ассистента кратко пересказывает результат для пользователя, а не вставляет полный JSON в чат.
+- Если tool возвращает `truncated=true`, ассистент предлагает продолжить и использует `next_cursor` в следующем шаге.
+- Ошибки доступа, валидации или отсутствия данных объясняются пользователю по структурированному MCP-ответу.
 

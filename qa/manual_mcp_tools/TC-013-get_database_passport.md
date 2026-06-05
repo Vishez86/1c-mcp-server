@@ -1,32 +1,63 @@
 # TC-013 - get_database_passport
 
-Tool: `get_database_passport`
+Инструмент: `get_database_passport`
 
-Goal: verify that the database passport is compact by default and expands only by flags.
+Цель: проверить компактный паспорт базы и расширение по флагам.
 
-Prerequisites:
-- MCP user has access to at least one accounting register or other metadata.
+## Предусловия
 
-Steps:
-1. Call:
-   ```json
-   {}
-   ```
-2. Call expanded:
-   ```json
-   {
-     "include_organizations": true,
-     "include_period": true,
-     "include_accumulation_registers": true,
-     "include_information_registers": true,
-     "include_calculation_registers": true,
-     "include_empty_registers": false
-   }
-   ```
+- MCP-сервер 1С развернут и подключен к LLM-чату.
+- Пользователь в чате имеет права, достаточные для сценария.
+- Значения в угловых скобках нужно заменить реальными данными целевой базы.
 
-Expected result:
-- Default response is concise and does not enumerate every register class.
-- Expanded response includes only requested sections.
-- Register limits are respected.
-- Repeated call without `force_refresh` may use cache semantics but still returns correct structured content.
+## Диалоговый сценарий
+
+### Шаг 1
+
+**Сообщение пользователя:**
+
+> Дай краткий паспорт базы.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_database_passport",
+  "arguments": {}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент вызывает `get_database_passport`, возвращает краткий паспорт без широкого перечисления всех регистров.
+
+### Шаг 2
+
+**Сообщение пользователя:**
+
+> Расширь паспорт: добавь организации, период данных и проверку регистров накопления/сведений/расчета.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_database_passport",
+  "arguments": {"include_organizations":true,"include_period":true,"include_accumulation_registers":true,"include_information_registers":true,"include_calculation_registers":true,"include_empty_registers":false}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент включает только явно запрошенные расширенные секции.
+
+## Дополнительная проверка
+
+Проверить, что `force_refresh` не используется без явной просьбы пользователя.
+
+## Общие критерии приемки
+
+- Ассистент не выдумывает имена объектов, полей, регистров или отчетов; при нехватке данных сначала использует обнаружение tools.
+- Ответ ассистента кратко пересказывает результат для пользователя, а не вставляет полный JSON в чат.
+- Если tool возвращает `truncated=true`, ассистент предлагает продолжить и использует `next_cursor` в следующем шаге.
+- Ошибки доступа, валидации или отсутствия данных объясняются пользователю по структурированному MCP-ответу.
 

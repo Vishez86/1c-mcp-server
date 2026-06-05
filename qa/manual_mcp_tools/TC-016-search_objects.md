@@ -1,32 +1,63 @@
 # TC-016 - search_objects
 
-Tool: `search_objects`
+Инструмент: `search_objects`
 
-Goal: verify object search with compact defaults, opt-in matched fields, and cursor pagination.
+Цель: проверить поиск объектов с компактными дефолтами и opt-in matched fields/navigation.
 
-Prerequisites:
-- At least one searchable metadata type from TC-001.
+## Предусловия
 
-Steps:
-1. Call:
-   ```json
-   {"query": "<known_name_fragment>", "types": ["<object_type>"], "limit": 2}
-   ```
-2. If truncated, call with `cursor`.
-3. Repeat with:
-   ```json
-   {
-     "query": "<known_name_fragment>",
-     "types": ["<object_type>"],
-     "include_matched_fields": true,
-     "include_navigation_url": true,
-     "limit": 2
-   }
-   ```
+- MCP-сервер 1С развернут и подключен к LLM-чату.
+- Пользователь в чате имеет права, достаточные для сценария.
+- Значения в угловых скобках нужно заменить реальными данными целевой базы.
 
-Expected result:
-- Default matches do not include verbose matched-field diagnostics or navigation URLs.
-- Opt-in call includes matched fields and navigation links where supported.
-- Cursor page does not duplicate first-page results.
-- Search respects allowed metadata and field-level security.
+## Диалоговый сценарий
+
+### Шаг 1
+
+**Сообщение пользователя:**
+
+> Найди объекты <object_type> по строке «<known_name_fragment>», лимит 2.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "search_objects",
+  "arguments": {"query":"<known_name_fragment>","types":["<object_type>"],"limit":2}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент вызывает `search_objects`, показывает не более 2 совпадений без verbose matched fields и navigation URL.
+
+### Шаг 2
+
+**Сообщение пользователя:**
+
+> Покажи следующую страницу.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "search_objects",
+  "arguments": {"query":"<known_name_fragment>","types":["<object_type>"],"limit":2,"cursor":"<next_cursor>"}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент использует курсор и не повторяет первую страницу.
+
+## Дополнительная проверка
+
+Попросить «покажи найденные поля и ссылки навигации». Ожидаются `include_matched_fields=true`, `include_navigation_url=true`.
+
+## Общие критерии приемки
+
+- Ассистент не выдумывает имена объектов, полей, регистров или отчетов; при нехватке данных сначала использует обнаружение tools.
+- Ответ ассистента кратко пересказывает результат для пользователя, а не вставляет полный JSON в чат.
+- Если tool возвращает `truncated=true`, ассистент предлагает продолжить и использует `next_cursor` в следующем шаге.
+- Ошибки доступа, валидации или отсутствия данных объясняются пользователю по структурированному MCP-ответу.
 

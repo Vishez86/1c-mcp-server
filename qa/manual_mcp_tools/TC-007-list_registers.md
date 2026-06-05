@@ -1,26 +1,63 @@
 # TC-007 - list_registers
 
-Tool: `list_registers`
+Инструмент: `list_registers`
 
-Goal: verify register discovery, mode filtering, and pagination.
+Цель: проверить обнаружение регистров, фильтр режимов и пагинацию.
 
-Prerequisites:
-- Target infobase has at least one accessible register.
+## Предусловия
 
-Steps:
-1. Call:
-   ```json
-   {"limit": 2}
-   ```
-2. If truncated, call with returned `next_cursor`.
-3. Call:
-   ```json
-   {"mode_support": "balance", "include_fields_summary": true, "limit": 5}
-   ```
+- MCP-сервер 1С развернут и подключен к LLM-чату.
+- Пользователь в чате имеет права, достаточные для сценария.
+- Значения в угловых скобках нужно заменить реальными данными целевой базы.
 
-Expected result:
-- Response contains `registers`, `register_count`, `truncated`, `next_cursor`, and `total_estimated`.
-- Cursor returns the next page.
-- `mode_support` filters registers that support the requested mode.
-- `include_fields_summary=true` adds concise dimensions/resources/attributes, not full metadata.
+## Диалоговый сценарий
+
+### Шаг 1
+
+**Сообщение пользователя:**
+
+> Покажи первые 2 регистра, доступные пользователю.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "list_registers",
+  "arguments": {"limit":2}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент вызывает `list_registers`, показывает не более 2 регистров и сообщает о следующей странице при `truncated=true`.
+
+### Шаг 2
+
+**Сообщение пользователя:**
+
+> Найди регистры, которые поддерживают получение остатков.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "list_registers",
+  "arguments": {"mode_support":"balance","limit":5}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент фильтрует по `mode_support=balance` и показывает только подходящие регистры.
+
+## Дополнительная проверка
+
+Попросить «добавь краткую схему полей». Ожидается `include_fields_summary=true`, а не полный полная выгрузка метаданных.
+
+## Общие критерии приемки
+
+- Ассистент не выдумывает имена объектов, полей, регистров или отчетов; при нехватке данных сначала использует обнаружение tools.
+- Ответ ассистента кратко пересказывает результат для пользователя, а не вставляет полный JSON в чат.
+- Если tool возвращает `truncated=true`, ассистент предлагает продолжить и использует `next_cursor` в следующем шаге.
+- Ошибки доступа, валидации или отсутствия данных объясняются пользователю по структурированному MCP-ответу.
 

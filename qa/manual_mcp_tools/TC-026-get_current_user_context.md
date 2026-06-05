@@ -1,30 +1,63 @@
 # TC-026 - get_current_user_context
 
-Tool: `get_current_user_context`
+Инструмент: `get_current_user_context`
 
-Goal: verify user/security context with opt-in detail sections.
+Цель: проверить контекст пользователя и opt-in детальные секции.
 
-Prerequisites:
-- MCP client is connected as a real 1C user.
+## Предусловия
 
-Steps:
-1. Call:
-   ```json
-   {}
-   ```
-2. Repeat with:
-   ```json
-   {
-     "include_roles": true,
-     "include_limits": true,
-     "include_allowed_metadata_summary": true,
-     "include_server_info": true
-   }
-   ```
+- MCP-сервер 1С развернут и подключен к LLM-чату.
+- Пользователь в чате имеет права, достаточные для сценария.
+- Значения в угловых скобках нужно заменить реальными данными целевой базы.
 
-Expected result:
-- Default response returns minimal user context and cache policy.
-- Expanded response includes requested role, limit, metadata summary, and server sections.
-- Sensitive information is masked according to server policy.
-- Response is structured and compact in `content[0].text`.
+## Диалоговый сценарий
+
+### Шаг 1
+
+**Сообщение пользователя:**
+
+> Кто я в текущей MCP-сессии?
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_current_user_context",
+  "arguments": {}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент вызывает `get_current_user_context`, возвращает минимальный контекст пользователя и не перечисляет роли/лимиты без запроса.
+
+### Шаг 2
+
+**Сообщение пользователя:**
+
+> Покажи мои роли, лимиты сервера, summary разрешенных метаданных и сведения сервера.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_current_user_context",
+  "arguments": {"include_roles":true,"include_limits":true,"include_allowed_metadata_summary":true,"include_server_info":true}
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент включает только запрошенные детальные секции и учитывает masking/security policy.
+
+## Дополнительная проверка
+
+Проверить, что ответ не раскрывает лишние чувствительные данные.
+
+## Общие критерии приемки
+
+- Ассистент не выдумывает имена объектов, полей, регистров или отчетов; при нехватке данных сначала использует обнаружение tools.
+- Ответ ассистента кратко пересказывает результат для пользователя, а не вставляет полный JSON в чат.
+- Если tool возвращает `truncated=true`, ассистент предлагает продолжить и использует `next_cursor` в следующем шаге.
+- Ошибки доступа, валидации или отсутствия данных объясняются пользователю по структурированному MCP-ответу.
 
