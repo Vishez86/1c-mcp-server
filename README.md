@@ -2,12 +2,12 @@
 
 Универсальный MCP-сервер для безопасного read-only доступа к данным и метаданным 1С:Предприятия 8. Постоянные данные не изменяются; временные таблицы языка запросов 1С разрешены как рабочая область выполнения аналитического запроса.
 
-Сервер реализует протокол **Model Context Protocol (MCP) 2025-11-25** поверх HTTP-сервиса 1С и предоставляет LLM-агентам 23 read-only инструмента согласно спецификации `mcp_1c_tools_spec.md`.
+Сервер реализует протокол **Model Context Protocol (MCP) 2025-11-25** поверх HTTP-сервиса 1С и предоставляет LLM-агентам 26 read-only инструментов согласно спецификации `mcp_1c_tools_spec.md`.
 
 ## Возможности
 
 - Полностью read-only: создание/изменение/удаление объектов невозможно.
-- 23 tools: discovery → inspect → search → retrieve → explain → navigate → report → query guidance → data passport.
+- 26 tools: discovery → inspect → search → retrieve → explain → navigate → report → query guidance → data passport.
 - Allowlist/denylist типов метаданных и полей.
 - Маскирование заданных полей перед передачей ответа в LLM.
 - Лимиты строк, времени и размера результата.
@@ -22,31 +22,34 @@
 |---:|---|---|
 | 1 | `list_metadata_objects` | Список объектов метаданных |
 | 2 | `get_metadata_structure` | Структура объекта метаданных |
-| 3 | `run_1c_query` | Безопасный read-only запрос 1С |
-| 4 | `validate_1c_query` | Проверка запроса до выполнения |
-| 5 | `get_1c_query_guidance` | Универсальные подсказки по языку запросов 1С |
-| 6 | `get_accounting_accounts_map` | Карта счетов и субконто плана счетов |
-| 7 | `get_accounting_entries` | Бухгалтерские проводки с универсальным join к субконто |
-| 8 | `get_inventory_balances_by_item` | Быстрые остатки товара по складам и организациям |
-| 9 | `get_calculation_types_map` | Карта видов расчёта |
-| 10 | `get_database_passport` | Паспорт фактических данных базы |
-| 11 | `get_object_by_ref` | Получение объекта по типу и UUID |
-| 12 | `find_object_by_id` | Поиск объекта по UUID без знания типа |
-| 13 | `search_objects` | Поиск по строке/коду/ИНН/артикулу |
-| 14 | `get_link_of_object` | Навигационная ссылка на объект |
-| 15 | `find_references_to_object` | Поиск ссылок на объект |
-| 16 | `get_enum_values` | Значения перечисления |
-| 17 | `get_register_records` | Записи / срезы / остатки / обороты |
-| 18 | `get_document_movements` | Движения документа по регистрам |
-| 19 | `list_reports` | Список отчётов |
-| 20 | `get_report_info` | Параметры и структура отчёта |
-| 21 | `run_1c_report` | Выполнение отчёта |
-| 22 | `get_object_history` | История объекта / журнал регистрации |
-| 23 | `get_current_user_context` | Контекст пользователя и базы |
+| 3 | `search_metadata_fields` | Компактный поиск полей метаданных |
+| 4 | `run_1c_query` | Безопасный read-only запрос 1С |
+| 5 | `validate_1c_query` | Проверка запроса до выполнения |
+| 6 | `get_1c_query_guidance` | Универсальные подсказки по языку запросов 1С |
+| 7 | `list_registers` | Компактный список регистров |
+| 8 | `get_accounting_accounts_map` | Карта счетов и субконто плана счетов |
+| 9 | `get_accounting_balances` | Бухгалтерские остатки и обороты |
+| 10 | `get_accounting_entries` | Бухгалтерские проводки с универсальным join к субконто |
+| 11 | `get_inventory_balances_by_item` | Быстрые остатки товара по складам и организациям |
+| 12 | `get_calculation_types_map` | Карта видов расчёта |
+| 13 | `get_database_passport` | Паспорт фактических данных базы |
+| 14 | `get_object_by_ref` | Получение объекта по типу и UUID |
+| 15 | `find_object_by_id` | Поиск объекта по UUID без знания типа |
+| 16 | `search_objects` | Поиск по строке/коду/ИНН/артикулу |
+| 17 | `get_link_of_object` | Навигационная ссылка на объект |
+| 18 | `find_references_to_object` | Поиск ссылок на объект |
+| 19 | `get_enum_values` | Значения перечисления |
+| 20 | `get_register_records` | Записи / срезы / остатки / обороты |
+| 21 | `get_document_movements` | Движения документа по регистрам |
+| 22 | `list_reports` | Список отчётов |
+| 23 | `get_report_info` | Параметры и структура отчёта |
+| 24 | `run_1c_report` | Выполнение отчёта |
+| 25 | `get_object_history` | История объекта / журнал регистрации |
+| 26 | `get_current_user_context` | Контекст пользователя и базы |
 
 ## Подробное описание tools
 
-Все инструменты вызываются через MCP `tools/call`. В `arguments` передаются только параметры конкретного tool; `additionalProperties=false`, поэтому лишние поля лучше не отправлять. Успешный ответ всегда содержит `structuredContent.ok=true`; при ошибке возвращается `isError=true`, `structuredContent.ok=false` и блок `error { code, message, details, correlation_id }`. Каждый ответ содержит `auth_context` с текущим пользователем 1С, базой, версией конфигурации, `identity_key` и `cache_policy.cacheable=false`: сведения о правах нельзя переносить между перелогинами. Если включён privacy-режим, в ответ добавляется `privacy`, совпадающие поля заменяются маской, а организации могут отображаться псевдонимами.
+Все инструменты вызываются через MCP `tools/call`. В `arguments` передаются только параметры конкретного tool; `additionalProperties=false`, поэтому лишние поля лучше не отправлять. Успешный ответ всегда содержит `structuredContent.ok=true`; при ошибке возвращается `isError=true`, `structuredContent.ok=false` и блок `error { code, message, details, correlation_id }`. Для экономии токенов `content[].text` по умолчанию содержит краткую сводку, а полный JSON находится в `structuredContent`; legacy-дублирование включается настройкой `compatibility.legacy_full_json_content=true`. Каждый ответ содержит минимальный `auth_context.identity_key` и `cache_policy.cacheable=false`; полный контекст доступен через `get_current_user_context` или `include_auth_context=true`. Если включён privacy-режим, в ответ добавляется `privacy`, совпадающие поля заменяются маской, а организации могут отображаться псевдонимами.
 
 Общие ограничения для всех tools: учитываются права текущего пользователя 1С, allowlist/denylist метаданных, field-level ограничения, лимиты строк/таймаутов/размера JSON из `MCP_ServerConfig`. Имена объектов и полей нельзя угадывать: сначала используйте `list_metadata_objects`, `get_metadata_structure`, карту счетов или результат предыдущего вызова. Если вернулся `error.code=access_denied`, LLM должна объяснить пользователю нехватку прав и не повторять тот же запрос без перелогина или изменения прав.
 

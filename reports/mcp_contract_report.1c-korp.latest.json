@@ -1,122 +1,90 @@
 {
   "target": "https://laba-1c.astondevs.ru/BUH_KORP/hs/mcp/rpc",
-  "startedAt": "2026-05-26T14:07:29.454Z",
-  "finishedAt": "2026-05-26T14:12:09.823Z",
-  "total": 55,
-  "passed": 35,
-  "failed": 20,
+  "startedAt": "2026-06-03T09:08:43.513Z",
+  "finishedAt": "2026-06-03T09:14:36.244Z",
+  "total": 59,
+  "passed": 21,
+  "failed": 38,
   "tests": [
     {
       "name": "protocol.initialize",
-      "status": "PASS",
-      "elapsedMs": 586,
-      "details": {
-        "server": {
-          "name": "universal-1c-mcp",
-          "version": "0.1.0"
-        }
+      "status": "FAIL",
+      "elapsedMs": 10744,
+      "error": {
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
       "name": "protocol.tools_list_has_expected_tools",
-      "status": "PASS",
-      "elapsedMs": 520,
-      "details": {
-        "count": 23
+      "status": "FAIL",
+      "elapsedMs": 10604,
+      "error": {
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
       "name": "protocol.resources_list_and_read",
-      "status": "PASS",
-      "elapsedMs": 12783,
-      "details": {
-        "resources": [
-          "1c://metadata",
-          "1c://context/current-user",
-          "1c://knowledge/query",
-          "1c://knowledge/query/syntax",
-          "1c://knowledge/query/functions",
-          "1c://knowledge/query/optimization",
-          "1c://knowledge/query/temporary-tables",
-          "1c://knowledge/query/compound-types",
-          "1c://knowledge/query/subkonto",
-          "1c://knowledge/query/parameters",
-          "1c://knowledge/query/reports-vs-query",
-          "1c://knowledge/query/report-fast-path",
-          "1c://knowledge/query/payroll"
-        ]
+      "status": "FAIL",
+      "elapsedMs": 10645,
+      "error": {
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
       "name": "fixtures.discover_generic_metadata",
       "status": "FAIL",
-      "elapsedMs": 176708,
+      "elapsedMs": 10700,
       "error": {
-        "message": "no generic metadata fixture found",
-        "stack": "Error: no generic metadata fixture found\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1490:25)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:250:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:23)\n    at async ContractRunner.fixtureDiscovery (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:205:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:191:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1547:19)"
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
       "name": "tool.get_current_user_context",
-      "status": "PASS",
-      "elapsedMs": 12300,
-      "details": {
-        "user": "web",
-        "objects": 5668,
-        "tools": 23
+      "status": "FAIL",
+      "elapsedMs": 10667,
+      "error": {
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
       "name": "tool.list_metadata_objects_pagination",
       "status": "FAIL",
-      "elapsedMs": 3961,
+      "elapsedMs": 10720,
       "error": {
-        "message": "cursor did not advance",
-        "stack": "Error: cursor did not advance\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1490:25)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:334:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:23)\n    at async ContractRunner.discoveryTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:319:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:192:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1547:19)"
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
+      }
+    },
+    {
+      "name": "tool.list_metadata_objects_does_not_mask_technical_metadata",
+      "status": "FAIL",
+      "elapsedMs": 10657,
+      "error": {
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
       "name": "tool.list_metadata_objects_does_not_invent_missing_register",
-      "status": "PASS",
-      "elapsedMs": 483,
-      "details": {
-        "found": 0
+      "status": "FAIL",
+      "elapsedMs": 10728,
+      "error": {
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
       "name": "tool.discovery_returns_guidance_is_contextual",
-      "status": "PASS",
-      "elapsedMs": 5247,
-      "details": {
-        "salesGuidance": [
-          {
-            "id": "returns_and_storno",
-            "applies_to": "Аналитика продаж, закупок, складских движений, ТМЦ, материалов, сырья, МБП, НМА, основных средств, себестоимости, прибыли и рентабельности.",
-            "instruction": "Для аналитики движений, стоимости, остатков, закупок, продаж, себестоимости, прибыли и рентабельности считайте показатели с учётом возвратов и сторно. Не суммируйте только документы поступления/реализации/принятия к учёту или только положительные движения: используйте отчёты/регистры, где обороты уже имеют знак, или явно учитывайте возвраты поставщику, возвраты покупателей, сторнирующие документы, ВидДвижения/ПриходРасход и отрицательные количества/суммы. Если структура конфигурации неизвестна, сначала исследуйте метаданные, регистры и движения документов.",
-            "configuration_agnostic": true
-          },
-          {
-            "id": "report_or_direct_query_choice",
-            "applies_to": "Отчетные и аналитические задачи, для которых в конфигурации может существовать готовый отчет или вариант отчета.",
-            "instruction": "Если пользовательская задача похожа на отчет/аналитику и перед прямым run_1c_query есть возможность подобрать готовый отчет, сначала вызовите list_reports с текстом намерения и include_variants=true. Если list_reports вернул релевантные кандидаты, не выполняйте прямой запрос молча: спросите пользователя, использовать готовый отчет/вариант через get_report_info -> run_1c_report или идти прямым read-only запросом. Если пользователь явно просит прямой запрос, готовый отчет не подходит по смыслу или нужно диагностировать расхождение, можно продолжать run_1c_query после validate_1c_query.",
-            "configuration_agnostic": true
-          }
-        ],
-        "materialsGuidance": [
-          {
-            "id": "returns_and_storno",
-            "applies_to": "Аналитика продаж, закупок, складских движений, ТМЦ, материалов, сырья, МБП, НМА, основных средств, себестоимости, прибыли и рентабельности.",
-            "instruction": "Для аналитики движений, стоимости, остатков, закупок, продаж, себестоимости, прибыли и рентабельности считайте показатели с учётом возвратов и сторно. Не суммируйте только документы поступления/реализации/принятия к учёту или только положительные движения: используйте отчёты/регистры, где обороты уже имеют знак, или явно учитывайте возвраты поставщику, возвраты покупателей, сторнирующие документы, ВидДвижения/ПриходРасход и отрицательные количества/суммы. Если структура конфигурации неизвестна, сначала исследуйте метаданные, регистры и движения документов.",
-            "configuration_agnostic": true
-          },
-          {
-            "id": "report_or_direct_query_choice",
-            "applies_to": "Отчетные и аналитические задачи, для которых в конфигурации может существовать готовый отчет или вариант отчета.",
-            "instruction": "Если пользовательская задача похожа на отчет/аналитику и перед прямым run_1c_query есть возможность подобрать готовый отчет, сначала вызовите list_reports с текстом намерения и include_variants=true. Если list_reports вернул релевантные кандидаты, не выполняйте прямой запрос молча: спросите пользователя, использовать готовый отчет/вариант через get_report_info -> run_1c_report или идти прямым read-only запросом. Если пользователь явно просит прямой запрос, готовый отчет не подходит по смыслу или нужно диагностировать расхождение, можно продолжать run_1c_query после validate_1c_query.",
-            "configuration_agnostic": true
-          }
-        ],
-        "hrGuidanceCount": 0
+      "status": "FAIL",
+      "elapsedMs": 10659,
+      "error": {
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
@@ -140,19 +108,19 @@
     {
       "name": "tool.get_metadata_structure_accounting_register_virtual_tables",
       "status": "FAIL",
-      "elapsedMs": 626,
+      "elapsedMs": 10656,
       "error": {
-        "message": "get_metadata_structure did not return ok=true: {\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"77f9e811-3e6a-4703-858e-de5711d27a78\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"77f9e811-3e6a-4703-858e-de5711d27a78\"}",
-        "stack": "Error: get_metadata_structure did not return ok=true: {\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"77f9e811-3e6a-4703-858e-de5711d27a78\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"77f9e811-3e6a-4703-858e-de5711d27a78\"}\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1490:25)\n    at okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1444:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:418:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:412:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:193:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1547:19)"
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
       "name": "tool.get_metadata_structure_accumulation_resources_by_mode",
       "status": "FAIL",
-      "elapsedMs": 869,
+      "elapsedMs": 10677,
       "error": {
-        "message": "get_metadata_structure did not return ok=true: {\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"dd28582a-bcd8-4979-baf4-f5f58c52d29b\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"dd28582a-bcd8-4979-baf4-f5f58c52d29b\"}",
-        "stack": "Error: get_metadata_structure did not return ok=true: {\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"dd28582a-bcd8-4979-baf4-f5f58c52d29b\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"dd28582a-bcd8-4979-baf4-f5f58c52d29b\"}\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1490:25)\n    at okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1444:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:449:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:445:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:193:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1547:19)"
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
@@ -166,11 +134,20 @@
     },
     {
       "name": "tool.validate_1c_query_warns_document_tabular_register_fanout",
-      "status": "PASS",
-      "elapsedMs": 39079,
-      "details": {
-        "skipped": true,
-        "reason": "no document tabular section or accounting register fixture"
+      "status": "FAIL",
+      "elapsedMs": 10661,
+      "error": {
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
+      }
+    },
+    {
+      "name": "tool.validate_1c_query_warns_accounting_subconto_fanout",
+      "status": "FAIL",
+      "elapsedMs": 10693,
+      "error": {
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
@@ -185,10 +162,10 @@
     {
       "name": "tool.validate_1c_query_rejects_main_register_subconto_dtkt",
       "status": "FAIL",
-      "elapsedMs": 267,
+      "elapsedMs": 10717,
       "error": {
-        "message": "subconto_wrong_table error is missing: [{\"code\":\"unknown_query_source\",\"message\":\"Источник запроса не является разрешённым объектом метаданных: ФЛ-скрыто\",\"location\":\"ФЛ-скрыто\"}]",
-        "stack": "Error: subconto_wrong_table error is missing: [{\"code\":\"unknown_query_source\",\"message\":\"Источник запроса не является разрешённым объектом метаданных: ФЛ-скрыто\",\"location\":\"ФЛ-скрыто\"}]\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1490:25)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:572:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:563:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:193:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1547:19)"
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
@@ -202,71 +179,71 @@
     },
     {
       "name": "tool.get_1c_query_guidance_contextual",
-      "status": "PASS",
-      "elapsedMs": 1293,
-      "details": {
-        "guidance": [
-          "temporary_tables_read_only",
-          "grouping_having",
-          "subconto_generic",
-          "accounting_register_patterns",
-          "accounting-register-turnovers-fields",
-          "report_fast_path",
-          "report_or_direct_query_choice",
-          "virtual_table_parameters"
-        ]
+      "status": "FAIL",
+      "elapsedMs": 10681,
+      "error": {
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
       "name": "tool.get_accounting_accounts_map",
       "status": "FAIL",
-      "elapsedMs": 791,
+      "elapsedMs": 10703,
       "error": {
-        "message": "get_accounting_accounts_map did not return ok=true: {\"code\":\"type_not_allowed\",\"message\":\"План счетов запрещён: ПланСчетов.ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"be9e1414-8c6f-4bca-991a-83d58bc87e10\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] План счетов запрещён: ПланСчетов.ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"be9e1414-8c6f-4bca-991a-83d58bc87e10\"}",
-        "stack": "Error: get_accounting_accounts_map did not return ok=true: {\"code\":\"type_not_allowed\",\"message\":\"План счетов запрещён: ПланСчетов.ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"be9e1414-8c6f-4bca-991a-83d58bc87e10\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] План счетов запрещён: ПланСчетов.ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"be9e1414-8c6f-4bca-991a-83d58bc87e10\"}\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1490:25)\n    at okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1444:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:630:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:623:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:193:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1547:19)"
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
       "name": "tool.get_accounting_entries_grouped",
       "status": "FAIL",
-      "elapsedMs": 795,
+      "elapsedMs": 10651,
       "error": {
-        "message": "unexpected accounting register name",
-        "stack": "Error: unexpected accounting register name\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1490:25)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:662:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:647:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:193:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1547:19)"
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
       "name": "tool.get_accounting_entries_subconto_join",
       "status": "FAIL",
-      "elapsedMs": 823,
+      "elapsedMs": 10707,
       "error": {
-        "message": "get_accounting_accounts_map did not return ok=true: {\"code\":\"type_not_allowed\",\"message\":\"План счетов запрещён: ПланСчетов.ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"0901b5cd-d536-43df-bf11-076bb4ad5af1\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] План счетов запрещён: ПланСчетов.ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"0901b5cd-d536-43df-bf11-076bb4ad5af1\"}",
-        "stack": "Error: get_accounting_accounts_map did not return ok=true: {\"code\":\"type_not_allowed\",\"message\":\"План счетов запрещён: ПланСчетов.ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"0901b5cd-d536-43df-bf11-076bb4ad5af1\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] План счетов запрещён: ПланСчетов.ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"0901b5cd-d536-43df-bf11-076bb4ad5af1\"}\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1490:25)\n    at okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1444:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:684:26\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:673:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:193:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1547:19)"
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
+      }
+    },
+    {
+      "name": "tool.get_accounting_entries_rejects_ambiguous_subconto_grouping",
+      "status": "FAIL",
+      "elapsedMs": 10673,
+      "error": {
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
       "name": "tool.get_calculation_types_map",
       "status": "FAIL",
-      "elapsedMs": 798,
+      "elapsedMs": 10720,
       "error": {
-        "message": "get_calculation_types_map did not return ok=true: {\"code\":\"type_not_allowed\",\"message\":\"План видов расчёта запрещён: ПланВидовРасчета.ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"bb65bab5-38a0-4990-8741-01c6a81c88f0\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] План видов расчёта запрещён: ПланВидовРасчета.ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"bb65bab5-38a0-4990-8741-01c6a81c88f0\"}",
-        "stack": "Error: get_calculation_types_map did not return ok=true: {\"code\":\"type_not_allowed\",\"message\":\"План видов расчёта запрещён: ПланВидовРасчета.ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"bb65bab5-38a0-4990-8741-01c6a81c88f0\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] План видов расчёта запрещён: ПланВидовРасчета.ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"bb65bab5-38a0-4990-8741-01c6a81c88f0\"}\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1490:25)\n    at okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1444:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:717:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:710:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:193:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1547:19)"
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
       "name": "tool.get_database_passport",
-      "status": "PASS",
-      "elapsedMs": 7978,
-      "details": {
-        "organizations": 5,
-        "accountingRegisters": 1,
-        "accumulationChecked": 5
+      "status": "FAIL",
+      "elapsedMs": 10710,
+      "error": {
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
       "name": "tool.run_1c_query_temporary_table_package",
       "status": "PASS",
-      "elapsedMs": 1,
+      "elapsedMs": 0,
       "details": {
         "skipped": true,
         "reason": "no generic catalog fixture"
@@ -293,19 +270,19 @@
     {
       "name": "tool.run_1c_query_accounting_debit_credit_subconto",
       "status": "FAIL",
-      "elapsedMs": 451,
+      "elapsedMs": 10738,
       "error": {
-        "message": "run_1c_query did not return ok=true: {\"code\":\"query_validation_failed\",\"message\":\"Запрос не прошёл проверку.\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"3ab42ff9-297a-4289-9600-038d145d7dd1\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [query_validation_failed] Запрос не прошёл проверку. | {\\n\\\"validation_errors\\\": [\\n{\\n\\\"code\\\": \\\"unknown_query_source\\\",\\n\\\"message\\\": \\\"Источник запроса не является разрешённым объектом метаданных: ФЛ-скрыто.ОборотыДтКт\\\",\\n\\\"location\\\": \\\"ФЛ-скрыто.ОборотыДтКт\\\"\\n}\\n],\\n\\\"validation_warnings\\\": [],\\n\\\"detected_objects\\\": [],\\n\\\"detected_parameters\\\": [\\n\\\"Начало\\\",\\n\\\"Конец\\\"\\n],\\n\\\"estimated_risk\\\": \\\"blocked\\\",\\n\\\"query_guidance\\\": [\\n{\\n\\\"id\\\": \\\"metadata_first\\\",\\n\\\"title\\\": \\\"Сначала проверьте метаданные\\\",\\n\\\"instruction\\\": \\\"Не угадывайте имена объектов, реквизитов, табличных частей, регистров и ресурсов. Начинайте с узкого discovery: list_metadata_objects с query/kinds/limit или специализированная карта вроде get_accounting_accounts_map/get_calculation_types_map. get_metadata_structure вызывайте только для уже выбранного объекта и только с нужными include_* флагами.\\\",\\n\\\"resource_uri\\\": \\\"1c://knowledge/query\\\",\\n\\\"severity\\\": \\\"high\\\",\\n\\\"configuratio",
-        "stack": "Error: run_1c_query did not return ok=true: {\"code\":\"query_validation_failed\",\"message\":\"Запрос не прошёл проверку.\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"3ab42ff9-297a-4289-9600-038d145d7dd1\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [query_validation_failed] Запрос не прошёл проверку. | {\\n\\\"validation_errors\\\": [\\n{\\n\\\"code\\\": \\\"unknown_query_source\\\",\\n\\\"message\\\": \\\"Источник запроса не является разрешённым объектом метаданных: ФЛ-скрыто.ОборотыДтКт\\\",\\n\\\"location\\\": \\\"ФЛ-скрыто.ОборотыДтКт\\\"\\n}\\n],\\n\\\"validation_warnings\\\": [],\\n\\\"detected_objects\\\": [],\\n\\\"detected_parameters\\\": [\\n\\\"Начало\\\",\\n\\\"Конец\\\"\\n],\\n\\\"estimated_risk\\\": \\\"blocked\\\",\\n\\\"query_guidance\\\": [\\n{\\n\\\"id\\\": \\\"metadata_first\\\",\\n\\\"title\\\": \\\"Сначала проверьте метаданные\\\",\\n\\\"instruction\\\": \\\"Не угадывайте имена объектов, реквизитов, табличных частей, регистров и ресурсов. Начинайте с узкого discovery: list_metadata_objects с query/kinds/limit или специализированная карта вроде get_accounting_accounts_map/get_calculation_types_map. get_metadata_structure вызывайте только для уже выбранного объекта и только с нужными include_* флагами.\\\",\\n\\\"resource_uri\\\": \\\"1c://knowledge/query\\\",\\n\\\"severity\\\": \\\"high\\\",\\n\\\"configuratio\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1490:25)\n    at okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1444:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:820:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:815:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:193:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1547:19)"
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
       "name": "tool.run_1c_query_accounting_balance_subconto",
       "status": "FAIL",
-      "elapsedMs": 498,
+      "elapsedMs": 10731,
       "error": {
-        "message": "run_1c_query did not return ok=true: {\"code\":\"query_validation_failed\",\"message\":\"Запрос не прошёл проверку.\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"c331bc76-0f71-405c-8d6f-05801785f51e\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [query_validation_failed] Запрос не прошёл проверку. | {\\n\\\"validation_errors\\\": [\\n{\\n\\\"code\\\": \\\"unknown_query_source\\\",\\n\\\"message\\\": \\\"Источник запроса не является разрешённым объектом метаданных: ФЛ-скрыто.Остатки\\\",\\n\\\"location\\\": \\\"ФЛ-скрыто.Остатки\\\"\\n}\\n],\\n\\\"validation_warnings\\\": [],\\n\\\"detected_objects\\\": [],\\n\\\"detected_parameters\\\": [\\n\\\"Период\\\"\\n],\\n\\\"estimated_risk\\\": \\\"blocked\\\",\\n\\\"query_guidance\\\": [\\n{\\n\\\"id\\\": \\\"metadata_first\\\",\\n\\\"title\\\": \\\"Сначала проверьте метаданные\\\",\\n\\\"instruction\\\": \\\"Не угадывайте имена объектов, реквизитов, табличных частей, регистров и ресурсов. Начинайте с узкого discovery: list_metadata_objects с query/kinds/limit или специализированная карта вроде get_accounting_accounts_map/get_calculation_types_map. get_metadata_structure вызывайте только для уже выбранного объекта и только с нужными include_* флагами.\\\",\\n\\\"resource_uri\\\": \\\"1c://knowledge/query\\\",\\n\\\"severity\\\": \\\"high\\\",\\n\\\"configuration_agnostic\\\": true\\n",
-        "stack": "Error: run_1c_query did not return ok=true: {\"code\":\"query_validation_failed\",\"message\":\"Запрос не прошёл проверку.\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"c331bc76-0f71-405c-8d6f-05801785f51e\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [query_validation_failed] Запрос не прошёл проверку. | {\\n\\\"validation_errors\\\": [\\n{\\n\\\"code\\\": \\\"unknown_query_source\\\",\\n\\\"message\\\": \\\"Источник запроса не является разрешённым объектом метаданных: ФЛ-скрыто.Остатки\\\",\\n\\\"location\\\": \\\"ФЛ-скрыто.Остатки\\\"\\n}\\n],\\n\\\"validation_warnings\\\": [],\\n\\\"detected_objects\\\": [],\\n\\\"detected_parameters\\\": [\\n\\\"Период\\\"\\n],\\n\\\"estimated_risk\\\": \\\"blocked\\\",\\n\\\"query_guidance\\\": [\\n{\\n\\\"id\\\": \\\"metadata_first\\\",\\n\\\"title\\\": \\\"Сначала проверьте метаданные\\\",\\n\\\"instruction\\\": \\\"Не угадывайте имена объектов, реквизитов, табличных частей, регистров и ресурсов. Начинайте с узкого discovery: list_metadata_objects с query/kinds/limit или специализированная карта вроде get_accounting_accounts_map/get_calculation_types_map. get_metadata_structure вызывайте только для уже выбранного объекта и только с нужными include_* флагами.\\\",\\n\\\"resource_uri\\\": \\\"1c://knowledge/query\\\",\\n\\\"severity\\\": \\\"high\\\",\\n\\\"configuration_agnostic\\\": true\\n\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1490:25)\n    at okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1444:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:840:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:835:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:193:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1547:19)"
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
@@ -323,7 +300,7 @@
       "elapsedMs": 0,
       "error": {
         "message": "fixture counterpartyRef/sampleRef is missing",
-        "stack": "Error: fixture counterpartyRef/sampleRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1490:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1520:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:877:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:29)\n    at ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:876:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:194:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1547:19)"
+        "stack": "Error: fixture counterpartyRef/sampleRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1607:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1654:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:932:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:29)\n    at ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:931:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:194:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1681:19)"
       }
     },
     {
@@ -332,7 +309,7 @@
       "elapsedMs": 0,
       "error": {
         "message": "fixture counterpartyRef/sampleRef is missing",
-        "stack": "Error: fixture counterpartyRef/sampleRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1490:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1520:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:902:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:29)\n    at ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:901:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:194:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1547:19)"
+        "stack": "Error: fixture counterpartyRef/sampleRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1607:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1654:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:957:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:29)\n    at ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:956:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:194:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1681:19)"
       }
     },
     {
@@ -341,7 +318,7 @@
       "elapsedMs": 0,
       "error": {
         "message": "fixture counterpartyRef/sampleRef is missing",
-        "stack": "Error: fixture counterpartyRef/sampleRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1490:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1520:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:914:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:29)\n    at ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:913:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:194:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1547:19)"
+        "stack": "Error: fixture counterpartyRef/sampleRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1607:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1654:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:969:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:29)\n    at ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:968:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:194:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1681:19)"
       }
     },
     {
@@ -350,7 +327,7 @@
       "elapsedMs": 0,
       "error": {
         "message": "fixture organizationRef/counterpartyRef/sampleRef is missing",
-        "stack": "Error: fixture organizationRef/counterpartyRef/sampleRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1490:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1520:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:928:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:29)\n    at ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:927:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:194:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1547:19)"
+        "stack": "Error: fixture organizationRef/counterpartyRef/sampleRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1607:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1654:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:983:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:29)\n    at ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:982:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:194:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1681:19)"
       }
     },
     {
@@ -359,16 +336,16 @@
       "elapsedMs": 0,
       "error": {
         "message": "fixture counterpartyRef/sampleRef is missing",
-        "stack": "Error: fixture counterpartyRef/sampleRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1490:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1520:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:941:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:29)\n    at ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:940:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:194:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1547:19)"
+        "stack": "Error: fixture counterpartyRef/sampleRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1607:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1654:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:996:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:29)\n    at ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:995:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:194:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1681:19)"
       }
     },
     {
       "name": "tool.get_enum_values",
-      "status": "FAIL",
-      "elapsedMs": 144,
-      "error": {
-        "message": "get_enum_values did not return ok=true: {\"code\":\"invalid_arguments\",\"message\":\"Ожидается тип Перечисление.<Имя>.\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"4c2364c3-3bab-469e-85bc-0ba7f08460fe\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [invalid_arguments] Ожидается тип Перечисление.<Имя>.\",\"parsed_details\":{}},\"correlation_id\":\"4c2364c3-3bab-469e-85bc-0ba7f08460fe\"}",
-        "stack": "Error: get_enum_values did not return ok=true: {\"code\":\"invalid_arguments\",\"message\":\"Ожидается тип Перечисление.<Имя>.\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"4c2364c3-3bab-469e-85bc-0ba7f08460fe\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [invalid_arguments] Ожидается тип Перечисление.<Имя>.\",\"parsed_details\":{}},\"correlation_id\":\"4c2364c3-3bab-469e-85bc-0ba7f08460fe\"}\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1490:25)\n    at okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1444:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:958:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:23)\n    at async ContractRunner.registerTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:955:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:195:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1547:19)"
+      "status": "PASS",
+      "elapsedMs": 0,
+      "details": {
+        "skipped": true,
+        "reason": "no enum fixture"
       }
     },
     {
@@ -383,40 +360,34 @@
     {
       "name": "tool.get_register_records_accounting_debit_credit_mode",
       "status": "FAIL",
-      "elapsedMs": 359,
+      "elapsedMs": 10705,
       "error": {
-        "message": "unexpected accounting register name",
-        "stack": "Error: unexpected accounting register name\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1490:25)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:998:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:23)\n    at async ContractRunner.registerTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:982:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:195:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1547:19)"
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
       "name": "tool.get_register_records_accounting_debit_credit_filter",
-      "status": "PASS",
-      "elapsedMs": 474,
-      "details": {
-        "register": "ФЛ-скрыто",
-        "account": "09",
-        "rows": 1,
-        "queryUsed": "ВЫБРАТЬ ПЕРВЫЕ 6 СчетДт, СчетКт, СуммаОборот\nИЗ РегистрБухгалтерии.Хозрасчетный.ОборотыДтКт(&ПериодНачало, &ПериодКонец)\nГДЕ СчетДт = &Filter_СчетДт"
+      "status": "FAIL",
+      "elapsedMs": 10641,
+      "error": {
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
       "name": "tool.get_register_records_accounting_turnovers_filter",
-      "status": "PASS",
-      "elapsedMs": 572,
-      "details": {
-        "register": "ФЛ-скрыто",
-        "account": "60.01",
-        "turnoversRows": 1,
-        "balanceAndTurnoversRows": 1,
-        "turnoversQueryUsed": "ВЫБРАТЬ ПЕРВЫЕ 6 Счет, СуммаОборот\nИЗ РегистрБухгалтерии.Хозрасчетный.Обороты(&ПериодНачало, &ПериодКонец)\nГДЕ Счет = &Filter_Счет",
-        "balanceAndTurnoversQueryUsed": "ВЫБРАТЬ ПЕРВЫЕ 6 Счет, СуммаОборот\nИЗ РегистрБухгалтерии.Хозрасчетный.ОстаткиИОбороты(&ПериодНачало, &ПериодКонец)\nГДЕ Счет = &Filter_Счет"
+      "status": "FAIL",
+      "elapsedMs": 10720,
+      "error": {
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
       "name": "tool.get_register_records_bad_mode_is_diagnostic",
       "status": "PASS",
-      "elapsedMs": 1,
+      "elapsedMs": 0,
       "details": {
         "skipped": true,
         "reason": "no information register fixture"
@@ -442,101 +413,47 @@
     },
     {
       "name": "tool.list_reports",
-      "status": "PASS",
-      "elapsedMs": 2464,
-      "details": {
-        "reports": [
-          "Отчет.АнализВерсийОбъектов",
-          "Отчет.АнализВзносовВФонды",
-          "Отчет.АнализДвиженийДенежныхСредств",
-          "Отчет.АнализЖурналаРегистрации",
-          "Отчет.АнализИзмененийЛичныхДанныхСотрудников"
-        ],
-        "firstVariant": "Основной"
+      "status": "FAIL",
+      "elapsedMs": 10658,
+      "error": {
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
       "name": "tool.get_report_info",
       "status": "PASS",
-      "elapsedMs": 187,
+      "elapsedMs": 0,
       "details": {
-        "report": "Отчет.АнализВерсийОбъектов",
-        "variants": [
-          {
-            "name": "Основной",
-            "presentation": "Основной"
-          }
-        ]
+        "skipped": true,
+        "reason": "no report fixture"
       }
     },
     {
       "name": "tool.run_1c_report_graceful",
       "status": "PASS",
-      "elapsedMs": 232,
+      "elapsedMs": 0,
       "details": {
-        "report": "Отчет.АнализВерсийОбъектов",
-        "executionSupported": false,
-        "rows": 0,
-        "warnings": [
-          "Отчёт не может быть выведен в коллекцию значений универсальным адаптером. Чаще всего причина в таблицах/диаграммах СКД. Нужен отдельный адаптер отчёта или fallback в ТабличныйДокумент.",
-          "raw_exception: {MCP ОбщийМодуль.MCP_Reports.Модуль(624)}: Ошибка при вызове метода контекста (Выполнить): Ошибка компоновки макета: Ошибка генерации макета: Не поддерживается вывод таблиц и диаграмм в универсальную коллекцию значений"
-        ]
+        "skipped": true,
+        "reason": "no report fixture"
       }
     },
     {
       "name": "negative.validate_missing_metadata_is_invalid",
-      "status": "PASS",
-      "elapsedMs": 181,
-      "details": {
-        "errors": [
-          {
-            "code": "metadata_not_found",
-            "message": "Объект метаданных не найден: РегистрСведений.MCP_НесуществующийРегистр",
-            "location": "РегистрСведений.MCP_НесуществующийРегистр"
-          }
-        ]
+      "status": "FAIL",
+      "elapsedMs": 10640,
+      "error": {
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
       "name": "negative.run_missing_metadata_is_diagnostic",
-      "status": "PASS",
-      "elapsedMs": 262,
-      "details": {
-        "errorCode": "query_validation_failed",
-        "message": "Запрос не прошёл проверку.",
-        "parsedDetails": {
-          "validation_errors": [
-            {
-              "code": "metadata_not_found",
-              "message": "Объект метаданных не найден: РегистрСведений.MCP_НесуществующийРегистр",
-              "location": "РегистрСведений.MCP_НесуществующийРегистр"
-            }
-          ],
-          "validation_warnings": [],
-          "detected_objects": [
-            "РегистрСведений.MCP_НесуществующийРегистр"
-          ],
-          "detected_parameters": [],
-          "estimated_risk": "blocked",
-          "query_guidance": [
-            {
-              "id": "metadata_first",
-              "title": "Сначала проверьте метаданные",
-              "instruction": "Не угадывайте имена объектов, реквизитов, табличных частей, регистров и ресурсов. Начинайте с узкого discovery: list_metadata_objects с query/kinds/limit или специализированная карта вроде get_accounting_accounts_map/get_calculation_types_map. get_metadata_structure вызывайте только для уже выбранного объекта и только с нужными include_* флагами.",
-              "resource_uri": "1c://knowledge/query",
-              "severity": "high",
-              "configuration_agnostic": true
-            },
-            {
-              "id": "mcp_query_safety",
-              "title": "Граница read-only",
-              "instruction": "Сервер не изменяет постоянные данные: запрещены запись, проведение, удаление и DDL/DML. Исключение - временные таблицы языка запросов 1С внутри выполнения запроса пользователя.",
-              "resource_uri": "1c://knowledge/query",
-              "severity": "high",
-              "configuration_agnostic": true
-            }
-          ]
-        }
+      "status": "FAIL",
+      "elapsedMs": 10691,
+      "error": {
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
@@ -558,18 +475,27 @@
       }
     },
     {
+      "name": "negative.get_accounting_entries_rejects_subconto_value_without_kind",
+      "status": "FAIL",
+      "elapsedMs": 10673,
+      "error": {
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
+      }
+    },
+    {
       "name": "negative.run_main_register_subconto_dtkt_is_smart_error",
       "status": "FAIL",
-      "elapsedMs": 368,
+      "elapsedMs": 10718,
       "error": {
-        "message": "smart error_code is missing: {\"ok\":false,\"message\":\"Запрос не прошёл проверку.\",\"error_code\":\"unknown_query_source\",\"hint\":\"Источник запроса не является разрешённым объектом метаданных: ФЛ-скрыто\",\"see_also\":\"ФЛ-скрыто\",\"validation_errors\":[{\"code\":\"unknown_query_source\",\"message\":\"Источник запроса не является разрешённым объектом метаданных: ФЛ-скрыто\",\"location\":\"ФЛ-скрыто\"}],\"validation_warnings\":[],\"detected_objects\":[],\"detected_parameters\":[],\"estimated_risk\":\"blocked\",\"query_guidance\":[{\"id\":\"metadata_first\",\"title\":\"Сначала проверьте метаданные\",\"instruction\":\"Не угадывайте имена объектов, реквизитов, табличных частей, регистров и ресурсов. Начинайте с узкого discovery: list_metadata_objects с query/kinds/limit или специализированная карта вроде get_accounting_accounts_map/get_calculation_types_map. get_metadata_structure вызывайте только для уже выбранного объекта и только с нужными include_* флагами.\",\"resource_uri\":\"1c://knowledge/query\",\"severity\":\"high\",\"configuration_agnostic\":true},{\"id\":\"subconto_generic\",\"title\":\"Субконто уже доступны через бухгалтерские регистры\",\"instruction\":\"Перед любым запросом с фильтрацией или группировкой по субконто вызовите get_accounting_accounts_map с нужным account_code_prefix. Используйте position из ответа, чтобы определить Субконто1/2/3; никогда не угадывайте позицию, пользователь мог изменить порядок аналитик в 1С:Предприятии. При передаче массива видов субконто в параметр Субконто виртуальной таблицы поля Субконто1/2/3 переиндексируются по порядку массива, что позволяет писать универсальные запросы независимо от позиции аналитики на счёте. Для JOIN между независимыми подзапросами выводите УникальныйИдентификатор(Субконто...) и соединяйте по UUID.\",\"resource_uri\":\"1c://knowledge/query/subkonto\",\"severity\":\"high\",\"configuration_agnostic\":true},{\"id\":\"accounting_register_patterns\",\"title\":\"Бухгалтерские запросы начинайте с карты счетов\",\"instruction\":\"Для запросов к РегистрБухгалтерии сначала получите только нужный срез карты счетов через get_accounting_accounts_map с account_code_prefix. Затем используйте виртуальные таблицы Остатки/Обороты/ОстаткиИОбороты/ОборотыДтКт с параметрами периода и отборами внутри виртуальной таблицы. Не вызывайте полный get_metadata_structure регистра, если достаточно карты счетов и известных виртуальных таблиц. Для сложной логики сначала ПОМЕСТИТЬ ключи счетов/субконто во временную таблицу и ИНДЕКСИРОВАТЬ ПО ключам.\",\"resource_uri\":\"1c://knowledge/query/subkonto\",\"severity\":\"high\",\"configuration_agnostic\":true},{\"id\":\"accounting-register-turnovers-fields\",\"title\":\"Бухгалтерские обороты и счета\",\"instruction\":\"В ЗНАЧЕНИЕ(ПланСчетов.<Имя>.*) допустимо только имя предопределённого элемента плана счетов, например РасчетыСПокупателями. Код счёта, например 62 или 62.01, не является именем предопределённого элемента; субсчета с точкой в коде в типовых конфигурациях не предопределены. Конкретный счёт передавайте UUID-параметром через get_accounting_accounts_map. Виртуальная таблица Обороты регистра бухгалтерии содержит поля СуммаОборотДт/СуммаОборотКт и аналогичные поля других ресурсов. Параметр фильтрации по виду субконто называется Субконто, не ВидСубконто; он принимает ссылку или массив ПланВидовХарактеристик. ОборотыДтКт используйте для анализа корреспонденции двух счетов, а не как замену Обороты.\",\"resource_uri\":\"1c://knowledge/query/subkonto\",\"severity\":\"high\",\"configuration_agnostic\":true},{\"id\":\"mcp_query_safety\",\"title\":\"Граница read-only\",\"instruction\":\"Сервер не изменяет постоянные данные: запрещены запись, проведение, удаление и DDL/DML. Исключение - временные таблицы языка запросов 1С внутри выполнения запроса пользователя.\",\"resource_uri\":\"1c://knowledge/query\",\"severity\":\"high\",\"configuration_agnostic\":true}],\"error\":{\"code\":\"query_validation_failed\",\"message\":\"Запрос не прошёл проверку.\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"6cbd3373-b498-4c21-896a-21dcd2c6700f\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [query_validation_failed] Запрос не прошёл проверку. | {\\n\\\"validation_errors\\\": [\\n{\\n\\\"code\\\": \\\"unknown_query_source\\\",\\n\\\"message\\\": \\\"Источник запроса не является разрешённым объектом метаданных: ФЛ-скрыто\\\",\\n\\\"location\\\": \\\"ФЛ-скрыто\\\"\\n}\\n],\\n\\\"validation_warnings\\\": [],\\n\\\"detected_objects\\\": [],\\n\\\"detected_parameters\\\": [],\\n\\\"estimated_risk\\\": \\\"blocked\\\",\\n\\\"query_guidance\\\": [\\n{\\n\\\"id\\\": \\\"metadata_first\\\",\\n\\\"title\\\": \\\"Сначала проверьте метаданные\\\",\\n\\\"instruction\\\": \\\"Не угадывайте имена объектов, реквизитов, табличных частей, регистров и ресурсов. Начинайте с узкого discovery: list_metadata_objects с query/kinds/limit или специализированная карта вроде get_accounting_accounts_map/get_calculation_types_map. get_metadata_structure вызывайте только для уже выбранного объекта и только с нужными include_* флагами.\\\",\\n\\\"resource_uri\\\": \\\"1c://knowledge/query\\\",\\n\\\"severity\\\": \\\"high\\\",\\n\\\"configuration_agnostic\\\": true\\n},\\n{\\n\\\"id\\\": \\\"subconto_generic\\\",\\n\\\"title\\\": \\\"Субконто уже доступны через бухгалтерские регистры\\\",\\n\\\"instruction\\\": \\\"Перед любым запросом с фильтрацией или группировкой по субконто вызовите get_accounting_accounts_map с нужным account_code_prefix. Используйте position из ответа, чтобы определить Субконто1/2/3; никогда не угадывайте позицию, пользователь мог изменить порядок аналитик в 1С:Предприятии. При передаче массива видов субконто в параметр Субконто виртуальной таблицы поля Субконто1/2/3 переиндексируются по порядку массива, что позволяет писать универсальные запросы независимо от позиции аналитики на счёте. Для JOIN между независимыми подзапросами выводите УникальныйИдентификатор(Субконто...) и соединяйте по UUID.\\\",\\n\\\"resource_uri\\\": \\\"1c://knowledge/query/subkonto\\\",\\n\\\"severity\\\": \\\"high\\\",\\n\\\"configuration_agnostic\\\": true\\n},\\n{\\n\\\"id\\\": \\\"accounting_register_patterns\\\",\\n\\\"title\\\": \\\"Бухгалтерские запросы начинайте с карты счетов\\\",\\n\\\"instruction\\\": \\\"Для запросов к РегистрБухгалтерии сначала получите только нужный срез карты счетов через get_accounting_accounts_map с account_code_prefix. Затем используйте виртуальные таблицы Остатки/Обороты/ОстаткиИОбороты/ОборотыДтКт с параметрами периода и отборами внутри виртуальной таблицы. Не вызывайте полный get_metadata_structure регистра, если достаточно карты счетов и известных виртуальных таблиц. Для сложной логики сначала ПОМЕСТИТЬ ключи счетов/субконто во временную таблицу и ИНДЕКСИРОВАТЬ ПО ключам.\\\",\\n\\\"resource_uri\\\": \\\"1c://knowledge/query/subkonto\\\",\\n\\\"severity\\\": \\\"high\\\",\\n\\\"configuration_agnostic\\\": true\\n},\\n{\\n\\\"id\\\": \\\"accounting-register-turnovers-fields\\\",\\n\\\"title\\\": \\\"Бухгалтерские обороты и счета\\\",\\n\\\"instruction\\\": \\\"В ЗНАЧЕНИЕ(ПланСчетов.<Имя>.*) допустимо только имя предопределённого элемента плана счетов, например РасчетыСПокупателями. Код счёта, например 62 или 62.01, не является именем предопределённого элемента; субсчета с точкой в коде в типовых конфигурациях не предопределены. Конкретный счёт передавайте UUID-параметром через get_accounting_accounts_map. Виртуальная таблица Обороты регистра бухгалтерии содержит поля СуммаОборотДт/СуммаОборотКт и аналогичные поля других ресурсов. Параметр фильтрации по виду субконто называется Субконто, не ВидСубконто; он принимает ссылку или массив ПланВидовХарактеристик. ОборотыДтКт используйте для анализа корреспонденции двух счетов, а не как замену Обороты.\\\",\\n\\\"resource_uri\\\": \\\"1c://knowledge/query/subkonto\\\",\\n\\\"severity\\\": \\\"high\\\",\\n\\\"configuration_agnostic\\\": true\\n},\\n{\\n\\\"id\\\": \\\"mcp_query_safety\\\",\\n\\\"title\\\": \\\"Граница read-only\\\",\\n\\\"instruction\\\": \\\"Сервер не изменяет постоянные данные: запрещены запись, проведение, удаление и DDL/DML. Исключение - временные таблицы языка запросов 1С внутри выполнения запроса пользователя.\\\",\\n\\\"resource_uri\\\": \\\"1c://knowledge/query\\\",\\n\\\"severity\\\": \\\"high\\\",\\n\\\"configuration_agnostic\\\": true\\n}\\n]\\n}\",\"parsed_details\":{\"validation_errors\":[{\"code\":\"unknown_query_source\",\"message\":\"Источник запроса не является разрешённым объектом метаданных: ФЛ-скрыто\",\"location\":\"ФЛ-скрыто\"}],\"validation_warnings\":[],\"detected_objects\":[],\"detected_parameters\":[],\"estimated_risk\":\"blocked\",\"query_guidance\":[{\"id\":\"metadata_first\",\"title\":\"Сначала проверьте метаданные\",\"instruction\":\"Не угадывайте имена объектов, реквизитов, табличных частей, регистров и ресурсов. Начинайте с узкого discovery: list_metadata_objects с query/kinds/limit или специализированная карта вроде get_accounting_accounts_map/get_calculation_types_map. get_metadata_structure вызывайте только для уже выбранного объекта и только с нужными include_* флагами.\",\"resource_uri\":\"1c://knowledge/query\",\"severity\":\"high\",\"configuration_agnostic\":true},{\"id\":\"subconto_generic\",\"title\":\"Субконто уже доступны через бухгалтерские регистры\",\"instruction\":\"Перед любым запросом с фильтрацией или группировкой по субконто вызовите get_accounting_accounts_map с нужным account_code_prefix. Используйте position из ответа, чтобы определить Субконто1/2/3; никогда не угадывайте позицию, пользователь мог изменить порядок аналитик в 1С:Предприятии. При передаче массива видов субконто в параметр Субконто виртуальной таблицы поля Субконто1/2/3 переиндексируются по порядку массива, что позволяет писать универсальные запросы независимо от позиции аналитики на счёте. Для JOIN между независимыми подзапросами выводите УникальныйИдентификатор(Субконто...) и соединяйте по UUID.\",\"resource_uri\":\"1c://knowledge/query/subkonto\",\"severity\":\"high\",\"configuration_agnostic\":true},{\"id\":\"accounting_register_patterns\",\"title\":\"Бухгалтерские запросы начинайте с карты счетов\",\"instruction\":\"Для запросов к РегистрБухгалтерии сначала получите только нужный срез карты счетов через get_accounting_accounts_map с account_code_prefix. Затем используйте виртуальные таблицы Остатки/Обороты/ОстаткиИОбороты/ОборотыДтКт с параметрами периода и отборами внутри виртуальной таблицы. Не вызывайте полный get_metadata_structure регистра, если достаточно карты счетов и известных виртуальных таблиц. Для сложной логики сначала ПОМЕСТИТЬ ключи счетов/субконто во временную таблицу и ИНДЕКСИРОВАТЬ ПО ключам.\",\"resource_uri\":\"1c://knowledge/query/subkonto\",\"severity\":\"high\",\"configuration_agnostic\":true},{\"id\":\"accounting-register-turnovers-fields\",\"title\":\"Бухгалтерские обороты и счета\",\"instruction\":\"В ЗНАЧЕНИЕ(ПланСчетов.<Имя>.*) допустимо только имя предопределённого элемента плана счетов, например РасчетыСПокупателями. Код счёта, например 62 или 62.01, не является именем предопределённого элемента; субсчета с точкой в коде в типовых конфигурациях не предопределены. Конкретный счёт передавайте UUID-параметром через get_accounting_accounts_map. Виртуальная таблица Обороты регистра бухгалтерии содержит поля СуммаОборотДт/СуммаОборотКт и аналогичные поля других ресурсов. Параметр фильтрации по виду субконто называется Субконто, не ВидСубконто; он принимает ссылку или массив ПланВидовХарактеристик. ОборотыДтКт используйте для анализа корреспонденции двух счетов, а не как замену Обороты.\",\"resource_uri\":\"1c://knowledge/query/subkonto\",\"severity\":\"high\",\"configuration_agnostic\":true},{\"id\":\"mcp_query_safety\",\"title\":\"Граница read-only\",\"instruction\":\"Сервер не изменяет постоянные данные: запрещены запись, проведение, удаление и DDL/DML. Исключение - временные таблицы языка запросов 1С внутри выполнения запроса пользователя.\",\"resource_uri\":\"1c://knowledge/query\",\"severity\":\"high\",\"configuration_agnostic\":true}]}},\"correlation_id\":\"6cbd3373-b498-4c21-896a-21dcd2c6700f\",\"error_code\":\"unknown_query_source\",\"hint\":\"Источник запроса не является разрешённым объектом метаданных: ФЛ-скрыто\",\"see_also\":\"ФЛ-скрыто\",\"validation_errors\":[{\"code\":\"unknown_query_source\",\"message\":\"Источник запроса не является разрешённым объектом метаданных: ФЛ-скрыто\",\"location\":\"ФЛ-скрыто\"}],\"validation_warnings\":[],\"detected_objects\":[],\"detected_parameters\":[],\"estimated_risk\":\"blocked\",\"query_guidance\":[{\"id\":\"metadata_first\",\"title\":\"Сначала проверьте метаданные\",\"instruction\":\"Не угадывайте имена объектов, реквизитов, табличных частей, регистров и ресурсов. Начинайте с узкого discovery: list_metadata_objects с query/kinds/limit или специализированная карта вроде get_accounting_accounts_map/get_calculation_types_map. get_metadata_structure вызывайте только для уже выбранного объекта и только с нужными include_* флагами.\",\"resource_uri\":\"1c://knowledge/query\",\"severity\":\"high\",\"configuration_agnostic\":true},{\"id\":\"subconto_generic\",\"title\":\"Субконто уже доступны через бухгалтерские регистры\",\"instruction\":\"Перед любым запросом с фильтрацией или группировкой по субконто вызовите get_accounting_accounts_map с нужным account_code_prefix. Используйте position из ответа, чтобы определить Субконто1/2/3; никогда не угадывайте позицию, пользователь мог изменить порядок аналитик в 1С:Предприятии. При передаче массива видов субконто в параметр Субконто виртуальной таблицы поля Субконто1/2/3 переиндексируются по порядку массива, что позволяет писать универсальные запросы независимо от позиции аналитики на счёте. Для JOIN между независимыми подзапросами выводите УникальныйИдентификатор(Субконто...) и соединяйте по UUID.\",\"resource_uri\":\"1c://knowledge/query/subkonto\",\"severity\":\"high\",\"configuration_agnostic\":true},{\"id\":\"accounting_register_patterns\",\"title\":\"Бухгалтерские запросы начинайте с карты счетов\",\"instruction\":\"Для запросов к РегистрБухгалтерии сначала получите только нужный срез карты счетов через get_accounting_accounts_map с account_code_prefix. Затем используйте виртуальные таблицы Остатки/Обороты/ОстаткиИОбороты/ОборотыДтКт с параметрами периода и отборами внутри виртуальной таблицы. Не вызывайте полный get_metadata_structure регистра, если достаточно карты счетов и известных виртуальных таблиц. Для сложной логики сначала ПОМЕСТИТЬ ключи счетов/субконто во временную таблицу и ИНДЕКСИРОВАТЬ ПО ключам.\",\"resource_uri\":\"1c://knowledge/query/subkonto\",\"severity\":\"high\",\"configuration_agnostic\":true},{\"id\":\"accounting-register-turnovers-fields\",\"title\":\"Бухгалтерские обороты и счета\",\"instruction\":\"В ЗНАЧЕНИЕ(ПланСчетов.<Имя>.*) допустимо только имя предопределённого элемента плана счетов, например РасчетыСПокупателями. Код счёта, например 62 или 62.01, не является именем предопределённого элемента; субсчета с точкой в коде в типовых конфигурациях не предопределены. Конкретный счёт передавайте UUID-параметром через get_accounting_accounts_map. Виртуальная таблица Обороты регистра бухгалтерии содержит поля СуммаОборотДт/СуммаОборотКт и аналогичные поля других ресурсов. Параметр фильтрации по виду субконто называется Субконто, не ВидСубконто; он принимает ссылку или массив ПланВидовХарактеристик. ОборотыДтКт используйте для анализа корреспонденции двух счетов, а не как замену Обороты.\",\"resource_uri\":\"1c://knowledge/query/subkonto\",\"severity\":\"high\",\"configuration_agnostic\":true},{\"id\":\"mcp_query_safety\",\"title\":\"Граница read-only\",\"instruction\":\"Сервер не изменяет постоянные данные: запрещены запись, проведение, удаление и DDL/DML. Исключение - временные таблицы языка запросов 1С внутри выполнения запроса пользователя.\",\"resource_uri\":\"1c://knowledge/query\",\"severity\":\"high\",\"configuration_agnostic\":true}]},\"privacy\":{\"enabled\":true,\"masked_fields\":[\"ФИО\",\"ДатаРождения\",\"НомерПаспорта\",\"ПерсональныйНомер\"],\"string_mask\":\"XXXXXXX\",\"date_mask\":\"1900-01-01T00:00:00\",\"organization_aliases\":{\"enabled\":true,\"prefix\":\"Орг-\",\"hidden_alias\":\"Орг-скрыто\",\"include_navigation_url\":true,\"resolution\":\"open_navigation_url_in_1c\"},\"person_aliases\":{\"enabled\":true,\"physical_person_prefix\":\"ФЛ-\",\"employee_prefix\":\"Сотр-\",\"hidden_alias\":\"ФЛ-скрыто\",\"include_navigation_url\":true,\"sensitive_fields\":[\"Фамилия\",\"Имя\",\"Отчество\",\"СерияПаспорта\",\"НомерПаспорта\",\"ИндивидуальныйНомер\",\"СтраховойНомер\",\"ДатаРождения\"],\"resolution\":\"open_navigation_url_in_1c\"},\"guidance\":\"Активно privacy-маскирование. Эти поля намеренно недоступны LLM-клиентам: ФИО, ДатаРождения, НомерПаспорта, ПерсональныйНомер. Значения заменяются на XXXXXXX, даты — на 1900-01-01T00:00:00. Активны privacy-псевдонимы организаций: полные названия организаций не передаются в чат, вместо них возвращаются стабильные коды вида Орг-XXXXXX. Для расшифровки пользователь открывает navigation_url в web-клиенте 1С, если настроен web_client.base_url, иначе в 1С. Активны privacy-псевдонимы физических лиц и сотрудников: ФИО и чувствительные персональные реквизиты не передаются в чат, вместо ссылок возвращаются стабильные коды вида ФЛ-XXXXXX или Сотр-XXXXXX. Для расшифровки пользователь открывает navigation_url в web-клиенте 1С, если настроен web_client.base_url, иначе в 1С. Не пытайтесь обходить эту политику альтернативными запросами.\"}}",
-        "stack": "Error: smart error_code is missing: {\"ok\":false,\"message\":\"Запрос не прошёл проверку.\",\"error_code\":\"unknown_query_source\",\"hint\":\"Источник запроса не является разрешённым объектом метаданных: ФЛ-скрыто\",\"see_also\":\"ФЛ-скрыто\",\"validation_errors\":[{\"code\":\"unknown_query_source\",\"message\":\"Источник запроса не является разрешённым объектом метаданных: ФЛ-скрыто\",\"location\":\"ФЛ-скрыто\"}],\"validation_warnings\":[],\"detected_objects\":[],\"detected_parameters\":[],\"estimated_risk\":\"blocked\",\"query_guidance\":[{\"id\":\"metadata_first\",\"title\":\"Сначала проверьте метаданные\",\"instruction\":\"Не угадывайте имена объектов, реквизитов, табличных частей, регистров и ресурсов. Начинайте с узкого discovery: list_metadata_objects с query/kinds/limit или специализированная карта вроде get_accounting_accounts_map/get_calculation_types_map. get_metadata_structure вызывайте только для уже выбранного объекта и только с нужными include_* флагами.\",\"resource_uri\":\"1c://knowledge/query\",\"severity\":\"high\",\"configuration_agnostic\":true},{\"id\":\"subconto_generic\",\"title\":\"Субконто уже доступны через бухгалтерские регистры\",\"instruction\":\"Перед любым запросом с фильтрацией или группировкой по субконто вызовите get_accounting_accounts_map с нужным account_code_prefix. Используйте position из ответа, чтобы определить Субконто1/2/3; никогда не угадывайте позицию, пользователь мог изменить порядок аналитик в 1С:Предприятии. При передаче массива видов субконто в параметр Субконто виртуальной таблицы поля Субконто1/2/3 переиндексируются по порядку массива, что позволяет писать универсальные запросы независимо от позиции аналитики на счёте. Для JOIN между независимыми подзапросами выводите УникальныйИдентификатор(Субконто...) и соединяйте по UUID.\",\"resource_uri\":\"1c://knowledge/query/subkonto\",\"severity\":\"high\",\"configuration_agnostic\":true},{\"id\":\"accounting_register_patterns\",\"title\":\"Бухгалтерские запросы начинайте с карты счетов\",\"instruction\":\"Для запросов к РегистрБухгалтерии сначала получите только нужный срез карты счетов через get_accounting_accounts_map с account_code_prefix. Затем используйте виртуальные таблицы Остатки/Обороты/ОстаткиИОбороты/ОборотыДтКт с параметрами периода и отборами внутри виртуальной таблицы. Не вызывайте полный get_metadata_structure регистра, если достаточно карты счетов и известных виртуальных таблиц. Для сложной логики сначала ПОМЕСТИТЬ ключи счетов/субконто во временную таблицу и ИНДЕКСИРОВАТЬ ПО ключам.\",\"resource_uri\":\"1c://knowledge/query/subkonto\",\"severity\":\"high\",\"configuration_agnostic\":true},{\"id\":\"accounting-register-turnovers-fields\",\"title\":\"Бухгалтерские обороты и счета\",\"instruction\":\"В ЗНАЧЕНИЕ(ПланСчетов.<Имя>.*) допустимо только имя предопределённого элемента плана счетов, например РасчетыСПокупателями. Код счёта, например 62 или 62.01, не является именем предопределённого элемента; субсчета с точкой в коде в типовых конфигурациях не предопределены. Конкретный счёт передавайте UUID-параметром через get_accounting_accounts_map. Виртуальная таблица Обороты регистра бухгалтерии содержит поля СуммаОборотДт/СуммаОборотКт и аналогичные поля других ресурсов. Параметр фильтрации по виду субконто называется Субконто, не ВидСубконто; он принимает ссылку или массив ПланВидовХарактеристик. ОборотыДтКт используйте для анализа корреспонденции двух счетов, а не как замену Обороты.\",\"resource_uri\":\"1c://knowledge/query/subkonto\",\"severity\":\"high\",\"configuration_agnostic\":true},{\"id\":\"mcp_query_safety\",\"title\":\"Граница read-only\",\"instruction\":\"Сервер не изменяет постоянные данные: запрещены запись, проведение, удаление и DDL/DML. Исключение - временные таблицы языка запросов 1С внутри выполнения запроса пользователя.\",\"resource_uri\":\"1c://knowledge/query\",\"severity\":\"high\",\"configuration_agnostic\":true}],\"error\":{\"code\":\"query_validation_failed\",\"message\":\"Запрос не прошёл проверку.\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"6cbd3373-b498-4c21-896a-21dcd2c6700f\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [query_validation_failed] Запрос не прошёл проверку. | {\\n\\\"validation_errors\\\": [\\n{\\n\\\"code\\\": \\\"unknown_query_source\\\",\\n\\\"message\\\": \\\"Источник запроса не является разрешённым объектом метаданных: ФЛ-скрыто\\\",\\n\\\"location\\\": \\\"ФЛ-скрыто\\\"\\n}\\n],\\n\\\"validation_warnings\\\": [],\\n\\\"detected_objects\\\": [],\\n\\\"detected_parameters\\\": [],\\n\\\"estimated_risk\\\": \\\"blocked\\\",\\n\\\"query_guidance\\\": [\\n{\\n\\\"id\\\": \\\"metadata_first\\\",\\n\\\"title\\\": \\\"Сначала проверьте метаданные\\\",\\n\\\"instruction\\\": \\\"Не угадывайте имена объектов, реквизитов, табличных частей, регистров и ресурсов. Начинайте с узкого discovery: list_metadata_objects с query/kinds/limit или специализированная карта вроде get_accounting_accounts_map/get_calculation_types_map. get_metadata_structure вызывайте только для уже выбранного объекта и только с нужными include_* флагами.\\\",\\n\\\"resource_uri\\\": \\\"1c://knowledge/query\\\",\\n\\\"severity\\\": \\\"high\\\",\\n\\\"configuration_agnostic\\\": true\\n},\\n{\\n\\\"id\\\": \\\"subconto_generic\\\",\\n\\\"title\\\": \\\"Субконто уже доступны через бухгалтерские регистры\\\",\\n\\\"instruction\\\": \\\"Перед любым запросом с фильтрацией или группировкой по субконто вызовите get_accounting_accounts_map с нужным account_code_prefix. Используйте position из ответа, чтобы определить Субконто1/2/3; никогда не угадывайте позицию, пользователь мог изменить порядок аналитик в 1С:Предприятии. При передаче массива видов субконто в параметр Субконто виртуальной таблицы поля Субконто1/2/3 переиндексируются по порядку массива, что позволяет писать универсальные запросы независимо от позиции аналитики на счёте. Для JOIN между независимыми подзапросами выводите УникальныйИдентификатор(Субконто...) и соединяйте по UUID.\\\",\\n\\\"resource_uri\\\": \\\"1c://knowledge/query/subkonto\\\",\\n\\\"severity\\\": \\\"high\\\",\\n\\\"configuration_agnostic\\\": true\\n},\\n{\\n\\\"id\\\": \\\"accounting_register_patterns\\\",\\n\\\"title\\\": \\\"Бухгалтерские запросы начинайте с карты счетов\\\",\\n\\\"instruction\\\": \\\"Для запросов к РегистрБухгалтерии сначала получите только нужный срез карты счетов через get_accounting_accounts_map с account_code_prefix. Затем используйте виртуальные таблицы Остатки/Обороты/ОстаткиИОбороты/ОборотыДтКт с параметрами периода и отборами внутри виртуальной таблицы. Не вызывайте полный get_metadata_structure регистра, если достаточно карты счетов и известных виртуальных таблиц. Для сложной логики сначала ПОМЕСТИТЬ ключи счетов/субконто во временную таблицу и ИНДЕКСИРОВАТЬ ПО ключам.\\\",\\n\\\"resource_uri\\\": \\\"1c://knowledge/query/subkonto\\\",\\n\\\"severity\\\": \\\"high\\\",\\n\\\"configuration_agnostic\\\": true\\n},\\n{\\n\\\"id\\\": \\\"accounting-register-turnovers-fields\\\",\\n\\\"title\\\": \\\"Бухгалтерские обороты и счета\\\",\\n\\\"instruction\\\": \\\"В ЗНАЧЕНИЕ(ПланСчетов.<Имя>.*) допустимо только имя предопределённого элемента плана счетов, например РасчетыСПокупателями. Код счёта, например 62 или 62.01, не является именем предопределённого элемента; субсчета с точкой в коде в типовых конфигурациях не предопределены. Конкретный счёт передавайте UUID-параметром через get_accounting_accounts_map. Виртуальная таблица Обороты регистра бухгалтерии содержит поля СуммаОборотДт/СуммаОборотКт и аналогичные поля других ресурсов. Параметр фильтрации по виду субконто называется Субконто, не ВидСубконто; он принимает ссылку или массив ПланВидовХарактеристик. ОборотыДтКт используйте для анализа корреспонденции двух счетов, а не как замену Обороты.\\\",\\n\\\"resource_uri\\\": \\\"1c://knowledge/query/subkonto\\\",\\n\\\"severity\\\": \\\"high\\\",\\n\\\"configuration_agnostic\\\": true\\n},\\n{\\n\\\"id\\\": \\\"mcp_query_safety\\\",\\n\\\"title\\\": \\\"Граница read-only\\\",\\n\\\"instruction\\\": \\\"Сервер не изменяет постоянные данные: запрещены запись, проведение, удаление и DDL/DML. Исключение - временные таблицы языка запросов 1С внутри выполнения запроса пользователя.\\\",\\n\\\"resource_uri\\\": \\\"1c://knowledge/query\\\",\\n\\\"severity\\\": \\\"high\\\",\\n\\\"configuration_agnostic\\\": true\\n}\\n]\\n}\",\"parsed_details\":{\"validation_errors\":[{\"code\":\"unknown_query_source\",\"message\":\"Источник запроса не является разрешённым объектом метаданных: ФЛ-скрыто\",\"location\":\"ФЛ-скрыто\"}],\"validation_warnings\":[],\"detected_objects\":[],\"detected_parameters\":[],\"estimated_risk\":\"blocked\",\"query_guidance\":[{\"id\":\"metadata_first\",\"title\":\"Сначала проверьте метаданные\",\"instruction\":\"Не угадывайте имена объектов, реквизитов, табличных частей, регистров и ресурсов. Начинайте с узкого discovery: list_metadata_objects с query/kinds/limit или специализированная карта вроде get_accounting_accounts_map/get_calculation_types_map. get_metadata_structure вызывайте только для уже выбранного объекта и только с нужными include_* флагами.\",\"resource_uri\":\"1c://knowledge/query\",\"severity\":\"high\",\"configuration_agnostic\":true},{\"id\":\"subconto_generic\",\"title\":\"Субконто уже доступны через бухгалтерские регистры\",\"instruction\":\"Перед любым запросом с фильтрацией или группировкой по субконто вызовите get_accounting_accounts_map с нужным account_code_prefix. Используйте position из ответа, чтобы определить Субконто1/2/3; никогда не угадывайте позицию, пользователь мог изменить порядок аналитик в 1С:Предприятии. При передаче массива видов субконто в параметр Субконто виртуальной таблицы поля Субконто1/2/3 переиндексируются по порядку массива, что позволяет писать универсальные запросы независимо от позиции аналитики на счёте. Для JOIN между независимыми подзапросами выводите УникальныйИдентификатор(Субконто...) и соединяйте по UUID.\",\"resource_uri\":\"1c://knowledge/query/subkonto\",\"severity\":\"high\",\"configuration_agnostic\":true},{\"id\":\"accounting_register_patterns\",\"title\":\"Бухгалтерские запросы начинайте с карты счетов\",\"instruction\":\"Для запросов к РегистрБухгалтерии сначала получите только нужный срез карты счетов через get_accounting_accounts_map с account_code_prefix. Затем используйте виртуальные таблицы Остатки/Обороты/ОстаткиИОбороты/ОборотыДтКт с параметрами периода и отборами внутри виртуальной таблицы. Не вызывайте полный get_metadata_structure регистра, если достаточно карты счетов и известных виртуальных таблиц. Для сложной логики сначала ПОМЕСТИТЬ ключи счетов/субконто во временную таблицу и ИНДЕКСИРОВАТЬ ПО ключам.\",\"resource_uri\":\"1c://knowledge/query/subkonto\",\"severity\":\"high\",\"configuration_agnostic\":true},{\"id\":\"accounting-register-turnovers-fields\",\"title\":\"Бухгалтерские обороты и счета\",\"instruction\":\"В ЗНАЧЕНИЕ(ПланСчетов.<Имя>.*) допустимо только имя предопределённого элемента плана счетов, например РасчетыСПокупателями. Код счёта, например 62 или 62.01, не является именем предопределённого элемента; субсчета с точкой в коде в типовых конфигурациях не предопределены. Конкретный счёт передавайте UUID-параметром через get_accounting_accounts_map. Виртуальная таблица Обороты регистра бухгалтерии содержит поля СуммаОборотДт/СуммаОборотКт и аналогичные поля других ресурсов. Параметр фильтрации по виду субконто называется Субконто, не ВидСубконто; он принимает ссылку или массив ПланВидовХарактеристик. ОборотыДтКт используйте для анализа корреспонденции двух счетов, а не как замену Обороты.\",\"resource_uri\":\"1c://knowledge/query/subkonto\",\"severity\":\"high\",\"configuration_agnostic\":true},{\"id\":\"mcp_query_safety\",\"title\":\"Граница read-only\",\"instruction\":\"Сервер не изменяет постоянные данные: запрещены запись, проведение, удаление и DDL/DML. Исключение - временные таблицы языка запросов 1С внутри выполнения запроса пользователя.\",\"resource_uri\":\"1c://knowledge/query\",\"severity\":\"high\",\"configuration_agnostic\":true}]}},\"correlation_id\":\"6cbd3373-b498-4c21-896a-21dcd2c6700f\",\"error_code\":\"unknown_query_source\",\"hint\":\"Источник запроса не является разрешённым объектом метаданных: ФЛ-скрыто\",\"see_also\":\"ФЛ-скрыто\",\"validation_errors\":[{\"code\":\"unknown_query_source\",\"message\":\"Источник запроса не является разрешённым объектом метаданных: ФЛ-скрыто\",\"location\":\"ФЛ-скрыто\"}],\"validation_warnings\":[],\"detected_objects\":[],\"detected_parameters\":[],\"estimated_risk\":\"blocked\",\"query_guidance\":[{\"id\":\"metadata_first\",\"title\":\"Сначала проверьте метаданные\",\"instruction\":\"Не угадывайте имена объектов, реквизитов, табличных частей, регистров и ресурсов. Начинайте с узкого discovery: list_metadata_objects с query/kinds/limit или специализированная карта вроде get_accounting_accounts_map/get_calculation_types_map. get_metadata_structure вызывайте только для уже выбранного объекта и только с нужными include_* флагами.\",\"resource_uri\":\"1c://knowledge/query\",\"severity\":\"high\",\"configuration_agnostic\":true},{\"id\":\"subconto_generic\",\"title\":\"Субконто уже доступны через бухгалтерские регистры\",\"instruction\":\"Перед любым запросом с фильтрацией или группировкой по субконто вызовите get_accounting_accounts_map с нужным account_code_prefix. Используйте position из ответа, чтобы определить Субконто1/2/3; никогда не угадывайте позицию, пользователь мог изменить порядок аналитик в 1С:Предприятии. При передаче массива видов субконто в параметр Субконто виртуальной таблицы поля Субконто1/2/3 переиндексируются по порядку массива, что позволяет писать универсальные запросы независимо от позиции аналитики на счёте. Для JOIN между независимыми подзапросами выводите УникальныйИдентификатор(Субконто...) и соединяйте по UUID.\",\"resource_uri\":\"1c://knowledge/query/subkonto\",\"severity\":\"high\",\"configuration_agnostic\":true},{\"id\":\"accounting_register_patterns\",\"title\":\"Бухгалтерские запросы начинайте с карты счетов\",\"instruction\":\"Для запросов к РегистрБухгалтерии сначала получите только нужный срез карты счетов через get_accounting_accounts_map с account_code_prefix. Затем используйте виртуальные таблицы Остатки/Обороты/ОстаткиИОбороты/ОборотыДтКт с параметрами периода и отборами внутри виртуальной таблицы. Не вызывайте полный get_metadata_structure регистра, если достаточно карты счетов и известных виртуальных таблиц. Для сложной логики сначала ПОМЕСТИТЬ ключи счетов/субконто во временную таблицу и ИНДЕКСИРОВАТЬ ПО ключам.\",\"resource_uri\":\"1c://knowledge/query/subkonto\",\"severity\":\"high\",\"configuration_agnostic\":true},{\"id\":\"accounting-register-turnovers-fields\",\"title\":\"Бухгалтерские обороты и счета\",\"instruction\":\"В ЗНАЧЕНИЕ(ПланСчетов.<Имя>.*) допустимо только имя предопределённого элемента плана счетов, например РасчетыСПокупателями. Код счёта, например 62 или 62.01, не является именем предопределённого элемента; субсчета с точкой в коде в типовых конфигурациях не предопределены. Конкретный счёт передавайте UUID-параметром через get_accounting_accounts_map. Виртуальная таблица Обороты регистра бухгалтерии содержит поля СуммаОборотДт/СуммаОборотКт и аналогичные поля других ресурсов. Параметр фильтрации по виду субконто называется Субконто, не ВидСубконто; он принимает ссылку или массив ПланВидовХарактеристик. ОборотыДтКт используйте для анализа корреспонденции двух счетов, а не как замену Обороты.\",\"resource_uri\":\"1c://knowledge/query/subkonto\",\"severity\":\"high\",\"configuration_agnostic\":true},{\"id\":\"mcp_query_safety\",\"title\":\"Граница read-only\",\"instruction\":\"Сервер не изменяет постоянные данные: запрещены запись, проведение, удаление и DDL/DML. Исключение - временные таблицы языка запросов 1С внутри выполнения запроса пользователя.\",\"resource_uri\":\"1c://knowledge/query\",\"severity\":\"high\",\"configuration_agnostic\":true}]},\"privacy\":{\"enabled\":true,\"masked_fields\":[\"ФИО\",\"ДатаРождения\",\"НомерПаспорта\",\"ПерсональныйНомер\"],\"string_mask\":\"XXXXXXX\",\"date_mask\":\"1900-01-01T00:00:00\",\"organization_aliases\":{\"enabled\":true,\"prefix\":\"Орг-\",\"hidden_alias\":\"Орг-скрыто\",\"include_navigation_url\":true,\"resolution\":\"open_navigation_url_in_1c\"},\"person_aliases\":{\"enabled\":true,\"physical_person_prefix\":\"ФЛ-\",\"employee_prefix\":\"Сотр-\",\"hidden_alias\":\"ФЛ-скрыто\",\"include_navigation_url\":true,\"sensitive_fields\":[\"Фамилия\",\"Имя\",\"Отчество\",\"СерияПаспорта\",\"НомерПаспорта\",\"ИндивидуальныйНомер\",\"СтраховойНомер\",\"ДатаРождения\"],\"resolution\":\"open_navigation_url_in_1c\"},\"guidance\":\"Активно privacy-маскирование. Эти поля намеренно недоступны LLM-клиентам: ФИО, ДатаРождения, НомерПаспорта, ПерсональныйНомер. Значения заменяются на XXXXXXX, даты — на 1900-01-01T00:00:00. Активны privacy-псевдонимы организаций: полные названия организаций не передаются в чат, вместо них возвращаются стабильные коды вида Орг-XXXXXX. Для расшифровки пользователь открывает navigation_url в web-клиенте 1С, если настроен web_client.base_url, иначе в 1С. Активны privacy-псевдонимы физических лиц и сотрудников: ФИО и чувствительные персональные реквизиты не передаются в чат, вместо ссылок возвращаются стабильные коды вида ФЛ-XXXXXX или Сотр-XXXXXX. Для расшифровки пользователь открывает navigation_url в web-клиенте 1С, если настроен web_client.base_url, иначе в 1С. Не пытайтесь обходить эту политику альтернативными запросами.\"}}\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1490:25)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1277:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:23)\n    at async ContractRunner.negativeTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1269:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:198:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1547:19)"
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
       "name": "negative.validate_plain_batch_without_temp_tables",
       "status": "PASS",
-      "elapsedMs": 0,
+      "elapsedMs": 1,
       "details": {
         "skipped": true,
         "reason": "not enough query fixtures"
@@ -595,26 +521,20 @@
     },
     {
       "name": "negative.unknown_tool",
-      "status": "PASS",
-      "elapsedMs": 153,
-      "details": {
-        "error": {
-          "code": "unknown_tool",
-          "message": "Unknown tool: definitely_not_a_tool",
-          "details": {
-            "tool": "definitely_not_a_tool"
-          },
-          "correlation_id": "efa85687-8e9d-429e-a17e-2f2ea46e702d"
-        }
+      "status": "FAIL",
+      "elapsedMs": 10705,
+      "error": {
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     },
     {
       "name": "crosscheck.every_listed_query_object_has_basic_structure_sample",
       "status": "FAIL",
-      "elapsedMs": 8108,
+      "elapsedMs": 10726,
       "error": {
-        "message": "metadata structure failures: [{\"type\":\"ФЛ-скрыто\",\"error\":{\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"7a3e3d8f-cf7b-42b7-b8a8-07dc9a0a17c4\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"7a3e3d8f-cf7b-42b7-b8a8-07dc9a0a17c4\"}},{\"type\":\"ФЛ-скрыто\",\"error\":{\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"aa579ac7-acb1-4cf8-a7c9-35f028ad7bde\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"aa579ac7-acb1-4cf8-a7c9-35f028ad7bde\"}},{\"type\":\"ФЛ-скрыто\",\"error\":{\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"ef0813ce-34d9-48e7-bb9b-84adbc95b2d7\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"ef0813ce-34d9-48e7-bb9b-84adbc95b2d7\"}},{\"type\":\"ФЛ-скрыто\",\"error\":{\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"cca944dd-c02d-4a8c-9469-cef3e20ad629\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"cca944dd-c02d-4a8c-9469-cef3e20ad629\"}},{\"type\":\"ФЛ-скрыто\",\"error\":{\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"1c81349a-282f-4197-9369-52044d712f27\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"1c81349a-282f-4197-9369-52044d712f27\"}},{\"type\":\"ФЛ-скрыто\",\"error\":{\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"60aa6c1e-d745-431d-9c63-dc86a146ef8c\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"60aa6c1e-d745-431d-9c63-dc86a146ef8c\"}},{\"type\":\"ФЛ-скрыто\",\"error\":{\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"5f99dd65-5629-4e3a-ba3d-d1afd6e4d0bf\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"5f99dd65-5629-4e3a-ba3d-d1afd6e4d0bf\"}},{\"type\":\"ФЛ-скрыто\",\"error\":{\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"fc9d38ab-be8f-439c-a5aa-5962a6bef13f\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"fc9d38ab-be8f-439c-a5aa-5962a6bef13f\"}},{\"type\":\"ФЛ-скрыто\",\"error\":{\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"209ea876-6c77-4b3f-abcb-f93d3cbf708b\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"209ea876-6c77-4b3f-abcb-f93d3cbf708b\"}},{\"type\":\"ФЛ-скрыто\",\"error\":{\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"6d79935f-b7ce-4a86-9800-a7063483efff\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"6d79935f-b7ce-4a86-9800-a7063483efff\"}},{\"type\":\"ФЛ-скрыто\",\"error\":{\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"c43d4c4b-a578-497d-9527-02ada32527fa\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"c43d4c4b-a578-497d-9527-02ada32527fa\"}},{\"type\":\"ФЛ-скрыто\",\"error\":{\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"f459da65-db06-4a1d-9f82-943dee93bc1b\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"f459da65-db06-4a1d-9f82-943dee93bc1b\"}}]",
-        "stack": "Error: metadata structure failures: [{\"type\":\"ФЛ-скрыто\",\"error\":{\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"7a3e3d8f-cf7b-42b7-b8a8-07dc9a0a17c4\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"7a3e3d8f-cf7b-42b7-b8a8-07dc9a0a17c4\"}},{\"type\":\"ФЛ-скрыто\",\"error\":{\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"aa579ac7-acb1-4cf8-a7c9-35f028ad7bde\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"aa579ac7-acb1-4cf8-a7c9-35f028ad7bde\"}},{\"type\":\"ФЛ-скрыто\",\"error\":{\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"ef0813ce-34d9-48e7-bb9b-84adbc95b2d7\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"ef0813ce-34d9-48e7-bb9b-84adbc95b2d7\"}},{\"type\":\"ФЛ-скрыто\",\"error\":{\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"cca944dd-c02d-4a8c-9469-cef3e20ad629\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"cca944dd-c02d-4a8c-9469-cef3e20ad629\"}},{\"type\":\"ФЛ-скрыто\",\"error\":{\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"1c81349a-282f-4197-9369-52044d712f27\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"1c81349a-282f-4197-9369-52044d712f27\"}},{\"type\":\"ФЛ-скрыто\",\"error\":{\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"60aa6c1e-d745-431d-9c63-dc86a146ef8c\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"60aa6c1e-d745-431d-9c63-dc86a146ef8c\"}},{\"type\":\"ФЛ-скрыто\",\"error\":{\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"5f99dd65-5629-4e3a-ba3d-d1afd6e4d0bf\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"5f99dd65-5629-4e3a-ba3d-d1afd6e4d0bf\"}},{\"type\":\"ФЛ-скрыто\",\"error\":{\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"fc9d38ab-be8f-439c-a5aa-5962a6bef13f\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"fc9d38ab-be8f-439c-a5aa-5962a6bef13f\"}},{\"type\":\"ФЛ-скрыто\",\"error\":{\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"209ea876-6c77-4b3f-abcb-f93d3cbf708b\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"209ea876-6c77-4b3f-abcb-f93d3cbf708b\"}},{\"type\":\"ФЛ-скрыто\",\"error\":{\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"6d79935f-b7ce-4a86-9800-a7063483efff\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"6d79935f-b7ce-4a86-9800-a7063483efff\"}},{\"type\":\"ФЛ-скрыто\",\"error\":{\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"c43d4c4b-a578-497d-9527-02ada32527fa\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"c43d4c4b-a578-497d-9527-02ada32527fa\"}},{\"type\":\"ФЛ-скрыто\",\"error\":{\"code\":\"type_not_allowed\",\"message\":\"Тип запрещён: ФЛ-скрыто\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"f459da65-db06-4a1d-9f82-943dee93bc1b\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [type_not_allowed] Тип запрещён: ФЛ-скрыто\",\"parsed_details\":{}},\"correlation_id\":\"f459da65-db06-4a1d-9f82-943dee93bc1b\"}}]\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1490:25)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1352:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:23)\n    at async ContractRunner.crossChecks (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1332:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:199:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1547:19)"
+        "message": "fetch failed",
+        "stack": "TypeError: fetch failed"
       }
     }
   ]
