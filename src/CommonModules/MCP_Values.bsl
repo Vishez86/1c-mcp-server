@@ -151,7 +151,7 @@
 Функция ОпцииПоУмолчанию() Экспорт
 
 	Стр = Новый Структура;
-	Стр.Вставить("include_navigation_url", Истина);
+	Стр.Вставить("include_navigation_url", Ложь);
 	Стр.Вставить("navigation_base_url", MCP_Config.БазовыйURLWebКлиента());
 	Стр.Вставить("binary_as_base64", Ложь);
 	Стр.Вставить("max_string_length", MCP_Config.Лимиты().max_string_length_in_response);

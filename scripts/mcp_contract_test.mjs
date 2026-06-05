@@ -8,10 +8,13 @@ const CONTRACT_PERIOD = makeContractPeriod();
 const EXPECTED_TOOLS = [
   "list_metadata_objects",
   "get_metadata_structure",
+  "search_metadata_fields",
   "run_1c_query",
   "validate_1c_query",
   "get_1c_query_guidance",
+  "list_registers",
   "get_accounting_accounts_map",
+  "get_accounting_balances",
   "get_accounting_entries",
   "get_inventory_balances_by_item",
   "get_calculation_types_map",
@@ -336,6 +339,30 @@ class ContractRunner {
       return { first: first.objects[0].full_name, second: second.objects[0].full_name };
     });
 
+    await this.test("tool.search_metadata_fields_pagination", async () => {
+      const result = await okTool(this.client, "search_metadata_fields", {
+        query: "Дата",
+        kinds: ["Документ"],
+        limit: 2,
+      });
+      assert(Array.isArray(result.fields), "fields must be an array");
+      assert("truncated" in result, "truncated flag must be present");
+      if (result.truncated) assert(result.next_cursor, "truncated field search must expose next_cursor");
+      return { fields: result.fields.map((item) => `${item.owner_type}.${item.path}`), truncated: result.truncated };
+    });
+
+    await this.test("tool.list_registers_pagination", async () => {
+      const result = await okTool(this.client, "list_registers", {
+        register_types: ["РегистрБухгалтерии", "РегистрНакопления", "РегистрСведений"],
+        limit: 2,
+      });
+      assert(Array.isArray(result.registers), "registers must be an array");
+      assert(result.registers.length > 0, "expected at least one register");
+      assert("truncated" in result, "truncated flag must be present");
+      if (result.truncated) assert(result.next_cursor, "truncated register list must expose next_cursor");
+      return { registers: result.registers.map((item) => item.full_name), truncated: result.truncated };
+    });
+
     await this.test("tool.list_metadata_objects_does_not_mask_technical_metadata", async () => {
       const result = await okTool(this.client, "list_metadata_objects", {
         kinds: ["Справочник", "РегистрБухгалтерии", "ПланСчетов", "ПланВидовРасчета"],
@@ -368,6 +395,7 @@ class ContractRunner {
       const sales = await okTool(this.client, "list_reports", {
         query: "продажи прибыль рентабельность по товарным позициям",
         include_variants: false,
+        include_guidance: true,
         limit: 1,
       });
       assert(hasGuidance(sales, "returns_and_storno"), "sales/report discovery must include returns-and-storno guidance");
@@ -376,6 +404,7 @@ class ContractRunner {
       const materials = await okTool(this.client, "list_reports", {
         query: "остатки и поступление сырья материалов тмц возвраты поставщику",
         include_variants: false,
+        include_guidance: true,
         limit: 1,
       });
       assert(hasGuidance(materials, "returns_and_storno"), "materials/inventory discovery must include returns-and-storno guidance");
@@ -383,6 +412,7 @@ class ContractRunner {
       const hr = await okTool(this.client, "list_reports", {
         query: "увольнение сотрудников кадровые документы",
         include_variants: false,
+        include_guidance: true,
         limit: 1,
       });
       assert(!hasGuidance(hr, "returns_and_storno"), "HR discovery must not include returns-and-storno guidance");
@@ -436,6 +466,7 @@ class ContractRunner {
         type: accountingRegister.fullName,
         include_standard_attributes: true,
         include_tabular_sections: false,
+        include_virtual_tables: true,
       });
       const schema = result.metadata?.register_schema;
       assert(result.metadata?.kind === "РегистрБухгалтерии", "register kind must be РегистрБухгалтерии");
@@ -669,6 +700,7 @@ class ContractRunner {
       const result = await okTool(this.client, "get_accounting_accounts_map", {
         chart,
         include_empty_subconto: false,
+        include_raw_rows: true,
         limit: 5,
       });
       assert(result.chart === chart, `unexpected chart: ${result.chart}`);
@@ -1047,6 +1079,7 @@ class ContractRunner {
         period_to: { kind: "datetime", value: CONTRACT_PERIOD.end },
         dimensions: ["СчетДт", "СчетКт", "СубконтоДт1", "СубконтоКт1"],
         resources: ["СуммаОборот"],
+        include_column_types: true,
         limit: 1,
       });
       const columnNames = (result.columns || []).map((item) => item.name);
@@ -1085,6 +1118,7 @@ class ContractRunner {
         filters: { СчетДт: toQueryRef(account) },
         dimensions: ["СчетДт", "СчетКт"],
         resources: ["СуммаОборот"],
+        include_query: true,
         limit: 5,
       });
       assert(result.query_used?.includes("ГДЕ СчетДт = &Filter_СчетДт"), "accounting debit-credit filter must be emitted as WHERE");
@@ -1123,6 +1157,7 @@ class ContractRunner {
         filters: { Счет: toQueryRef(account) },
         dimensions: ["Счет"],
         resources: ["СуммаОборот"],
+        include_query: true,
         limit: 5,
       });
       assert(turnovers.query_used?.includes("ГДЕ Счет = &Filter_Счет"), "accounting turnovers filter must be emitted as WHERE");
@@ -1139,6 +1174,7 @@ class ContractRunner {
         filters: { Счет: toQueryRef(account) },
         dimensions: ["Счет"],
         resources: ["СуммаОборот"],
+        include_query: true,
         limit: 5,
       });
       assert(balanceAndTurnovers.query_used?.includes("ГДЕ Счет = &Filter_Счет"), "accounting balance-and-turnovers filter must be emitted as WHERE");
@@ -1154,6 +1190,26 @@ class ContractRunner {
         turnoversQueryUsed: turnovers.query_used,
         balanceAndTurnoversQueryUsed: balanceAndTurnovers.query_used,
       };
+    });
+
+    await this.test("tool.get_accounting_balances", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) {
+        return { skipped: true, reason: "no accounting register in metadata" };
+      }
+      const result = await okTool(this.client, "get_accounting_balances", {
+        accounting_register: accountingRegister.name,
+        mode: "balance",
+        period: { kind: "datetime", value: CONTRACT_PERIOD.end },
+        dimensions: ["Счет"],
+        resources: ["Сумма"],
+        limit: 2,
+      });
+      assert(result.accounting_register === accountingRegister.fullName, "unexpected accounting register name");
+      assert(result.mode === "balance", "unexpected accounting balance mode");
+      assert(Array.isArray(result.rows), "accounting balance rows must be an array");
+      assert("truncated" in result, "truncated flag must be present");
+      return { register: accountingRegister.fullName, rows: result.rows.length, truncated: result.truncated };
     });
 
     await this.test("tool.get_register_records_bad_mode_is_diagnostic", async () => {
@@ -1209,6 +1265,7 @@ class ContractRunner {
       const result = await okTool(this.client, "list_reports", {
         query: "Анализ",
         include_variants: true,
+        include_guidance: true,
         limit: 5,
       });
       assert(result.reports?.length > 0, "expected reports");
@@ -1252,6 +1309,7 @@ class ContractRunner {
         output_format: "table",
         limit: 3,
         timeout_seconds: 30,
+        include_parameters_used: true,
       });
       assert(result.report === report, "run_1c_report returned different report");
       assert("execution_supported" in result, "execution_supported must be present");

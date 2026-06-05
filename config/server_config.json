@@ -7,6 +7,14 @@
     "base_url": ""
   },
 
+  "compatibility": {
+    "legacy_full_json_content": false
+  },
+
+  "response": {
+    "include_full_auth_context_by_default": false
+  },
+
   "privacy": {
     "masked_fields": [],
     "organization_aliases": {
@@ -26,13 +34,13 @@
   "limits": {
     "max_limit": 1000,
     "max_query_rows": 1000,
-    "max_report_rows": 5000,
+    "max_report_rows": 1000,
     "max_tabular_section_rows": 100,
     "max_register_rows": 1000,
     "query_timeout_seconds": 15,
     "report_timeout_seconds": 60,
     "max_result_json_bytes": 5242880,
     "max_searched_types_per_call": 100,
-    "max_string_length_in_response": 10000
+    "max_string_length_in_response": 2000
   }
 }
