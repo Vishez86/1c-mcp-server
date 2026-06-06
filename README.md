@@ -16,6 +16,8 @@
 - LLM не должна выдумывать методы, сущности, таблицы и поля: все имена берутся из discovery/metadata tools, карты счетов или результата предыдущего вызова.
 - Поддержка MCP Streamable HTTP: один endpoint `/rpc`, JSON-RPC 2.0, `202 Accepted` для notifications, `405` для GET/SSE при stateless-режиме.
 
+См. вебинар [AI in 1C: How to Automate Routine Tasks and Speed Up Business Processes](https://www.youtube.com/live/acRb2MDiaSE).
+
 ## Реализованные tools
 
 | № | Tool | Назначение |
