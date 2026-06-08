@@ -107,6 +107,10 @@ http(s)://<сервер>/<база>/hs/mcp/rpc
   "web_client": {
     "base_url": "https://laba-1c.astondevs.ru/BUH_KORP"
   },
+  "response": {
+    "tool_result_mode": "text_only",
+    "include_full_auth_context_by_default": false
+  },
   "privacy": {
     "masked_fields": [],
     "organization_aliases": {
@@ -140,6 +144,7 @@ http(s)://<сервер>/<база>/hs/mcp/rpc
 
 - `http.allowed_origins` управляет CORS-проверкой HTTP-сервиса.
 - `web_client.base_url` задаёт корневой URL web-клиента для кликабельных ссылок на объекты.
+- `response.tool_result_mode` выбирает формат MCP tool result.
 - `privacy.masked_fields` задаёт список полей, значения которых нельзя передавать в LLM.
 - `limits.*` задаёт серверные верхние границы для tools, запросов, отчётов, регистров, размера ответа и длины строк.
 - Если константа отсутствует или поле не задано, используются значения по умолчанию из `MCP_Config`.
@@ -155,6 +160,15 @@ http(s)://<сервер>/<база>/hs/mcp/rpc
 
 Поле `web_client.base_url` задаёт корневой URL web-клиента 1С. Если оно заполнено, ссылки `ObjectRef.navigation_url` возвращаются как кликабельные HTTP(S)-ссылки вида `https://.../e1cib/data/<Тип>?ref=<uuid>`, а исходная `e1cib/data/...` сохраняется в `e1cib_navigation_url`. Если `restrict_data_access: true`, добавьте этот URL в `allowed_base_urls` allowlist.
 
+Поля `response`:
+
+| Поле | Где применяется |
+|---|---|
+| `tool_result_mode: "text_only"` | Режим по умолчанию и рекомендуемый режим для Claude Desktop/Windows: полный JSON результата возвращается только в `content[].text`, `structuredContent` и `outputSchema` не используются. |
+| `tool_result_mode: "structured_only"` | Для programmatic-клиентов, которые читают `structuredContent`: tools объявляют `outputSchema`, полный JSON возвращается в `structuredContent`, а `content[].text` содержит только краткую сводку. |
+| `tool_result_mode: "both"` | Диагностический/совместимый режим: возвращаются и `structuredContent`, и полный сериализованный JSON в `content[].text`; дороже по токенам, если клиент передаёт модели оба канала. |
+| `include_full_auth_context_by_default: false` | По умолчанию отдаётся только минимальный `auth_context`; полный контекст можно запросить `include_auth_context=true` или через `get_current_user_context`. |
+
 Поля `privacy`:
 
 | Поле | Где применяется |
@@ -168,7 +182,7 @@ http(s)://<сервер>/<база>/hs/mcp/rpc
 | `person_aliases.physical_person_prefix: "ФЛ-"` | Префикс псевдонима физического лица. |
 | `person_aliases.employee_prefix: "Сотр-"` | Префикс псевдонима сотрудника. |
 
-Сравнение имён полей регистронезависимое и не учитывает пробелы, дефисы, подчёркивания и суффиксы дубликатов колонок вида `#2`. Поэтому `Дата рождения`, `ДатаРождения` и `дата_рождения` считаются одним полем. Маскирование применяется рекурсивно к `structuredContent` и текстовому JSON-блоку MCP-ответа; оно не зависит от структуры конкретной базы.
+Сравнение имён полей регистронезависимое и не учитывает пробелы, дефисы, подчёркивания и суффиксы дубликатов колонок вида `#2`. Поэтому `Дата рождения`, `ДатаРождения` и `дата_рождения` считаются одним полем. Маскирование применяется рекурсивно до формирования `structuredContent`, текстового JSON MCP-ответа и legacy JSON-блока; оно не зависит от структуры конкретной базы.
 
 Режим `organization_aliases` выключен по умолчанию. При включении сервер постобрабатывает все tool-ответы, ресурсы и диагностические JSON-данные: ссылочные значения организаций получают `presentation: "Орг-..."`, поля названий организации в том же объекте заменяются тем же кодом, а строковые поля, явно похожие на организацию без UUID/ссылки, заменяются на `Орг-скрыто`.
 

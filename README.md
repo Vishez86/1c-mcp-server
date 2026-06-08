@@ -51,11 +51,11 @@
 
 ## Подробное описание tools
 
-Все инструменты вызываются через MCP `tools/call`. В `arguments` передаются только параметры конкретного tool; `additionalProperties=false`, поэтому лишние поля лучше не отправлять. Успешный ответ всегда содержит `structuredContent.ok=true`; при ошибке возвращается `isError=true`, `structuredContent.ok=false` и блок `error { code, message, details, correlation_id }`. Для экономии токенов `content[].text` по умолчанию содержит краткую сводку, а полный JSON находится в `structuredContent`; legacy-дублирование включается настройкой `compatibility.legacy_full_json_content=true`. Каждый ответ содержит минимальный `auth_context.identity_key` и `cache_policy.cacheable=false`; полный контекст доступен через `get_current_user_context` или `include_auth_context=true`. Если включён privacy-режим, в ответ добавляется `privacy`, совпадающие поля заменяются маской, а организации могут отображаться псевдонимами.
+Все инструменты вызываются через MCP `tools/call`. В `arguments` передаются только параметры конкретного tool; `additionalProperties=false`, поэтому лишние поля лучше не отправлять. Формат результата задаёт `response.tool_result_mode`: `text_only` возвращает полный JSON только в `content[].text` и не объявляет `outputSchema`; `structured_only` возвращает `structuredContent` и объявляет `outputSchema`; `both` возвращает оба канала и дублирует JSON в тексте. По умолчанию используется `text_only`, чтобы Claude Desktop/Windows точно видел значения без двойного расхода токенов. Каждый ответ содержит минимальный `auth_context.identity_key` и `cache_policy.cacheable=false`; полный контекст доступен через `get_current_user_context` или `include_auth_context=true`. Если включён privacy-режим, в ответ добавляется `privacy`, совпадающие поля заменяются маской, а организации могут отображаться псевдонимами.
 
 Общие ограничения для всех tools: учитываются права текущего пользователя 1С, allowlist/denylist метаданных, field-level ограничения, лимиты строк/таймаутов/размера JSON из `MCP_ServerConfig`. Имена объектов и полей нельзя угадывать: сначала используйте `list_metadata_objects`, `get_metadata_structure`, карту счетов или результат предыдущего вызова. Если вернулся `error.code=access_denied`, LLM должна объяснить пользователю нехватку прав и не повторять тот же запрос без перелогина или изменения прав.
 
-Пример отказа доступа:
+Пример отказа доступа в режимах `structured_only` и `both`:
 
 ```json
 {
@@ -701,7 +701,7 @@ ping                 -- ping
 
 При работе через промежуточный Python-сервер с per-session учетными данными каждый HTTP-запрос к 1С выполняется в контексте текущего пользователя 1С. Поэтому права проверяются на каждом вызове tool и в каждом ответе возвращается `auth_context.cache_policy.cacheable=false`. Если клиент перелогинился, прежние сведения о доступных объектах, отчетах и полях надо считать устаревшими.
 
-Ошибки прав возвращаются как обычный MCP tool result с `isError=true`, `error.code=access_denied` и блоком `authorization`. Критичная диагностика также дублируется в `content[]` строкой `Диагностика JSON: ...`, потому что некоторые proxy-реализации MCP передают LLM только текстовый content и теряют `structuredContent`.
+Ошибки прав возвращаются как обычный MCP tool result с `isError=true`, `error.code=access_denied` и блоком `authorization`. В режиме `text_only` диагностика находится в JSON внутри `content[]`; в режиме `both` критичная диагностика дополнительно дублируется в `content[]` строкой `Диагностика JSON: ...`, потому что некоторые proxy-реализации MCP передают LLM только текстовый content и теряют `structuredContent`.
 
 Минимальный allowlist для полного тестового доступа:
 
