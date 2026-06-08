@@ -12,7 +12,8 @@
   },
 
   "response": {
-    "include_full_auth_context_by_default": false
+    "include_full_auth_context_by_default": false,
+    "tool_result_mode": "text_only"
   },
 
   "privacy": {

@@ -52,7 +52,7 @@
 
 ## Дополнительная проверка
 
-Проверить, что полный JSON не дублируется в текстовом сообщении: данные находятся в `structuredContent`, а текст ответа компактный.
+Проверить формат ответа по текущему `response.tool_result_mode`: в `text_only` полный JSON находится в `content[].text` без `structuredContent` и `outputSchema`; в `structured_only` данные находятся в `structuredContent`, а текст ответа компактный; в `both` присутствуют оба канала.
 
 ## Общие критерии приемки
 

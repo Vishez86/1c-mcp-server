@@ -39,8 +39,10 @@ MCP-сервер предоставляет LLM-клиенту безопасн�
 - tools возвращаются через `tools/list`;
 - tool вызывается через `tools/call`;
 - каждый tool имеет `name`, `title`, `description`, `inputSchema`;
-- желательно указывать `outputSchema`;
-- результат tool возвращать в `content` и `structuredContent`;
+- формат результата выбирается настройкой `response.tool_result_mode`: `text_only`, `structured_only` или `both`;
+- в режимах `structured_only` и `both` каждый tool указывает `outputSchema`;
+- в режиме `text_only` tools не указывают `outputSchema`, а полный JSON результата возвращается только в `content[].text`;
+- в режиме `both` результат tool возвращать в `content` и `structuredContent`; сериализованный JSON дублировать в `TextContent` для совместимости с клиентами/proxy, которые не передают structured-часть модели;
 - прикладные ошибки возвращать как `isError: true`, а не как JSON-RPC error, если JSON-RPC запрос был корректен;
 - JSON Schema по умолчанию считать 2020-12;
 - входные данные валидировать до обращения к 1С.
@@ -49,7 +51,21 @@ MCP-сервер предоставляет LLM-клиенту безопасн�
 
 ## 3. Общий формат результата
 
-Успех:
+Успех в режиме `text_only` по умолчанию:
+
+```json
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"ok\":true,\"rows\":[...]}"
+    }
+  ],
+  "isError": false
+}
+```
+
+Успех в режиме `structured_only` или `both`:
 
 ```json
 {
@@ -77,7 +93,7 @@ MCP-сервер предоставляет LLM-клиенту безопасн�
 }
 ```
 
-Ошибка исполнения tool:
+Ошибка исполнения tool в режиме `structured_only` или `both`:
 
 ```json
 {
@@ -118,7 +134,9 @@ MCP-сервер предоставляет LLM-клиенту безопасн�
 
 JSON-RPC error использовать только для ошибок протокола: malformed JSON, неизвестный method, неизвестный tool name, ошибка авторизации транспорта, фатальная ошибка до запуска tool.
 
-Для ошибок прав доступа используется MCP tool error, а не JSON-RPC error. `error.code=access_denied` означает отказ платформенных прав 1С или coarse MCP-доступа; `authorization.retry_policy` всегда запрещает повтор того же запроса без перелогина или изменения прав. Диагностический JSON дублируется в `content[]` строкой `Диагностика JSON: ...`, чтобы LLM получила причину отказа даже через proxy, который не сохраняет `structuredContent`.
+В режиме `text_only` та же структура ошибки возвращается сериализованным JSON в `content[].text` без `structuredContent`.
+
+Для ошибок прав доступа используется MCP tool error, а не JSON-RPC error. `error.code=access_denied` означает отказ платформенных прав 1С или coarse MCP-доступа; `authorization.retry_policy` всегда запрещает повтор того же запроса без перелогина или изменения прав. В `text_only` диагностика находится в JSON внутри `content[]`; в `both` она дополнительно дублируется в текстовом блоке, чтобы LLM получила причину отказа даже через proxy, который не сохраняет `structuredContent`.
 
 ---
 
@@ -266,7 +284,7 @@ string, number, boolean, date, datetime, uuid, ref, enum, array, null
 
 Если список пустой или отсутствует, ответы не меняются. Если список заполнен,
 security layer рекурсивно заменяет значения совпадающих полей перед формированием
-`content[].text` и `structuredContent`: обычные значения — на `XXXXXXX`, даты —
+`content[].text` и, если режим результата его использует, `structuredContent`: обычные значения — на `XXXXXXX`, даты —
 на фиксированное значение `1900-01-01T00:00:00`. Сравнение имён полей
 регистронезависимое и не привязано к конкретной конфигурации 1С.
 
@@ -3601,7 +3619,7 @@ Knowledge resources возвращают встроенные правила и�
 }
 ```
 
-Для ошибок выполнения `run_1c_query` сервер должен возвращать структурированные поля в `structuredContent` и дублировать их в `error`, а исходную диагностику сохранять в `error.details.parsed_details.diagnostics`:
+Для ошибок выполнения `run_1c_query` сервер должен возвращать структурированные поля в JSON результата (`content[].text` в `text_only`, `structuredContent` в `structured_only`/`both`) и дублировать их в `error`, а исходную диагностику сохранять в `error.details.parsed_details.diagnostics`:
 
 ```json
 {
@@ -3723,7 +3741,7 @@ MVP готов, если:
 
 1. Все 26 tools возвращаются в `tools/list`.
 2. У каждого tool есть корректный `inputSchema`.
-3. Все tools возвращают `content`, `structuredContent`, `isError`.
+3. Все tools возвращают `content` и `isError`; `structuredContent` возвращается в режимах `structured_only` и `both`.
 4. Реализованы allowlist и denylist.
 5. Реализован аудит вызовов.
 6. `run_1c_query` не выполняется без проверки.
@@ -3828,7 +3846,7 @@ MVP готов, если:
 
 Передать некорректный UUID в `get_object_by_ref`.
 
-Ожидание: `isError=true`, `structuredContent.ok=false`, `error.code=invalid_arguments`.
+Ожидание: `isError=true`, `ok=false`, `error.code=invalid_arguments`; в `text_only` эти поля находятся в JSON внутри `content[].text`, в `structured_only`/`both` — в `structuredContent`.
 
 ---
 

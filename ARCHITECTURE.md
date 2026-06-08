@@ -143,16 +143,18 @@ Dispatcher `Выполнить(ИмяТула, Аргументы, Контек�
    4.8. MCP_Tools добавляет privacy-информацию, если маскирование или псевдонимы сущностей активны.
    4.9. MCP_Security маскирует поля из privacy.masked_fields, заменяет названия организаций и ФИО физлиц/сотрудников стабильными псевдонимами, сохраняя UUID/type/navigation_url для открытия объекта в 1С.
    4.10. Audit запись по уже замаскированному результату.
-   4.11. Унифицированный MCP tool result.
+   4.11. Унифицированный MCP tool result с учётом `response.tool_result_mode`: `text_only` отдаёт полный JSON только в `content[].text`; `structured_only` отдаёт JSON в `structuredContent`; `both` отдаёт оба канала.
 5. JSON-RPC dispatcher формирует response.
 6. HTTP-сервис отдаёт ответ.
 ```
 
 ## Ошибки прав доступа
 
-Все операции читают данные в текущем сеансе 1С, поэтому платформенные роли, RLS и прикладные проверки могут отказать отдельной учетной записи даже при разрешенном allowlist. Такие сбои нормализуются в MCP tool error: `isError=true`, `structuredContent.ok=false`, `error.code=access_denied`, `authorization.reason_code=1c_access_denied` и `authorization.retry_policy=do_not_retry_same_request_without_reauth_or_permission_change`.
+Все операции читают данные в текущем сеансе 1С, поэтому платформенные роли, RLS и прикладные проверки могут отказать отдельной учетной записи даже при разрешенном allowlist. Такие сбои нормализуются в MCP tool error: `isError=true`, `ok=false`, `error.code=access_denied`, `authorization.reason_code=1c_access_denied` и `authorization.retry_policy=do_not_retry_same_request_without_reauth_or_permission_change`. В `text_only` эти поля находятся в JSON внутри `content[].text`; в `structured_only` и `both` — в `structuredContent`.
 
-MCP-ограничения сервера тоже отражаются в `authorization`: `mcp_type_not_allowed`, `mcp_field_not_allowed`, `mcp_tool_not_allowed`. Для совместимости с промежуточными proxy, которые не передают `structuredContent`, тот же диагностический JSON дублируется в текстовом `content[]`.
+MCP-ограничения сервера тоже отражаются в `authorization`: `mcp_type_not_allowed`, `mcp_field_not_allowed`, `mcp_tool_not_allowed`. Для совместимости с промежуточными proxy, которые не передают `structuredContent`, используйте `response.tool_result_mode=text_only` или `both`.
+
+В `tools/list` общий `outputSchema` объявляется только для режимов `structured_only` и `both`. В `text_only` сервер не объявляет `outputSchema`, чтобы клиенты не ожидали `structuredContent`.
 
 `tools/list`, описания tools и `get_current_user_context` явно предупреждают LLM: сведения о доступе зависят от текущей учетной записи 1С и не кэшируются между перелогинами.
 
