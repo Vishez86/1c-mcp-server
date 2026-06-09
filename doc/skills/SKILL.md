@@ -126,6 +126,8 @@ Do not infer "debt at end of period" from turnovers alone: turnovers ignore the 
 
 Payroll-specific accounting fallback: if the user asks for accrued salary for a period and no payroll calculation register/report is available, account 70 is usually a passive payroll liability account. Accruals are normally credit turnover of 70 (`СуммаОборотКт`) for the period, while debit turnover of 70 is payments, withholdings, or settlement of the liability. Prefer payroll reports/calculation registers first; use `РегистрБухгалтерии.<Имя>.Обороты(&Нач, &Кон, , Счет = &Счет70, ...)` only as the accounting fallback, after resolving account/subconto mapping via `get_accounting_accounts_map`.
 
+MCP accounting shortcuts: for aging balances by a dated subconto, prefer `get_accounting_balances_by_subconto_age` after resolving real account/subconto mapping with `get_accounting_accounts_map`. For intersections between two balance sets by the same analytics, prefer `compare_accounting_balances_by_subconto`. These tools stay configuration-agnostic: the caller supplies account prefixes, debit/credit side, and `subconto_kinds`; the server does not infer receivables, payables, advances, or account semantics.
+
 **Accumulation register (Регистр накопления):**
 
 ```

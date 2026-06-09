@@ -1,4 +1,4 @@
-# Спецификация MCP-сервера для 1С: 26 read-only tools
+# Спецификация MCP-сервера для 1С: 28 read-only tools
 
 **Версия документа:** 0.1  
 **Дата:** 2026-05-12  
@@ -375,23 +375,25 @@ read-only синтаксис, безопасность имён, лимиты с
 | 7 | `list_registers` | Получить компактный список регистров и поддерживаемых режимов | P0 |
 | 8 | `get_accounting_accounts_map` | Получить карту счетов и субконто плана счетов | P0 |
 | 9 | `get_accounting_balances` | Получить бухгалтерские остатки и обороты | P0 |
-| 10 | `get_accounting_entries` | Получить бухгалтерские проводки с универсальным join к субконто | P0 |
-| 11 | `get_inventory_balances_by_item` | Получить быстрые остатки товара по складам и организациям | P0 |
-| 12 | `get_calculation_types_map` | Получить карту видов расчёта плана видов расчёта | P0 |
-| 13 | `get_database_passport` | Получить паспорт фактических данных базы | P0 |
-| 14 | `get_object_by_ref` | Получить объект по типу и UUID ссылки | P0 |
-| 15 | `find_object_by_id` | Найти объект по UUID без знания типа | P0 |
-| 16 | `search_objects` | Поиск объектов по строке, коду, номеру, ИНН, артикулу | P0 |
-| 17 | `get_link_of_object` | Получить навигационную ссылку на объект | P1 |
-| 18 | `find_references_to_object` | Найти ссылки на объект | P1 |
-| 19 | `get_enum_values` | Получить значения перечисления | P0 |
-| 20 | `get_register_records` | Получить записи, срезы, остатки и обороты регистров | P0 |
-| 21 | `get_document_movements` | Получить движения документа по регистрам | P0 |
-| 22 | `list_reports` | Получить список доступных отчётов | P1 |
-| 23 | `get_report_info` | Получить параметры и структуру отчёта | P1 |
-| 24 | `run_1c_report` | Выполнить отчёт 1С | P1 |
-| 25 | `get_object_history` | Получить историю объекта, версии или события журнала | P2 |
-| 26 | `get_current_user_context` | Получить текущий контекст пользователя и базы | P0 |
+| 10 | `get_accounting_balances_by_subconto_age` | Получить aging бухгалтерских остатков по выбранному субконто | P0 |
+| 11 | `compare_accounting_balances_by_subconto` | Сравнить два набора остатков по одной аналитике | P0 |
+| 12 | `get_accounting_entries` | Получить бухгалтерские проводки с универсальным join к субконто | P0 |
+| 13 | `get_inventory_balances_by_item` | Получить быстрые остатки товара по складам и организациям | P0 |
+| 14 | `get_calculation_types_map` | Получить карту видов расчёта плана видов расчёта | P0 |
+| 15 | `get_database_passport` | Получить паспорт фактических данных базы | P0 |
+| 16 | `get_object_by_ref` | Получить объект по типу и UUID ссылки | P0 |
+| 17 | `find_object_by_id` | Найти объект по UUID без знания типа | P0 |
+| 18 | `search_objects` | Поиск объектов по строке, коду, номеру, ИНН, артикулу | P0 |
+| 19 | `get_link_of_object` | Получить навигационную ссылку на объект | P1 |
+| 20 | `find_references_to_object` | Найти ссылки на объект | P1 |
+| 21 | `get_enum_values` | Получить значения перечисления | P0 |
+| 22 | `get_register_records` | Получить записи, срезы, остатки и обороты регистров | P0 |
+| 23 | `get_document_movements` | Получить движения документа по регистрам | P0 |
+| 24 | `list_reports` | Получить список доступных отчётов | P1 |
+| 25 | `get_report_info` | Получить параметры и структуру отчёта | P1 |
+| 26 | `run_1c_report` | Выполнить отчёт 1С | P1 |
+| 27 | `get_object_history` | Получить историю объекта, версии или события журнала | P2 |
+| 28 | `get_current_user_context` | Получить текущий контекст пользователя и базы | P0 |
 
 ---
 
@@ -1175,7 +1177,7 @@ live-таблицу `ПланСчетов.<ИмяПлана>.ВидыСубко�
 - Tool не обращается к данным конкретной базы и не зависит от структуры конфигурации.
 - Примеры должны быть шаблонными: `<Источник>`, `<ИмяРегистра>`, `<Реквизит>`.
 - Тема `parameters` должна явно показывать, что строки/числа/булево можно передавать напрямую, а даты/ссылки/перечисления/массивы передаются через `QueryParameterValue`: `{"kind":"datetime","value":"..."}`, `{"kind":"ref","type":"<ПолныйТип>","uuid":"<UUID>"}`, `{"kind":"enum","type":"<Тип>","name":"<Имя>"}`, `{"kind":"array","value":[...]}`.
-- Тема `report-fast-path` должна направлять агента к минимальному discovery для отчетной аналитики: узкие `search_objects`/`list_metadata_objects`, `list_reports` с малым `limit`, специализированные карты (`get_accounting_accounts_map`, `get_calculation_types_map`) и отказ от широкого `get_database_passport(force_refresh=true)` без необходимости.
+- Тема `report-fast-path` должна направлять агента к минимальному discovery для отчетной аналитики: узкие `search_objects`/`list_metadata_objects`, `list_reports` с малым `limit`, специализированные карты (`get_accounting_accounts_map`, `get_calculation_types_map`), бухгалтерские shortcuts (`get_accounting_balances_by_subconto_age`, `compare_accounting_balances_by_subconto`) для aging/пересечений остатков и отказ от широкого `get_database_passport(force_refresh=true)` без необходимости.
 - Темы `subkonto` и `accounting-register-patterns` должны включать high-severity guidance с id `accounting-register-turnovers-fields`: `ЗНАЧЕНИЕ(ПланСчетов.<Имя>.*)` принимает только имена предопределённых элементов, конкретные счета передаются UUID-параметрами из `get_accounting_accounts_map`; для виртуальной таблицы `Обороты` использовать поля `СуммаОборотДт`/`СуммаОборотКт` и параметр `Субконто`, а `ОборотыДтКт` применять только для анализа корреспонденции.
 - Темы `virtual-tables`, `subkonto` и `accounting-register-patterns` должны включать high-severity guidance с id `accounting-balance-vs-turnover`: `Остатки` применяются для долга/задолженности/сальдо/остатка на дату, `Обороты` — только для движения за период, `ОстаткиИОбороты` — когда нужны начальное/конечное сальдо и обороты вместе. Для "на конец 2024" использовать дату остатка `ДАТАВРЕМЯ(2025, 1, 1)`.
 - Тема `payroll` должна включать high-severity guidance с id `payroll-salary-source-selection`: для зарплаты за период сначала предпочитать зарплатный отчёт/расчётные регистры ЗУП; если доступен только бухгалтерский регистр, начисленная зарплата по счёту 70 обычно берётся из кредитового оборота 70 (`СуммаОборотКт`) через виртуальную таблицу `Обороты`, а дебетовый оборот 70 нельзя называть начислением.
@@ -1280,7 +1282,170 @@ live-таблицу `ПланСчетов.<ИмяПлана>.ВидыСубко�
 
 ---
 
-## 7.6.1. `get_inventory_balances_by_item`
+## 7.6.1. `get_accounting_balances_by_subconto_age`
+
+**Title:** Остатки по возрасту субконто
+**Priority:** P0
+
+### Назначение
+
+Универсальный конфигурационно-агностичный tool для aging бухгалтерских остатков: вызывающая сторона передает регистр, префиксы счетов, сторону остатка и виды/позиции субконто. Сервер строит запрос к `РегистрБухгалтерии.<Имя>.Остатки`, считает возраст по дате выбранного `СубконтоN` и возвращает агрегированные бакеты плюс детализацию.
+
+Tool не содержит знаний о дебиторке, кредиторке, авансах или конкретных счетах. Бизнес-смысл задает агент или пользователь через `account_code_prefixes`, `balance_side` и выбранные виды субконто.
+
+### Вход
+
+```json
+{
+  "accounting_register": "РегистрБухгалтерии.Хозрасчетный",
+  "as_of": "2026-06-29T23:59:59",
+  "account_code_prefixes": ["62.01", "62.21", "62.31"],
+  "balance_side": "debit",
+  "subconto_kinds": [
+    {"kind": "ref", "type": "ПланВидовХарактеристик.<Имя>", "uuid": "<UUIDКонтрагенты>"},
+    {"kind": "ref", "type": "ПланВидовХарактеристик.<Имя>", "uuid": "<UUIDДоговоры>"},
+    {"kind": "ref", "type": "ПланВидовХарактеристик.<Имя>", "uuid": "<UUIDДокументыРасчетов>"}
+  ],
+  "group_subconto_index": 1,
+  "age_subconto_index": 3,
+  "extra_subconto_indexes": [2, 3],
+  "age_buckets": [90, 180, 365],
+  "min_age_days": 0,
+  "min_amount": 10000,
+  "order_by": "amount_desc",
+  "include_query": false,
+  "include_guidance": false,
+  "limit": 100
+}
+```
+
+Обязательные поля: `account_code_prefixes`, `balance_side`, `subconto_kinds`. Если `accounting_register` не указан, сервер выбирает доступный бухгалтерский регистр или `Хозрасчетный`, если он есть и доступен. Если `as_of` не указан, используется текущая дата сервера. Если `age_buckets` не указан, используются `[90, 180, 365]`.
+
+### Выход
+
+```json
+{
+  "ok": true,
+  "accounting_register": "РегистрБухгалтерии.<Имя>",
+  "as_of": "2026-06-29T23:59:59",
+  "balance_side": "debit",
+  "account_code_prefixes": ["62"],
+  "group_subconto_index": 1,
+  "age_subconto_index": 3,
+  "bucket_rows": [
+    {"bucket": ">365", "amount": 1000000, "row_count": 3}
+  ],
+  "rows": [
+    {
+      "account_code": "62.01",
+      "account": {},
+      "group_subconto": {},
+      "group_subconto_uuid": "...",
+      "age_subconto": {},
+      "age_date": "2025-01-01T00:00:00",
+      "age_days": 545,
+      "amount": 1000000
+    }
+  ],
+  "row_count": 1,
+  "truncated": false,
+  "next_cursor": null,
+  "duration_ms": 42,
+  "warnings": [],
+  "configuration_agnostic": true
+}
+```
+
+При `include_query=true` возвращается `query_used.detail` и `query_used.buckets`. При `include_guidance=true` возвращается пояснение, что tool не интерпретирует счета и аналитики предметно.
+
+### Правила
+
+- Перед вызовом агент должен получить реальные виды субконто через `get_accounting_accounts_map`; порядок массива `subconto_kinds` определяет поля `Субконто1/2/3` виртуальной таблицы.
+- `balance_side=debit` использует `СуммаОстатокДт`, `balance_side=credit` использует `СуммаОстатокКт`.
+- Возраст считается по реквизиту `Дата` значения выбранного `СубконтоN`; если аналитика не имеет даты, такой сценарий нужно выполнять обычным `run_1c_query` после discovery.
+- `min_amount` фильтрует детализацию и бакеты; при значении `0` нулевые остатки не возвращаются.
+- Постоянные данные не изменяются.
+
+---
+
+## 7.6.2. `compare_accounting_balances_by_subconto`
+
+**Title:** Сравнить два набора остатков по субконто
+**Priority:** P0
+
+### Назначение
+
+Универсальный конфигурационно-агностичный tool для поиска пересечений двух наборов бухгалтерских остатков по одной аналитике. Вызывающая сторона задает оба набора счетов и стороны Дт/Кт; сервер агрегирует `Остатки` и соединяет наборы по `УникальныйИдентификатор(СубконтоN)`.
+
+Tool не знает, что левый или правый набор означает дебиторку, кредиторку, авансы или другой бизнес-смысл.
+
+### Вход
+
+```json
+{
+  "accounting_register": "РегистрБухгалтерии.Хозрасчетный",
+  "as_of": "2026-06-29T23:59:59",
+  "subconto_kinds": [
+    {"kind": "ref", "type": "ПланВидовХарактеристик.<Имя>", "uuid": "<UUIDКонтрагенты>"}
+  ],
+  "match_subconto_index": 1,
+  "left_account_code_prefixes": ["62"],
+  "left_balance_side": "debit",
+  "right_account_code_prefixes": ["60"],
+  "right_balance_side": "credit",
+  "min_amount": 10000,
+  "include_query": false,
+  "include_guidance": false,
+  "limit": 100
+}
+```
+
+Обязательные поля: `subconto_kinds`, `left_account_code_prefixes`, `left_balance_side`, `right_account_code_prefixes`, `right_balance_side`. Если `match_subconto_index` не указан, используется `1`.
+
+### Выход
+
+```json
+{
+  "ok": true,
+  "accounting_register": "РегистрБухгалтерии.<Имя>",
+  "as_of": "2026-06-29T23:59:59",
+  "match_subconto_index": 1,
+  "left_balance_side": "debit",
+  "right_balance_side": "credit",
+  "left_account_code_prefixes": ["62"],
+  "right_account_code_prefixes": ["60"],
+  "rows": [
+    {
+      "subconto": {},
+      "subconto_uuid": "...",
+      "left_amount": 100000,
+      "right_amount": 50000,
+      "left_accounts": "62.01",
+      "right_accounts": "60.01"
+    }
+  ],
+  "row_count": 1,
+  "truncated": false,
+  "next_cursor": null,
+  "duration_ms": 31,
+  "warnings": [],
+  "configuration_agnostic": true
+}
+```
+
+При `include_query=true` возвращается `query_used`. При `include_guidance=true` возвращается пояснение, что tool сравнивает произвольные наборы остатков без предметной интерпретации счетов.
+
+### Правила
+
+- `subconto_kinds` задает порядок аналитик виртуальной таблицы `Остатки`; не угадывать позиции, сначала использовать `get_accounting_accounts_map`.
+- Сравнение выполняется по UUID выбранного `СубконтоN`, чтобы одинаковые представления разных ссылок не склеивались.
+- `min_amount` применяется к каждой стороне отдельно; при значении `0` строки с нулем по стороне не возвращаются.
+- Для задач с периодическими движениями, документами или корреспонденцией использовать `get_accounting_entries`, `get_register_records` или `run_1c_query`.
+- Постоянные данные не изменяются.
+
+---
+
+## 7.6.3. `get_inventory_balances_by_item`
 
 **Title:** Остатки товара по складам и организациям
 **Priority:** P0
@@ -3739,7 +3904,7 @@ Knowledge resources возвращают встроенные правила и�
 
 MVP готов, если:
 
-1. Все 26 tools возвращаются в `tools/list`.
+1. Все 28 tools возвращаются в `tools/list`.
 2. У каждого tool есть корректный `inputSchema`.
 3. Все tools возвращают `content` и `isError`; `structuredContent` возвращается в режимах `structured_only` и `both`.
 4. Реализованы allowlist и denylist.
@@ -3763,7 +3928,7 @@ MVP готов, если:
 }
 ```
 
-Ожидание: `ok=true`, `read_only=true`, список tools содержит 26 tools.
+Ожидание: `ok=true`, `read_only=true`, список tools содержит 28 tools.
 
 ## Test 2: Metadata
 

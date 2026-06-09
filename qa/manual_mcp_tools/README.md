@@ -40,4 +40,6 @@
 | TC-024 | `run_1c_report` | [TC-024-run_1c_report.md](TC-024-run_1c_report.md) |
 | TC-025 | `get_object_history` | [TC-025-get_object_history.md](TC-025-get_object_history.md) |
 | TC-026 | `get_current_user_context` | [TC-026-get_current_user_context.md](TC-026-get_current_user_context.md) |
+| TC-027 | `get_accounting_balances_by_subconto_age` | [TC-027-get_accounting_balances_by_subconto_age.md](TC-027-get_accounting_balances_by_subconto_age.md) |
+| TC-028 | `compare_accounting_balances_by_subconto` | [TC-028-compare_accounting_balances_by_subconto.md](TC-028-compare_accounting_balances_by_subconto.md) |
 

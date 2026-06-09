@@ -1,0 +1,92 @@
+# TC-027 - get_accounting_balances_by_subconto_age
+
+Инструмент: `get_accounting_balances_by_subconto_age`
+
+Цель: проверить универсальный aging бухгалтерских остатков по выбранному субконто без конфигурационно-специфичной логики.
+
+## Предусловия
+
+- MCP-сервер 1С развернут и подключен к LLM-чату.
+- Пользователь в чате имеет права, достаточные для сценария.
+- Значения в угловых скобках нужно заменить реальными данными целевой базы.
+- Реальные UUID видов субконто получены через `get_accounting_accounts_map` для нужных счетов.
+
+## Диалоговый сценарий
+
+### Шаг 1
+
+**Сообщение пользователя:**
+
+> Для регистра <accounting_register_full_name> покажи старые остатки на <as_of> по счетам с префиксом <account_prefix>. Группируй по первому субконто, возраст считай по третьему, бакеты 90, 180 и 365 дней, лимит 10.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_accounting_balances_by_subconto_age",
+  "arguments": {
+    "accounting_register": "<accounting_register_full_name>",
+    "as_of": "<as_of>",
+    "account_code_prefixes": ["<account_prefix>"],
+    "balance_side": "debit",
+    "subconto_kinds": [
+      {"kind": "ref", "type": "<subconto_kind_type>", "uuid": "<subconto_kind_uuid_1>"},
+      {"kind": "ref", "type": "<subconto_kind_type>", "uuid": "<subconto_kind_uuid_2>"},
+      {"kind": "ref", "type": "<subconto_kind_type>", "uuid": "<subconto_kind_uuid_3>"}
+    ],
+    "group_subconto_index": 1,
+    "age_subconto_index": 3,
+    "age_buckets": [90, 180, 365],
+    "limit": 10
+  }
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент показывает `bucket_rows` и топ детализации из `rows`, явно подписывает дату остатков и не называет остатки дебиторкой/кредиторкой без указания пользователя.
+
+### Шаг 2
+
+**Сообщение пользователя:**
+
+> Добавь использованные запросы и поясни, как выбран порядок субконто.
+
+**Ожидаемое действие ассистента / MCP вызов:**
+
+~~~json
+{
+  "tool": "get_accounting_balances_by_subconto_age",
+  "arguments": {
+    "accounting_register": "<accounting_register_full_name>",
+    "as_of": "<as_of>",
+    "account_code_prefixes": ["<account_prefix>"],
+    "balance_side": "debit",
+    "subconto_kinds": [
+      {"kind": "ref", "type": "<subconto_kind_type>", "uuid": "<subconto_kind_uuid_1>"},
+      {"kind": "ref", "type": "<subconto_kind_type>", "uuid": "<subconto_kind_uuid_2>"},
+      {"kind": "ref", "type": "<subconto_kind_type>", "uuid": "<subconto_kind_uuid_3>"}
+    ],
+    "group_subconto_index": 1,
+    "age_subconto_index": 3,
+    "include_query": true,
+    "include_guidance": true,
+    "limit": 10
+  }
+}
+~~~
+
+**Ожидаемый ответ ассистента:**
+
+Ассистент включает краткое объяснение `guidance` и сообщает, что `query_used` доступен по явному запросу пользователя.
+
+## Дополнительная проверка
+
+Проверить вызов без `subconto_kinds`: ассистент должен получить структурированную ошибку и объяснить, что сначала нужна карта счетов.
+
+## Общие критерии приемки
+
+- Ассистент не выдумывает имена объектов, полей, регистров или отчетов; при нехватке данных сначала использует обнаружение tools.
+- Ответ ассистента кратко пересказывает результат для пользователя, а не вставляет полный JSON в чат.
+- Если tool возвращает `truncated=true`, ассистент предлагает продолжить и использует `next_cursor` в следующем шаге.
+- Ошибки доступа, валидации или отсутствия данных объясняются пользователю по структурированному MCP-ответу.
