@@ -1,90 +1,123 @@
 {
   "target": "https://laba-1c.astondevs.ru/BUH_KORP/hs/mcp/rpc",
-  "startedAt": "2026-06-03T09:08:43.513Z",
-  "finishedAt": "2026-06-03T09:14:36.244Z",
-  "total": 59,
-  "passed": 21,
-  "failed": 38,
+  "startedAt": "2026-06-09T12:20:32.753Z",
+  "finishedAt": "2026-06-09T12:22:37.091Z",
+  "total": 62,
+  "passed": 25,
+  "failed": 37,
   "tests": [
     {
       "name": "protocol.initialize",
-      "status": "FAIL",
-      "elapsedMs": 10744,
-      "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+      "status": "PASS",
+      "elapsedMs": 283,
+      "details": {
+        "server": {
+          "name": "universal-1c-mcp",
+          "version": "0.1.0"
+        }
       }
     },
     {
       "name": "protocol.tools_list_has_expected_tools",
-      "status": "FAIL",
-      "elapsedMs": 10604,
-      "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+      "status": "PASS",
+      "elapsedMs": 358,
+      "details": {
+        "count": 26
       }
     },
     {
       "name": "protocol.resources_list_and_read",
-      "status": "FAIL",
-      "elapsedMs": 10645,
-      "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+      "status": "PASS",
+      "elapsedMs": 376,
+      "details": {
+        "resources": [
+          "1c://metadata",
+          "1c://context/current-user",
+          "1c://knowledge/query",
+          "1c://knowledge/query/syntax",
+          "1c://knowledge/query/functions",
+          "1c://knowledge/query/optimization",
+          "1c://knowledge/query/temporary-tables",
+          "1c://knowledge/query/compound-types",
+          "1c://knowledge/query/subkonto",
+          "1c://knowledge/query/parameters",
+          "1c://knowledge/query/reports-vs-query",
+          "1c://knowledge/query/report-fast-path",
+          "1c://knowledge/query/payroll"
+        ]
       }
     },
     {
       "name": "fixtures.discover_generic_metadata",
       "status": "FAIL",
-      "elapsedMs": 10700,
+      "elapsedMs": 2824,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "list_metadata_objects auth_context.user_name is missing",
+        "stack": "Error: list_metadata_objects auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async findFirstMetadataObject (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1575:20)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:209:37\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.fixtureDiscovery (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:208:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:194:5)"
       }
     },
     {
       "name": "tool.get_current_user_context",
-      "status": "FAIL",
-      "elapsedMs": 10667,
-      "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+      "status": "PASS",
+      "elapsedMs": 16481,
+      "details": {
+        "user": "web",
+        "objects": 5668,
+        "tools": 26
       }
     },
     {
       "name": "tool.list_metadata_objects_pagination",
       "status": "FAIL",
-      "elapsedMs": 10720,
+      "elapsedMs": 2321,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "list_metadata_objects auth_context.user_name is missing",
+        "stack": "Error: list_metadata_objects auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:324:21\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.discoveryTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:323:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:195:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1739:19)"
+      }
+    },
+    {
+      "name": "tool.search_metadata_fields_pagination",
+      "status": "FAIL",
+      "elapsedMs": 60009,
+      "error": {
+        "message": "This operation was aborted",
+        "stack": "AbortError: This operation was aborted"
+      }
+    },
+    {
+      "name": "tool.list_registers_pagination",
+      "status": "FAIL",
+      "elapsedMs": 6950,
+      "error": {
+        "message": "list_registers auth_context.user_name is missing",
+        "stack": "Error: list_registers auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:355:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.discoveryTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:354:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:195:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1739:19)"
       }
     },
     {
       "name": "tool.list_metadata_objects_does_not_mask_technical_metadata",
       "status": "FAIL",
-      "elapsedMs": 10657,
+      "elapsedMs": 3158,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "list_metadata_objects auth_context.user_name is missing",
+        "stack": "Error: list_metadata_objects auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:367:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.discoveryTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:366:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:195:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1739:19)"
       }
     },
     {
       "name": "tool.list_metadata_objects_does_not_invent_missing_register",
       "status": "FAIL",
-      "elapsedMs": 10728,
+      "elapsedMs": 575,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "list_metadata_objects auth_context.user_name is missing",
+        "stack": "Error: list_metadata_objects auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:383:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.discoveryTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:382:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:195:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1739:19)"
       }
     },
     {
       "name": "tool.discovery_returns_guidance_is_contextual",
       "status": "FAIL",
-      "elapsedMs": 10659,
+      "elapsedMs": 2366,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "list_reports auth_context.user_name is missing",
+        "stack": "Error: list_reports auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:395:21\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.discoveryTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:394:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:195:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1739:19)"
       }
     },
     {
@@ -108,19 +141,19 @@
     {
       "name": "tool.get_metadata_structure_accounting_register_virtual_tables",
       "status": "FAIL",
-      "elapsedMs": 10656,
+      "elapsedMs": 509,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "list_metadata_objects auth_context.user_name is missing",
+        "stack": "Error: list_metadata_objects auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async findAccountingRegister (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1539:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:460:34\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:459:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:196:5)"
       }
     },
     {
       "name": "tool.get_metadata_structure_accumulation_resources_by_mode",
       "status": "FAIL",
-      "elapsedMs": 10677,
+      "elapsedMs": 735,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "list_metadata_objects auth_context.user_name is missing",
+        "stack": "Error: list_metadata_objects auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async findAccumulationRegister (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1556:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:494:36\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:493:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:196:5)"
       }
     },
     {
@@ -135,19 +168,19 @@
     {
       "name": "tool.validate_1c_query_warns_document_tabular_register_fanout",
       "status": "FAIL",
-      "elapsedMs": 10661,
+      "elapsedMs": 1945,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "list_metadata_objects auth_context.user_name is missing",
+        "stack": "Error: list_metadata_objects auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async findFirstMetadataObject (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1575:20)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:525:35\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:524:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:196:5)"
       }
     },
     {
       "name": "tool.validate_1c_query_warns_accounting_subconto_fanout",
       "status": "FAIL",
-      "elapsedMs": 10693,
+      "elapsedMs": 479,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "list_metadata_objects auth_context.user_name is missing",
+        "stack": "Error: list_metadata_objects auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async findAccountingRegister (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1539:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:562:69\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:561:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:196:5)"
       }
     },
     {
@@ -162,10 +195,10 @@
     {
       "name": "tool.validate_1c_query_rejects_main_register_subconto_dtkt",
       "status": "FAIL",
-      "elapsedMs": 10717,
+      "elapsedMs": 460,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "list_metadata_objects auth_context.user_name is missing",
+        "stack": "Error: list_metadata_objects auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async findAccountingRegister (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1539:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:628:69\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:627:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:196:5)"
       }
     },
     {
@@ -180,64 +213,64 @@
     {
       "name": "tool.get_1c_query_guidance_contextual",
       "status": "FAIL",
-      "elapsedMs": 10681,
+      "elapsedMs": 402,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "get_1c_query_guidance auth_context.user_name is missing",
+        "stack": "Error: get_1c_query_guidance auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:654:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:653:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:196:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1739:19)"
       }
     },
     {
       "name": "tool.get_accounting_accounts_map",
       "status": "FAIL",
-      "elapsedMs": 10703,
+      "elapsedMs": 471,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "list_metadata_objects auth_context.user_name is missing",
+        "stack": "Error: list_metadata_objects auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:694:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:693:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:196:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1739:19)"
       }
     },
     {
       "name": "tool.get_accounting_entries_grouped",
       "status": "FAIL",
-      "elapsedMs": 10651,
+      "elapsedMs": 456,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "list_metadata_objects auth_context.user_name is missing",
+        "stack": "Error: list_metadata_objects auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async findAccountingRegister (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1539:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:719:69\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:718:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:196:5)"
       }
     },
     {
       "name": "tool.get_accounting_entries_subconto_join",
       "status": "FAIL",
-      "elapsedMs": 10707,
+      "elapsedMs": 469,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "list_metadata_objects auth_context.user_name is missing",
+        "stack": "Error: list_metadata_objects auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async findAccountingRegister (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1539:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:745:69\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:744:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:196:5)"
       }
     },
     {
       "name": "tool.get_accounting_entries_rejects_ambiguous_subconto_grouping",
       "status": "FAIL",
-      "elapsedMs": 10673,
+      "elapsedMs": 481,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "list_metadata_objects auth_context.user_name is missing",
+        "stack": "Error: list_metadata_objects auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async findAccountingRegister (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1539:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:782:69\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:781:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:196:5)"
       }
     },
     {
       "name": "tool.get_calculation_types_map",
       "status": "FAIL",
-      "elapsedMs": 10720,
+      "elapsedMs": 467,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "list_metadata_objects auth_context.user_name is missing",
+        "stack": "Error: list_metadata_objects auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:798:21\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:797:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:196:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1739:19)"
       }
     },
     {
       "name": "tool.get_database_passport",
       "status": "FAIL",
-      "elapsedMs": 10710,
+      "elapsedMs": 6454,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "get_database_passport auth_context.user_name is missing",
+        "stack": "Error: get_database_passport auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:817:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:816:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:196:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1739:19)"
       }
     },
     {
@@ -270,19 +303,19 @@
     {
       "name": "tool.run_1c_query_accounting_debit_credit_subconto",
       "status": "FAIL",
-      "elapsedMs": 10738,
+      "elapsedMs": 478,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "list_metadata_objects auth_context.user_name is missing",
+        "stack": "Error: list_metadata_objects auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async findAccountingRegister (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1539:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:903:69\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:902:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:196:5)"
       }
     },
     {
       "name": "tool.run_1c_query_accounting_balance_subconto",
       "status": "FAIL",
-      "elapsedMs": 10731,
+      "elapsedMs": 470,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "list_metadata_objects auth_context.user_name is missing",
+        "stack": "Error: list_metadata_objects auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async findAccountingRegister (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1539:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:923:69\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.queryAndSchemaTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:922:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:196:5)"
       }
     },
     {
@@ -300,7 +333,7 @@
       "elapsedMs": 0,
       "error": {
         "message": "fixture counterpartyRef/sampleRef is missing",
-        "stack": "Error: fixture counterpartyRef/sampleRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1607:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1654:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:932:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:29)\n    at ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:931:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:194:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1681:19)"
+        "stack": "Error: fixture counterpartyRef/sampleRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1712:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:964:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:29)\n    at ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:963:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:197:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1739:19)"
       }
     },
     {
@@ -309,7 +342,7 @@
       "elapsedMs": 0,
       "error": {
         "message": "fixture counterpartyRef/sampleRef is missing",
-        "stack": "Error: fixture counterpartyRef/sampleRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1607:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1654:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:957:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:29)\n    at ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:956:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:194:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1681:19)"
+        "stack": "Error: fixture counterpartyRef/sampleRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1712:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:989:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:29)\n    at ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:988:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:197:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1739:19)"
       }
     },
     {
@@ -318,7 +351,7 @@
       "elapsedMs": 0,
       "error": {
         "message": "fixture counterpartyRef/sampleRef is missing",
-        "stack": "Error: fixture counterpartyRef/sampleRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1607:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1654:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:969:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:29)\n    at ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:968:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:194:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1681:19)"
+        "stack": "Error: fixture counterpartyRef/sampleRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1712:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1001:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:29)\n    at ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1000:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:197:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1739:19)"
       }
     },
     {
@@ -327,7 +360,7 @@
       "elapsedMs": 0,
       "error": {
         "message": "fixture organizationRef/counterpartyRef/sampleRef is missing",
-        "stack": "Error: fixture organizationRef/counterpartyRef/sampleRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1607:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1654:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:983:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:29)\n    at ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:982:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:194:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1681:19)"
+        "stack": "Error: fixture organizationRef/counterpartyRef/sampleRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1712:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1015:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:29)\n    at ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1014:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:197:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1739:19)"
       }
     },
     {
@@ -336,7 +369,7 @@
       "elapsedMs": 0,
       "error": {
         "message": "fixture counterpartyRef/sampleRef is missing",
-        "stack": "Error: fixture counterpartyRef/sampleRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1607:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1654:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:996:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:159:29)\n    at ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:995:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:194:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1681:19)"
+        "stack": "Error: fixture counterpartyRef/sampleRef is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at requireContextRef (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1712:3)\n    at file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1028:19\n    at ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:29)\n    at ContractRunner.referenceTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1027:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:197:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1739:19)"
       }
     },
     {
@@ -360,34 +393,43 @@
     {
       "name": "tool.get_register_records_accounting_debit_credit_mode",
       "status": "FAIL",
-      "elapsedMs": 10705,
+      "elapsedMs": 498,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "list_metadata_objects auth_context.user_name is missing",
+        "stack": "Error: list_metadata_objects auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async findAccountingRegister (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1539:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1070:69\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.registerTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1069:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:198:5)"
       }
     },
     {
       "name": "tool.get_register_records_accounting_debit_credit_filter",
       "status": "FAIL",
-      "elapsedMs": 10641,
+      "elapsedMs": 445,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "list_metadata_objects auth_context.user_name is missing",
+        "stack": "Error: list_metadata_objects auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async findAccountingRegister (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1539:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1094:69\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.registerTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1093:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:198:5)"
       }
     },
     {
       "name": "tool.get_register_records_accounting_turnovers_filter",
       "status": "FAIL",
-      "elapsedMs": 10720,
+      "elapsedMs": 433,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "list_metadata_objects auth_context.user_name is missing",
+        "stack": "Error: list_metadata_objects auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async findAccountingRegister (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1539:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1133:69\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.registerTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1132:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:198:5)"
+      }
+    },
+    {
+      "name": "tool.get_accounting_balances",
+      "status": "FAIL",
+      "elapsedMs": 493,
+      "error": {
+        "message": "list_metadata_objects auth_context.user_name is missing",
+        "stack": "Error: list_metadata_objects auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async findAccountingRegister (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1539:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1196:69\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.registerTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1195:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:198:5)"
       }
     },
     {
       "name": "tool.get_register_records_bad_mode_is_diagnostic",
       "status": "PASS",
-      "elapsedMs": 0,
+      "elapsedMs": 1,
       "details": {
         "skipped": true,
         "reason": "no information register fixture"
@@ -414,10 +456,10 @@
     {
       "name": "tool.list_reports",
       "status": "FAIL",
-      "elapsedMs": 10658,
+      "elapsedMs": 2668,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "list_reports auth_context.user_name is missing",
+        "stack": "Error: list_reports auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1265:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.reportTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1264:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:200:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1739:19)"
       }
     },
     {
@@ -441,19 +483,19 @@
     {
       "name": "negative.validate_missing_metadata_is_invalid",
       "status": "FAIL",
-      "elapsedMs": 10640,
+      "elapsedMs": 221,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "validate_1c_query auth_context.user_name is missing",
+        "stack": "Error: validate_1c_query auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1330:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.negativeTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1329:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:201:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1739:19)"
       }
     },
     {
       "name": "negative.run_missing_metadata_is_diagnostic",
       "status": "FAIL",
-      "elapsedMs": 10691,
+      "elapsedMs": 355,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "run_1c_query auth_context.user_name is missing",
+        "stack": "Error: run_1c_query auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1341:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.negativeTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1340:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:201:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1739:19)"
       }
     },
     {
@@ -477,25 +519,25 @@
     {
       "name": "negative.get_accounting_entries_rejects_subconto_value_without_kind",
       "status": "FAIL",
-      "elapsedMs": 10673,
+      "elapsedMs": 450,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "list_metadata_objects auth_context.user_name is missing",
+        "stack": "Error: list_metadata_objects auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async findAccountingRegister (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1539:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1383:69\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.negativeTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1382:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:201:5)"
       }
     },
     {
       "name": "negative.run_main_register_subconto_dtkt_is_smart_error",
       "status": "FAIL",
-      "elapsedMs": 10718,
+      "elapsedMs": 489,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "list_metadata_objects auth_context.user_name is missing",
+        "stack": "Error: list_metadata_objects auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async findAccountingRegister (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1539:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1403:69\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.negativeTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1402:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:201:5)"
       }
     },
     {
       "name": "negative.validate_plain_batch_without_temp_tables",
       "status": "PASS",
-      "elapsedMs": 1,
+      "elapsedMs": 0,
       "details": {
         "skipped": true,
         "reason": "not enough query fixtures"
@@ -522,19 +564,19 @@
     {
       "name": "negative.unknown_tool",
       "status": "FAIL",
-      "elapsedMs": 10705,
+      "elapsedMs": 159,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "definitely_not_a_tool auth_context.user_name is missing",
+        "stack": "Error: definitely_not_a_tool auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1457:22\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.negativeTests (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1456:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:201:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1739:19)"
       }
     },
     {
       "name": "crosscheck.every_listed_query_object_has_basic_structure_sample",
       "status": "FAIL",
-      "elapsedMs": 10726,
+      "elapsedMs": 8141,
       "error": {
-        "message": "fetch failed",
-        "stack": "TypeError: fetch failed"
+        "message": "list_metadata_objects auth_context.user_name is missing",
+        "stack": "Error: list_metadata_objects auth_context.user_name is missing\n    at assert (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1665:25)\n    at assertAuthContext (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1672:3)\n    at rawTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1608:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async okTool (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1600:18)\n    at async file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1490:26\n    at async ContractRunner.test (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:162:23)\n    at async ContractRunner.crossChecks (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1489:5)\n    at async ContractRunner.run (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:202:5)\n    at async main (file:///C:/Golden/Andersen/1c-mcp-server/scripts/mcp_contract_test.mjs:1739:19)"
       }
     }
   ]

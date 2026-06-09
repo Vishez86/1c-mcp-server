@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { writeFile, mkdir } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { dirname, extname, resolve } from "node:path";
 
 const DEFAULT_URL = "https://laba-1c.astondevs.ru/BUH_KORP/hs/mcp/rpc";
 const CONTRACT_PERIOD = makeContractPeriod();
@@ -40,6 +40,8 @@ function parseArgs(argv) {
     basic: process.env.MCP_BASIC || "",
     timeoutMs: Number(process.env.MCP_TIMEOUT_MS || 60000),
     out: process.env.MCP_CONTRACT_OUT || "",
+    responseMode: process.env.MCP_RESPONSE_MODE || "",
+    modes: [],
     failFast: false,
     verbose: false,
   };
@@ -54,6 +56,11 @@ function parseArgs(argv) {
     else if (arg.startsWith("--timeout-ms=")) options.timeoutMs = Number(arg.slice("--timeout-ms=".length));
     else if (arg === "--out") options.out = argv[++i];
     else if (arg.startsWith("--out=")) options.out = arg.slice("--out=".length);
+    else if (arg === "--response-mode") options.responseMode = argv[++i];
+    else if (arg.startsWith("--response-mode=")) options.responseMode = arg.slice("--response-mode=".length);
+    else if (arg === "--modes") options.modes = parseModes(argv[++i]);
+    else if (arg.startsWith("--modes=")) options.modes = parseModes(arg.slice("--modes=".length));
+    else if (arg === "--all-response-modes") options.modes = ["text_only", "structured_only", "both"];
     else if (arg === "--fail-fast") options.failFast = true;
     else if (arg === "--verbose") options.verbose = true;
     else if (arg === "--help" || arg === "-h") {
@@ -68,18 +75,40 @@ function parseArgs(argv) {
   if (!Number.isFinite(options.timeoutMs) || options.timeoutMs <= 0) {
     throw new Error("--timeout-ms must be a positive number.");
   }
+  if (options.responseMode) options.responseMode = normalizeMode(options.responseMode);
+  if (options.modes.length === 0 && process.env.MCP_RESPONSE_MODES) {
+    options.modes = parseModes(process.env.MCP_RESPONSE_MODES);
+  }
+  options.modes = options.modes.map(normalizeMode);
   return options;
+}
+
+function parseModes(value) {
+  return String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeMode(mode) {
+  const normalized = String(mode || "").trim().toLowerCase();
+  if (!["text_only", "structured_only", "both"].includes(normalized)) {
+    throw new Error(`Unsupported response mode: ${mode}`);
+  }
+  return normalized;
 }
 
 function printHelp() {
   console.log(`Usage:
-  node scripts/mcp_contract_test.mjs [--url URL] [--basic user:pass] [--out report.json] [--verbose]
+  node scripts/mcp_contract_test.mjs [--url URL] [--basic user:pass] [--out report.json] [--response-mode MODE] [--all-response-modes] [--verbose]
 
 Environment:
   MCP_URL          JSON-RPC endpoint. Defaults to ${DEFAULT_URL}
   MCP_BASIC        Optional Basic auth value in user:pass form.
   MCP_TIMEOUT_MS   Per-request timeout, default 60000.
   MCP_CONTRACT_OUT Optional JSON report path.
+  MCP_RESPONSE_MODE Optional tool result mode: text_only, structured_only, both.
+  MCP_RESPONSE_MODES Optional comma-separated modes for repeated runs.
 `);
 }
 
@@ -88,6 +117,7 @@ class McpHttpClient {
     this.url = options.url;
     this.timeoutMs = options.timeoutMs;
     this.verbose = options.verbose;
+    this.responseMode = options.responseMode || "";
     this.nextId = 1;
     this.headers = {
       "content-type": "application/json",
@@ -102,6 +132,9 @@ class McpHttpClient {
   async rpc(method, params = {}) {
     const id = this.nextId;
     this.nextId += 1;
+    if (this.responseMode && (method === "tools/list" || method === "tools/call")) {
+      params = { ...params, _response_mode: this.responseMode };
+    }
     const body = { jsonrpc: "2.0", id, method, params };
     const started = Date.now();
     const controller = new AbortController();
@@ -188,6 +221,7 @@ class ContractRunner {
   async run() {
     this.startedAt = new Date().toISOString();
     console.log(`MCP contract test target: ${this.client.url}`);
+    if (this.options.responseMode) console.log(`Response mode: ${this.options.responseMode}`);
     console.log(`Started: ${this.startedAt}`);
 
     await this.protocolTests();
@@ -281,6 +315,7 @@ class ContractRunner {
       assert(missing.length === 0, `missing tools: ${missing.join(", ")}`);
       assert(names.length === EXPECTED_TOOLS.length, `expected ${EXPECTED_TOOLS.length}, got ${names.length}; extra=${extra.join(", ")}`);
       assert((result?.server_hints || []).some((hint) => String(hint).includes("access_denied")), "tools/list must warn about per-user access_denied retry policy");
+      assertToolsListMode(tools, this.options.responseMode);
       this.context.toolNames = names;
       return { count: names.length };
     });
@@ -1516,6 +1551,7 @@ class ContractRunner {
     const failed = this.tests.filter((test) => test.status === "FAIL").length;
     const summary = {
       target: this.client.url,
+      responseMode: this.options.responseMode || "server_default",
       startedAt: this.startedAt,
       finishedAt: new Date().toISOString(),
       total: this.tests.length,
@@ -1604,6 +1640,7 @@ async function okTool(client, name, args) {
 
 async function rawTool(client, name, args) {
   const { result } = await client.callTool(name, args);
+  assertToolResultEnvelope(result, name, client.responseMode);
   const unwrapped = unwrapToolResult(result);
   assertAuthContext(unwrapped, name);
   if (unwrapped?.ok === false) {
@@ -1615,6 +1652,53 @@ async function rawTool(client, name, args) {
     }
   }
   return unwrapped;
+}
+
+function assertToolsListMode(tools, responseMode) {
+  if (!responseMode) return;
+  if (responseMode === "text_only") {
+    const withSchema = tools.filter((tool) => tool.outputSchema);
+    assert(withSchema.length === 0, `text_only tools/list must not declare outputSchema: ${withSchema.map((tool) => tool.name).join(", ")}`);
+    return;
+  }
+  const withoutSchema = tools.filter((tool) => !tool.outputSchema);
+  assert(withoutSchema.length === 0, `${responseMode} tools/list must declare outputSchema: ${withoutSchema.map((tool) => tool.name).join(", ")}`);
+}
+
+function assertToolResultEnvelope(result, toolName, responseMode) {
+  if (!responseMode) return;
+  if (!result || typeof result !== "object") {
+    throw new Error(`${toolName} result envelope must be an object`);
+  }
+  const text = firstTextContent(result);
+  if (responseMode === "text_only") {
+    assert(!result.structuredContent, `${toolName} text_only must not include structuredContent`);
+    assert(canParseJsonObject(text), `${toolName} text_only content[0].text must contain full JSON`);
+    return;
+  }
+  assert(result.structuredContent && typeof result.structuredContent === "object", `${toolName} ${responseMode} must include structuredContent`);
+  if (responseMode === "both") {
+    if (result.isError) {
+      assert((result.content || []).some((item) => item?.type === "text" && String(item.text || "").includes("Диагностика JSON:")),
+        `${toolName} both error content must include JSON diagnostics`);
+    } else {
+      assert(String(text || "").includes("structuredContent="), `${toolName} both success text must duplicate structuredContent`);
+    }
+  }
+}
+
+function firstTextContent(result) {
+  return result?.content?.find?.((item) => item?.type === "text" && typeof item.text === "string")?.text || "";
+}
+
+function canParseJsonObject(text) {
+  if (!text) return false;
+  try {
+    const parsed = JSON.parse(text);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed);
+  } catch {
+    return false;
+  }
 }
 
 function unwrapToolResult(result) {
@@ -1679,7 +1763,17 @@ function assertErrorDiagnosticText(toolResult, toolName) {
   const texts = (toolResult?.content || [])
     .filter((item) => item?.type === "text" && typeof item.text === "string")
     .map((item) => item.text);
-  assert(texts.some((text) => text.includes("Диагностика JSON:")), `${toolName} error content must include JSON diagnostics`);
+  const hasDiagnosticText = texts.some((text) => text.includes("Диагностика JSON:"));
+  const hasJsonText = texts.some((text) => {
+    try {
+      const parsed = JSON.parse(text);
+      return parsed?.ok === false && parsed?.error;
+    } catch {
+      return false;
+    }
+  });
+  const hasStructuredError = toolResult?.structuredContent?.ok === false && toolResult.structuredContent?.error;
+  assert(hasDiagnosticText || hasJsonText || hasStructuredError, `${toolName} error content must expose JSON diagnostics`);
 }
 
 function assertRef(value, label) {
@@ -1734,16 +1828,59 @@ function printRow(row) {
 
 async function main() {
   const options = parseArgs(process.argv);
+  if (options.modes.length > 0) {
+    const summaries = [];
+    for (const mode of options.modes) {
+      const runOptions = {
+        ...options,
+        responseMode: mode,
+        out: outPathForMode(options.out, mode),
+        modes: [],
+      };
+      summaries.push(await runContract(runOptions));
+    }
+    const aggregate = {
+      target: options.url,
+      responseModes: options.modes,
+      startedAt: summaries[0]?.startedAt,
+      finishedAt: new Date().toISOString(),
+      total: summaries.reduce((sum, item) => sum + item.total, 0),
+      passed: summaries.reduce((sum, item) => sum + item.passed, 0),
+      failed: summaries.reduce((sum, item) => sum + item.failed, 0),
+      summaries,
+    };
+    if (options.out) {
+      await writeReport(options.out, aggregate);
+    }
+    process.exitCode = aggregate.failed > 0 ? 1 : 0;
+    return;
+  }
+  const summary = await runContract(options);
+  process.exitCode = summary.failed > 0 ? 1 : 0;
+}
+
+async function runContract(options) {
   const client = new McpHttpClient(options);
   const runner = new ContractRunner(client, options);
   const summary = await runner.run();
   if (options.out) {
-    const out = resolve(options.out);
-    await mkdir(dirname(out), { recursive: true });
-    await writeFile(out, `${JSON.stringify(summary, null, 2)}\n`, "utf8");
-    console.log(`Report written: ${out}`);
+    await writeReport(options.out, summary);
   }
-  process.exitCode = summary.failed > 0 ? 1 : 0;
+  return summary;
+}
+
+async function writeReport(path, data) {
+  const out = resolve(path);
+  await mkdir(dirname(out), { recursive: true });
+  await writeFile(out, `${JSON.stringify(data, null, 2)}\n`, "utf8");
+  console.log(`Report written: ${out}`);
+}
+
+function outPathForMode(path, mode) {
+  if (!path) return "";
+  const extension = extname(path);
+  if (!extension) return `${path}.${mode}`;
+  return `${path.slice(0, -extension.length)}.${mode}${extension}`;
 }
 
 main().catch((error) => {
