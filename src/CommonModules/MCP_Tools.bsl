@@ -20,6 +20,8 @@
 	Результат.Добавить(Tool_list_registers(РежимРезультата));
 	Результат.Добавить(Tool_get_accounting_accounts_map(РежимРезультата));
 	Результат.Добавить(Tool_get_accounting_balances(РежимРезультата));
+	Результат.Добавить(Tool_get_accounting_balances_by_subconto_age(РежимРезультата));
+	Результат.Добавить(Tool_compare_accounting_balances_by_subconto(РежимРезультата));
 	Результат.Добавить(Tool_get_accounting_entries(РежимРезультата));
 	Результат.Добавить(Tool_get_inventory_balances_by_item(РежимРезультата));
 	Результат.Добавить(Tool_get_calculation_types_map(РежимРезультата));
@@ -78,6 +80,10 @@
 			Данные = MCP_Tools_Impl.GetAccountingAccountsMap(Аргументы);
 		ИначеЕсли ИмяТула = "get_accounting_balances" Тогда
 			Данные = MCP_Tools_Impl.GetAccountingBalances(Аргументы);
+		ИначеЕсли ИмяТула = "get_accounting_balances_by_subconto_age" Тогда
+			Данные = MCP_Tools_Impl.GetAccountingBalancesBySubcontoAge(Аргументы);
+		ИначеЕсли ИмяТула = "compare_accounting_balances_by_subconto" Тогда
+			Данные = MCP_Tools_Impl.CompareAccountingBalancesBySubconto(Аргументы);
 		ИначеЕсли ИмяТула = "get_accounting_entries" Тогда
 			Данные = MCP_Tools_Impl.GetAccountingEntries(Аргументы);
 		ИначеЕсли ИмяТула = "get_inventory_balances_by_item" Тогда
@@ -931,6 +937,51 @@
 		Props, Неопределено, РежимРезультата);
 КонецФункции
 
+Функция Tool_get_accounting_balances_by_subconto_age(РежимРезультата = "")
+	Props = Новый Структура;
+	Props.Вставить("accounting_register", _Схема("string", , "Бухгалтерский регистр, например РегистрБухгалтерии.Хозрасчетный. Если не указан, выбирается доступный или Хозрасчетный."));
+	Props.Вставить("as_of", _Схема("string", , "Дата остатков ISO 8601. Если не указана, используется текущая дата сервера."));
+	Props.Вставить("account_code_prefixes", _Схема("array", , "Префиксы кодов счетов. Бизнес-смысл счетов задает вызывающая сторона; сервер их не интерпретирует."));
+	Props.Вставить("balance_side", _СхемаЕnum(СписокСтрок("debit,credit")));
+	Props.Вставить("subconto_kinds", _Схема("array", , "Массив видов субконто из get_accounting_accounts_map в нужном порядке для параметра виртуальной таблицы Субконто."));
+	Props.Вставить("group_subconto_index", _СхемаInt(1, 3, 1));
+	Props.Вставить("age_subconto_index", _СхемаInt(1, 3, 3));
+	Props.Вставить("extra_subconto_indexes", _Схема("array", , "Дополнительные позиции субконто 1..3, которые надо вернуть в детализации, например [2,3]."));
+	Props.Вставить("age_buckets", _Схема("array", , "Пороги старения в днях, например [90,180,365]. Возвращаются bucket_rows с группами >порог."));
+	Props.Вставить("min_age_days", _СхемаInt(0, 100000, 0));
+	Props.Вставить("min_amount", _Схема("number", , "Минимальная сумма остатка для детализации и бакетов."));
+	Props.Вставить("order_by", _СхемаЕnum(СписокСтрок("amount_desc,age_desc,account")));
+	Props.Вставить("include_query", _Схема("boolean", , "Вернуть использованные read-only запросы."));
+	Props.Вставить("include_guidance", _Схема("boolean", , "Вернуть пояснение универсального маршрута."));
+	Props.Вставить("limit", _СхемаInt(1, 1000, 100));
+	Props.Вставить("cursor", _Схема("string", , "Offset cursor строк детализации."));
+	Возврат _Tool("get_accounting_balances_by_subconto_age",
+		"Остатки по возрасту субконто",
+		"Универсальный конфигурационно-агностичный tool для aging бухгалтерских остатков: вызывающая сторона передает регистр, префиксы счетов, сторону остатка и виды/позиции субконто. Сервер строит быстрый запрос к Остатки, считает возраст по дате выбранного субконто и возвращает bucket_rows плюс топ детализации. Не содержит знаний о дебиторке, кредиторке, авансах или конкретных счетах.",
+		Props, _Required("account_code_prefixes", "balance_side", "subconto_kinds"), РежимРезультата);
+КонецФункции
+
+Функция Tool_compare_accounting_balances_by_subconto(РежимРезультата = "")
+	Props = Новый Структура;
+	Props.Вставить("accounting_register", _Схема("string", , "Бухгалтерский регистр, например РегистрБухгалтерии.Хозрасчетный. Если не указан, выбирается доступный или Хозрасчетный."));
+	Props.Вставить("as_of", _Схема("string", , "Дата остатков ISO 8601. Если не указана, используется текущая дата сервера."));
+	Props.Вставить("subconto_kinds", _Схема("array", , "Массив видов субконто из get_accounting_accounts_map в нужном порядке для параметра виртуальной таблицы Субконто."));
+	Props.Вставить("match_subconto_index", _СхемаInt(1, 3, 1));
+	Props.Вставить("left_account_code_prefixes", _Схема("array", , "Префиксы счетов левого набора."));
+	Props.Вставить("left_balance_side", _СхемаЕnum(СписокСтрок("debit,credit")));
+	Props.Вставить("right_account_code_prefixes", _Схема("array", , "Префиксы счетов правого набора."));
+	Props.Вставить("right_balance_side", _СхемаЕnum(СписокСтрок("debit,credit")));
+	Props.Вставить("min_amount", _Схема("number", , "Минимальная сумма по каждой стороне."));
+	Props.Вставить("include_query", _Схема("boolean", , "Вернуть использованный read-only запрос."));
+	Props.Вставить("include_guidance", _Схема("boolean", , "Вернуть пояснение универсального маршрута."));
+	Props.Вставить("limit", _СхемаInt(1, 1000, 100));
+	Props.Вставить("cursor", _Схема("string", , "Offset cursor строк результата."));
+	Возврат _Tool("compare_accounting_balances_by_subconto",
+		"Сравнить два набора остатков по субконто",
+		"Универсальный конфигурационно-агностичный tool для поиска пересечений двух наборов бухгалтерских остатков по одной аналитике. Вызывающая сторона задает оба набора счетов и стороны Дт/Кт; сервер агрегирует Остатки и соединяет по УникальныйИдентификатор(СубконтоN).",
+		Props, _Required("subconto_kinds", "left_account_code_prefixes", "left_balance_side", "right_account_code_prefixes", "right_balance_side"), РежимРезультата);
+КонецФункции
+
 Функция Tool_get_accounting_entries(РежимРезультата = "")
 	Props = Новый Структура;
 	Props.Вставить("accounting_register", _Схема("string", , "Бухгалтерский регистр, например РегистрБухгалтерии.Хозрасчетный. Если не указан, выбирается доступный или Хозрасчетный."));
@@ -1359,7 +1410,7 @@
 	Возврат Стр;
 КонецФункции
 
-Функция _Required(Знач П1, Знач П2 = "", Знач П3 = "")
+Функция _Required(Знач П1, Знач П2 = "", Знач П3 = "", Знач П4 = "", Знач П5 = "")
 	М = Новый Массив;
 	М.Добавить(П1);
 	Если НЕ ПустаяСтрока(П2) Тогда
@@ -1367,6 +1418,12 @@
 	КонецЕсли;
 	Если НЕ ПустаяСтрока(П3) Тогда
 		М.Добавить(П3);
+	КонецЕсли;
+	Если НЕ ПустаяСтрока(П4) Тогда
+		М.Добавить(П4);
+	КонецЕсли;
+	Если НЕ ПустаяСтрока(П5) Тогда
+		М.Добавить(П5);
 	КонецЕсли;
 	Возврат М;
 КонецФункции

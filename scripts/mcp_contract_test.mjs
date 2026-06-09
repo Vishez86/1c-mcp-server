@@ -15,6 +15,8 @@ const EXPECTED_TOOLS = [
   "list_registers",
   "get_accounting_accounts_map",
   "get_accounting_balances",
+  "get_accounting_balances_by_subconto_age",
+  "compare_accounting_balances_by_subconto",
   "get_accounting_entries",
   "get_inventory_balances_by_item",
   "get_calculation_types_map",
@@ -841,11 +843,10 @@ class ContractRunner {
         limit: 5,
       });
       assert(result.plan === plan, `unexpected plan: ${result.plan}`);
-      assert(Array.isArray(result.rows), "rows must be present");
       assert(Array.isArray(result.calculation_types), "calculation_types must be present");
       assert("total_calculation_types" in result, "total_calculation_types must be present");
       assert(result.configuration_agnostic === true, "result must be configuration agnostic");
-      return { plan, rows: result.rows.length, total: result.total_calculation_types };
+      return { plan, calculationTypes: result.calculation_types.length, total: result.total_calculation_types };
     });
 
     await this.test("tool.get_database_passport", async () => {
@@ -854,6 +855,8 @@ class ContractRunner {
         include_period: true,
         include_closed_periods: true,
         include_accumulation_registers: true,
+        include_information_registers: true,
+        include_calculation_registers: true,
         organization_limit: 5,
         accounting_register_limit: 2,
         accumulation_register_limit: 5,
@@ -1245,6 +1248,84 @@ class ContractRunner {
       assert(Array.isArray(result.rows), "accounting balance rows must be an array");
       assert("truncated" in result, "truncated flag must be present");
       return { register: accountingRegister.fullName, rows: result.rows.length, truncated: result.truncated };
+    });
+
+    await this.test("tool.get_accounting_balances_by_subconto_age", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) {
+        return { skipped: true, reason: "no accounting register in metadata" };
+      }
+      const map = await okTool(this.client, "get_accounting_accounts_map", {
+        account_code_prefix: "62",
+        include_empty_subconto: false,
+        limit: 20,
+      });
+      const accountWithSettlementDoc = (map.accounts || []).find((account) =>
+        (account.subconto || []).some((item) => item.position === 1)
+        && (account.subconto || []).some((item) => item.position === 3)
+      );
+      if (!accountWithSettlementDoc) {
+        return { skipped: true, reason: "no 62 account with subconto positions 1 and 3" };
+      }
+      const subcontoKinds = (accountWithSettlementDoc.subconto || [])
+        .sort((left, right) => left.position - right.position)
+        .map((item) => item.ref);
+      const result = await okTool(this.client, "get_accounting_balances_by_subconto_age", {
+        accounting_register: accountingRegister.name,
+        as_of: CONTRACT_PERIOD.end,
+        account_code_prefixes: ["62"],
+        balance_side: "debit",
+        subconto_kinds: subcontoKinds,
+        group_subconto_index: 1,
+        age_subconto_index: 3,
+        age_buckets: [90, 180, 365],
+        limit: 5,
+        include_query: true,
+      });
+      assert(result.accounting_register === accountingRegister.fullName, "unexpected accounting register name");
+      assert(result.configuration_agnostic === true, "aging tool must be configuration agnostic");
+      assert(Array.isArray(result.bucket_rows), "aging bucket_rows must be an array");
+      assert(Array.isArray(result.rows), "aging rows must be an array");
+      assert(result.query_used?.detail?.includes(".Остатки("), "aging detail query must use Остатки");
+      return { register: accountingRegister.fullName, rows: result.rows.length, buckets: result.bucket_rows.length };
+    });
+
+    await this.test("tool.compare_accounting_balances_by_subconto", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) {
+        return { skipped: true, reason: "no accounting register in metadata" };
+      }
+      const map = await okTool(this.client, "get_accounting_accounts_map", {
+        account_code_prefix: "62",
+        include_empty_subconto: false,
+        limit: 20,
+      });
+      const accountWithCounterparty = (map.accounts || []).find((account) =>
+        (account.subconto || []).some((item) => item.position === 1)
+      );
+      if (!accountWithCounterparty) {
+        return { skipped: true, reason: "no 62 account with counterparty subconto" };
+      }
+      const subcontoKinds = (accountWithCounterparty.subconto || [])
+        .sort((left, right) => left.position - right.position)
+        .map((item) => item.ref);
+      const result = await okTool(this.client, "compare_accounting_balances_by_subconto", {
+        accounting_register: accountingRegister.name,
+        as_of: CONTRACT_PERIOD.end,
+        subconto_kinds: subcontoKinds,
+        match_subconto_index: 1,
+        left_account_code_prefixes: ["62"],
+        left_balance_side: "debit",
+        right_account_code_prefixes: ["60"],
+        right_balance_side: "credit",
+        limit: 5,
+        include_query: true,
+      });
+      assert(result.accounting_register === accountingRegister.fullName, "unexpected accounting register name");
+      assert(result.configuration_agnostic === true, "compare tool must be configuration agnostic");
+      assert(Array.isArray(result.rows), "compare rows must be an array");
+      assert(result.query_used?.includes("ВТ_ЛевыеОстатки"), "compare query must use temporary left table");
+      return { register: accountingRegister.fullName, rows: result.rows.length };
     });
 
     await this.test("tool.get_register_records_bad_mode_is_diagnostic", async () => {
