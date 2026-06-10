@@ -124,7 +124,7 @@
 
 **Назначение:** выполнить безопасный read-only запрос на языке запросов 1С. Временные таблицы в пакетах разрешены как рабочая область, изменение постоянных данных запрещено.
 
-**Параметры:** обязательный `query: string`; `parameters: object` с типизированными значениями `kind=string|number|boolean|date|datetime|uuid|ref|enum|array|null`; `limit: integer 1..1000 = 100`; `cursor`; `timeout_seconds: integer 1..60 = 15`; `validate_before_run`; `return_format: rows|table`; `include_column_types`.
+**Параметры:** обязательный `query: string`; `parameters: object` с типизированными значениями `kind=string|number|boolean|date|datetime|uuid|ref|enum|array|null`; `limit: integer 1..1000 = 100`; `cursor`; `timeout_seconds: integer 1..60 = 15`; `validate_before_run` (legacy-флаг, серверная проверка всё равно выполняется); `return_format: rows|table`; `include_column_types`.
 
 **Пример:**
 
@@ -136,7 +136,7 @@
 }
 ```
 
-**Выходящая схема:** `columns[] { name, type_description }`, `rows[]`, `row_count`, `truncated`, `next_cursor`, `duration_ms`, `warnings[]`, опционально `query_guidance`. При ошибках запроса дополнительно возвращаются `error_code`, `hint`, `field`, `field_path`, `object`, `available_fields`, `suggestions`.
+**Выходящая схема:** `validation { ok, valid, errors[], warnings[] }`, `columns[] { name, type_description }`, `rows[]`, `row_count`, `truncated`, `next_cursor`, `duration_ms`, `warnings[]`, опционально `query_guidance`. При ошибках запроса дополнительно возвращаются `error_code`, `hint`, `field`, `field_path`, `object`, `available_fields`, `suggestions`.
 
 **Ограничения:** может выполняться долго на больших БД, особенно при широких `JOIN`, виртуальных таблицах без параметров и отсутствии индексов. Не используйте `ВЫБРАТЬ *`; сначала получите структуру метаданных и ограничивайте поля, период и `limit`.
 

@@ -906,6 +906,9 @@ class ContractRunner {
       if (!row) return { skipped: true, reason: "generic catalog fixture has no rows", catalog: fixture.full_name };
       assertRef(row.Ссылка, "temporary table ref");
       assert(row.Ссылка.uuid === row.UUID, "temporary table UUID must match encoded ref uuid");
+      assert(result.validation?.ok === true, "run_1c_query must include successful validation.ok");
+      assert(result.validation?.valid === true, "run_1c_query validation must keep valid=true for compatibility");
+      assert(Array.isArray(result.validation?.warnings), "run_1c_query validation warnings must be an array");
       return { row };
     });
 
@@ -1476,6 +1479,21 @@ class ContractRunner {
       return { errorCode: result.error?.code, message: result.error?.message, parsedDetails };
     });
 
+    await this.test("negative.run_validate_before_run_false_is_ignored", async () => {
+      const result = await rawTool(this.client, "run_1c_query", {
+        query: "ВЫБРАТЬ ПЕРВЫЕ 1 Объект ИЗ РегистрСведений.MCP_НесуществующийРегистр",
+        validate_before_run: false,
+        limit: 1,
+      });
+      assert(result.ok === false, "invalid query must fail even with validate_before_run=false");
+      assert(result.error?.code === "query_validation_failed", `unexpected error code: ${result.error?.code}`);
+      const parsedDetails = result.error?.details?.parsed_details;
+      const validationDetails = Array.isArray(parsedDetails) ? parsedDetails : [];
+      assert(validationDetails.some((error) => error.code === "metadata_not_found")
+        || result.error?.details?.raw_exception?.includes("metadata_not_found"), "validation diagnostics must be present");
+      return { errorCode: result.error?.code, parsedDetails };
+    });
+
     await this.test("negative.validate_forbidden_keyword", async () => {
       const fixture = this.context.genericCatalog;
       if (!fixture) return { skipped: true, reason: "no generic catalog fixture" };
@@ -1535,6 +1553,30 @@ class ContractRunner {
       assert((result.see_also || result.error?.see_also || "").includes(".Субконто"), "see_also must point to .Субконто table");
       assert(Array.isArray(result.validation_errors || result.error?.validation_errors), "validation_errors must be present");
       return { errorCode: result.error_code || result.error?.error_code, hint: result.hint || result.error?.hint };
+    });
+
+    await this.test("negative.validate_rejects_accounting_balance_vt_deref_params", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) return { skipped: true, reason: "no accounting register" };
+      const query = `ВЫБРАТЬ ПЕРВЫЕ 1 Остатки.Счет КАК Счет ИЗ ${accountingRegister.fullName}.Остатки(&Дата, СчетДт.Код ПОДОБНО "01%") КАК Остатки`;
+      const validation = await okTool(this.client, "validate_1c_query", {
+        query,
+        parameters: { Дата: { kind: "datetime", value: CONTRACT_PERIOD.end } },
+        strict: true,
+        explain: true,
+      });
+      assert(validation.valid === false, "Остатки virtual table params with dotted field dereference must be invalid");
+      assert((validation.errors || []).some((error) => error.code === "vt_param_field_error"), `vt_param_field_error is missing: ${JSON.stringify(validation.errors)}`);
+
+      const run = await rawTool(this.client, "run_1c_query", {
+        query,
+        parameters: { Дата: { kind: "datetime", value: CONTRACT_PERIOD.end } },
+        validate_before_run: false,
+        limit: 1,
+      });
+      assert(run.ok === false, "run_1c_query must fail before execution for invalid Остатки params");
+      assert(run.error?.code === "query_validation_failed", `unexpected run error code: ${run.error?.code}`);
+      return { validationErrors: validation.errors, runErrorCode: run.error?.code };
     });
 
     await this.test("negative.validate_plain_batch_without_temp_tables", async () => {
