@@ -749,7 +749,14 @@ class ContractRunner {
         assert(Array.isArray(result.accounts[0].subconto), "account.subconto must be an array");
       }
       assert(result.configuration_agnostic === true, "result must be configuration agnostic");
-      return { chart, rows: result.rows.length, subcontoAttributes: result.subconto_attributes };
+      const maxLimitResult = await okTool(this.client, "get_accounting_accounts_map", {
+        chart,
+        include_query: true,
+        limit: 1000,
+      });
+      assert(maxLimitResult.query_used?.includes("ВЫБРАТЬ ПЕРВЫЕ 1000 "), "query must use an ungrouped numeric limit");
+      assert(!/ВЫБРАТЬ\s+ПЕРВЫЕ\s+1[\s\u00a0\u202f]+000\b/u.test(maxLimitResult.query_used || ""), "query limit must not contain thousands separators");
+      return { chart, rows: result.rows.length, maxLimitAccounts: maxLimitResult.accounts?.length || 0, subcontoAttributes: result.subconto_attributes };
     });
 
     await this.test("tool.get_accounting_entries_grouped", async () => {
