@@ -9,7 +9,7 @@
 - MCP-сервер 1С развернут и подключен к LLM-чату.
 - Пользователь в чате имеет права, достаточные для сценария.
 - Значения в угловых скобках нужно заменить реальными данными целевой базы.
-- Реальный UUID вида субконто для сравнения получен через `get_accounting_accounts_map`.
+- Реальное наименование вида субконто для сравнения получено через `get_accounting_accounts_map`.
 
 ## Диалоговый сценарий
 
@@ -28,7 +28,7 @@
     "accounting_register": "<accounting_register_full_name>",
     "as_of": "<as_of>",
     "subconto_kinds": [
-      {"kind": "ref", "type": "<subconto_kind_type>", "uuid": "<subconto_kind_uuid>"}
+      "<subconto_kind_name>"
     ],
     "match_subconto_index": 1,
     "left_account_code_prefixes": ["<left_prefix>"],
@@ -60,7 +60,7 @@
     "accounting_register": "<accounting_register_full_name>",
     "as_of": "<as_of>",
     "subconto_kinds": [
-      {"kind": "ref", "type": "<subconto_kind_type>", "uuid": "<subconto_kind_uuid>"}
+      "<subconto_kind_name>"
     ],
     "match_subconto_index": 1,
     "left_account_code_prefixes": ["<left_prefix>"],
@@ -81,6 +81,8 @@
 ## Дополнительная проверка
 
 Проверить невалидную сторону остатка, например `left_balance_side="amount"`: ассистент должен получить структурированную ошибку и объяснить допустимые значения `debit|credit`.
+
+Проверить вызов с несуществующим строковым видом субконто: tool должен вернуть `invalid_arguments` до основного запроса и показать доступные значения из `ПланВидовХарактеристик.ВидыСубконтоХозрасчетные`.
 
 ## Общие критерии приемки
 

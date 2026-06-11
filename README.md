@@ -136,7 +136,9 @@
 }
 ```
 
-**Выходящая схема:** `validation { ok, valid, errors[], warnings[] }`, `columns[] { name, type_description }`, `rows[]`, `row_count`, `truncated`, `next_cursor`, `duration_ms`, `warnings[]`, опционально `query_guidance`. При ошибках запроса дополнительно возвращаются `error_code`, `hint`, `field`, `field_path`, `object`, `available_fields`, `suggestions`.
+**Выходящая схема:** `validation { ok, valid, errors[], warnings[] }`, `columns[] { name, type_description }`, `rows[]`, `row_count`, `truncated`, `next_cursor`, `duration_ms`, `warnings[]`, опционально `query_guidance` при `include_guidance=true` или диагностическом событии. При ошибках запроса дополнительно возвращаются `error_code`, `hint`, `field`, `field_path`, `object`, `available_fields`, `suggestions` и диагностический guidance.
+
+Если бухгалтерский запрос к виртуальным таблицам `Остатки`/`Обороты` использует позиционные поля `Субконто1/2/3` и возвращает `0` строк, `warnings[]` дополнительно подскажет проверить позицию аналитики через `get_accounting_accounts_map` с узким `account_code_prefix`.
 
 **Ограничения:** может выполняться долго на больших БД, особенно при широких `JOIN`, виртуальных таблицах без параметров и отсутствии индексов. Не используйте `ВЫБРАТЬ *`; сначала получите структуру метаданных и ограничивайте поля, период и `limit`.
 
@@ -144,7 +146,7 @@
 
 **Назначение:** проверить запрос до выполнения: read-only синтаксис, известные таблицы, параметры, доступ к объектам, рискованные конструкции.
 
-**Параметры:** обязательный `query: string`; `parameters: object`; `strict: boolean`; `explain: boolean`.
+**Параметры:** обязательный `query: string`; `parameters: object`; `strict: boolean`; `explain: boolean`; `include_guidance: boolean = false`.
 
 **Пример:**
 
@@ -152,11 +154,11 @@
 {
   "query": "ВЫБРАТЬ Н.Ссылка ИЗ Справочник.Номенклатура КАК Н",
   "strict": true,
-  "explain": true
+  "include_guidance": true
 }
 ```
 
-**Выходящая схема:** `valid: boolean`, `errors[] { code, message, location?, hint?, see_also? }`, `warnings[]`, `detected_objects[]`, `detected_parameters[]`, `estimated_risk`, опционально `query_guidance` и `interaction_hint`.
+**Выходящая схема:** `valid: boolean`, `errors[] { code, message, location?, hint?, see_also? }`, `warnings[]`, `detected_objects[]`, `detected_parameters[]`, `estimated_risk`, опционально `query_guidance`/`domain_guidance` при `include_guidance=true` или legacy `explain=true`.
 
 **Ограничения:** валидация не заменяет фактическое выполнение: часть ошибок платформы 1С обнаружится только при `run_1c_query`.
 
@@ -184,7 +186,7 @@
 
 **Назначение:** прочитать `ПланСчетов.<Имя>.ВидыСубконто` и вернуть соответствие счетов позициям `Субконто1/2/3`.
 
-**Параметры:** `chart: string` полное имя плана счетов или краткое имя; `account_code_prefix: string`; `include_empty_subconto: boolean`; `limit: integer 1..1000 = 500`; `cursor`; `include_query: boolean`.
+**Параметры:** `chart: string` полное имя плана счетов или краткое имя; `account_code_prefix: string`; `include_empty_subconto: boolean`; `limit: integer 1..1000 = 500`; `cursor`; `include_query: boolean`; `include_guidance: boolean = false`.
 
 **Пример:**
 
@@ -197,7 +199,7 @@
 }
 ```
 
-**Выходящая схема:** `chart`, `filter`, `tabular_section`, `source_of_truth`, `accounts[] { code, name, ref?, subconto[] }`, `total_accounts`, `next_cursor`, `truncated`, `warnings[]`, `guidance`, опционально `query_used`.
+**Выходящая схема:** `chart`, `filter`, `tabular_section`, `source_of_truth`, `accounts[] { code, name, ref?, subconto[] }`, `total_accounts`, `next_cursor`, `truncated`, `warnings[]`, опционально `guidance`, `domain_guidance`, `query_used`.
 
 **Ограничения:** если доступно несколько планов счетов и `chart` не указан, tool вернёт `needs_chart=true`. На больших планах используйте `account_code_prefix` и пагинацию.
 
@@ -205,7 +207,7 @@
 
 **Назначение:** универсальный быстрый путь для aging бухгалтерских остатков на дату по выбранному субконто. Вызывающая сторона задаёт регистр, префиксы счетов, сторону остатка и порядок видов субконто; сервер не интерпретирует счета как дебиторку, кредиторку или авансы.
 
-**Параметры:** обязательные `account_code_prefixes: string[]`, `balance_side: debit|credit`, `subconto_kinds: QueryParameterValue[]`; опциональные `accounting_register`, `as_of`, `group_subconto_index: 1..3 = 1`, `age_subconto_index: 1..3 = 3`, `extra_subconto_indexes: integer[]`, `age_buckets: number[] = [90,180,365]`, `min_age_days`, `min_amount`, `order_by: amount_desc|age_desc|account`, `include_query`, `include_guidance`, `limit`, `cursor`.
+**Параметры:** обязательные `account_code_prefixes: string[]`, `balance_side: debit|credit`, `subconto_kinds: string[]|QueryParameterValue[]`; опциональные `accounting_register`, `as_of`, `group_subconto_index: 1..3 = 1`, `age_subconto_index: 1..3 = 3`, `extra_subconto_indexes: integer[]`, `age_buckets: number[] = [90,180,365]`, `min_age_days`, `min_amount`, `order_by: amount_desc|age_desc|account`, `include_query`, `include_guidance`, `limit`, `cursor`.
 
 **Пример:**
 
@@ -216,9 +218,9 @@
   "account_code_prefixes": ["62.01", "62.21", "62.31"],
   "balance_side": "debit",
   "subconto_kinds": [
-    {"kind": "ref", "type": "ПланВидовХарактеристик.ВидыСубконтоХозрасчетные", "uuid": "<Контрагенты>"},
-    {"kind": "ref", "type": "ПланВидовХарактеристик.ВидыСубконтоХозрасчетные", "uuid": "<Договоры>"},
-    {"kind": "ref", "type": "ПланВидовХарактеристик.ВидыСубконтоХозрасчетные", "uuid": "<ДокументыРасчетов>"}
+    "Контрагенты",
+    "Договоры",
+    "Документы расчетов с контрагентом"
   ],
   "group_subconto_index": 1,
   "age_subconto_index": 3,
@@ -230,13 +232,13 @@
 
 **Выходящая схема:** `accounting_register`, `as_of`, `balance_side`, `account_code_prefixes`, `group_subconto_index`, `age_subconto_index`, `bucket_rows[]`, `rows[]`, `row_count`, `truncated`, `next_cursor`, `duration_ms`, `warnings[]`, `configuration_agnostic`, опционально `guidance`, `query_used { detail, buckets }`.
 
-**Ограничения:** перед вызовом получите реальные виды субконто через `get_accounting_accounts_map`; порядок `subconto_kinds` задаёт порядок `Субконто1/2/3` в виртуальной таблице `Остатки`. Возраст считается по дате выбранного субконто, поэтому `age_subconto_index` должен указывать на аналитику, у значения которой есть реквизит `Дата`.
+**Ограничения:** перед вызовом получите реальные виды субконто через `get_accounting_accounts_map`; порядок `subconto_kinds` задаёт порядок `Субконто1/2/3` в виртуальной таблице `Остатки`. Строковые значения резолвятся по `Наименование` в `ПланВидовХарактеристик.ВидыСубконтоХозрасчетные`; UUID можно передать явно через `kind=ref`. Возраст считается по дате выбранного субконто, поэтому `age_subconto_index` должен указывать на аналитику, у значения которой есть реквизит `Дата`.
 
 ### `compare_accounting_balances_by_subconto`
 
 **Назначение:** универсально сравнить два набора бухгалтерских остатков на дату и найти пересечения по UUID выбранного субконто. Подходит для сценариев вида "по одному контрагенту есть остатки в двух разных наборах счетов", но бизнес-смысл наборов задаёт вызывающая сторона.
 
-**Параметры:** обязательные `subconto_kinds: QueryParameterValue[]`, `left_account_code_prefixes: string[]`, `left_balance_side: debit|credit`, `right_account_code_prefixes: string[]`, `right_balance_side: debit|credit`; опциональные `accounting_register`, `as_of`, `match_subconto_index: 1..3 = 1`, `min_amount`, `include_query`, `include_guidance`, `limit`, `cursor`.
+**Параметры:** обязательные `subconto_kinds: string[]|QueryParameterValue[]`, `left_account_code_prefixes: string[]`, `left_balance_side: debit|credit`, `right_account_code_prefixes: string[]`, `right_balance_side: debit|credit`; опциональные `accounting_register`, `as_of`, `match_subconto_index: 1..3 = 1`, `min_amount`, `include_query`, `include_guidance`, `limit`, `cursor`.
 
 **Пример:**
 
@@ -245,7 +247,7 @@
   "accounting_register": "РегистрБухгалтерии.Хозрасчетный",
   "as_of": "2026-06-29T23:59:59",
   "subconto_kinds": [
-    {"kind": "ref", "type": "ПланВидовХарактеристик.ВидыСубконтоХозрасчетные", "uuid": "<Контрагенты>"}
+    "Контрагенты"
   ],
   "match_subconto_index": 1,
   "left_account_code_prefixes": ["62"],
@@ -259,13 +261,13 @@
 
 **Выходящая схема:** `accounting_register`, `as_of`, `match_subconto_index`, `left_balance_side`, `right_balance_side`, `left_account_code_prefixes`, `right_account_code_prefixes`, `rows[]`, `row_count`, `truncated`, `next_cursor`, `duration_ms`, `warnings[]`, `configuration_agnostic`, опционально `guidance`, `query_used`.
 
-**Ограничения:** tool соединяет наборы по `УникальныйИдентификатор(СубконтоN)` и не содержит предметных правил конкретной конфигурации. Если нужная аналитика не первая, задайте `match_subconto_index` и передайте `subconto_kinds` в соответствующем порядке.
+**Ограничения:** tool соединяет наборы по `УникальныйИдентификатор(СубконтоN)` и не содержит предметных правил конкретной конфигурации. Если нужная аналитика не первая, задайте `match_subconto_index` и передайте `subconto_kinds` в соответствующем порядке. Строковые значения резолвятся по `Наименование`; UUID можно передать явно через `kind=ref`.
 
 ### `get_accounting_entries`
 
 **Назначение:** быстрый универсальный путь для чтения проводок из основной таблицы `РегистрБухгалтерии.*` и, при необходимости, join к `РегистрБухгалтерии.*.Субконто`.
 
-**Параметры:** `accounting_register`; `period_from`; `period_to`; `debit_account_code_prefixes`; `credit_account_code_prefixes`; `subconto_side: debit|credit`; `subconto_kind { kind:"ref", type, uuid }`; `subconto_value { kind:"ref", type, uuid }`; `group_by: string[]`; `include_zero`; `include_query`; `limit`; `cursor`.
+**Параметры:** `accounting_register`; `period_from`; `period_to`; `debit_account_code_prefixes`; `credit_account_code_prefixes`; `subconto_side: debit|credit`; `subconto_kind { kind:"ref", type, uuid }`; `subconto_value { kind:"ref", type, uuid }`; `group_by: string[]`; `include_zero`; `include_query`; `include_guidance: boolean = false`; `limit`; `cursor`.
 
 **Пример:**
 
@@ -280,7 +282,7 @@
 }
 ```
 
-**Выходящая схема:** стандартная табличная схема `columns[]`, `rows[]`, `row_count`, плюс `accounting_register`, `mode`, `group_by`, `subconto_side`, `configuration_agnostic`, `guidance`, опционально `query_used`.
+**Выходящая схема:** стандартная табличная схема `columns[]`, `rows[]`, `row_count`, плюс `accounting_register`, `mode`, `group_by`, `subconto_side`, `configuration_agnostic`, опционально `guidance`, `query_used`.
 
 **Ограничения:** tool не содержит бизнес-логики ОС/ТМЦ/НДС. Для фильтра или группировки по виду субконто сначала получите реальный `subconto_kind` из `get_accounting_accounts_map` или metadata/query результата. Группировка по `debit_subconto`/`credit_subconto` без `subconto_kind` или `group_by=subconto_kind` отклоняется как неоднозначная: в одном поле могут смешаться контрагенты, договоры и документы расчетов. Для долга, задолженности и сальдо на дату используйте `Остатки`/`ОстаткиИОбороты`, а не проводки.
 
@@ -288,7 +290,7 @@
 
 **Назначение:** быстрый путь для вопроса об остатках товара: найти номенклатуру, определить виды субконто и выполнить агрегированный запрос к бухгалтерскому регистру.
 
-**Параметры:** `item_query: string` или `item_ref { type, uuid }`; `item_type`; `as_of: string` ISO-дата; `accounting_register`; `chart`; `account_code_prefixes: string[]`; `item_subconto_name`; `warehouse_subconto_name`; `include_zero`; `include_query`; `limit: integer 1..1000 = 100`.
+**Параметры:** `item_query: string` или `item_ref { type, uuid }`; `item_type`; `as_of: string` ISO-дата; `accounting_register`; `chart`; `account_code_prefixes: string[]`; `item_subconto_name`; `warehouse_subconto_name`; `include_zero`; `include_query`; `include_guidance: boolean = false`; `limit: integer 1..1000 = 100`.
 
 **Пример:**
 
@@ -696,7 +698,8 @@ ping                 -- ping
 - tool `get_calculation_types_map` читает `ПланВидовРасчета.<Имя>` и возвращает реальные виды расчёта для ЗУП-подобных конфигураций;
 - для зарплатных запросов база знаний закрепляет порядок выбора источника: готовый зарплатный отчёт или расчётные регистры, затем бухгалтерский fallback по кредитовому обороту 70 через `Обороты`;
 - tool `get_database_passport` возвращает фактический срез данных: активные организации, горизонт записей, закрытые периоды при наличии регистра дат запрета и заполненность регистров накопления/сведений/расчёта; параметр `force_refresh` принудительно пересчитывает паспорт, а поля `cache_hit`/`cache_age_seconds` показывают состояние кэша или его отсутствие в универсальной read-only поставке;
-- `validate_1c_query` и `run_1c_query` добавляют `query_guidance` и структурированные подсказки ошибок, если запрос содержит временные таблицы, агрегаты, субконто, составные ссылки, `NULL`, JOIN или другие рискованные конструкции;
+- `validate_1c_query` и `run_1c_query` возвращают `query_guidance` opt-in через `include_guidance=true`; при ошибках выполнения диагностический guidance возвращается принудительно;
+- `run_1c_query` без дополнительного discovery добавляет компактный warning, если нулевой результат похож на неверно угаданную позицию бухгалтерского `Субконто1/2/3`;
 - resources `1c://knowledge/query/*` дают полную встроенную справку: syntax, functions, optimization, temporary-tables, compound-types, subconto, parameters, reports-vs-query, report-fast-path, payroll.
 
 Главное правило этой базы знаний: сначала получить метаданные через `list_metadata_objects` / `get_metadata_structure`, затем писать запрос по фактическим именам объектов и полей текущей базы.

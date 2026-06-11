@@ -220,8 +220,9 @@
 		СкопироватьПолеДеталей(Детали, Данные, Ошибка, "detected_objects");
 		СкопироватьПолеДеталей(Детали, Данные, Ошибка, "detected_parameters");
 		СкопироватьПолеДеталей(Детали, Данные, Ошибка, "estimated_risk");
-		СкопироватьПолеДеталей(Детали, Данные, Ошибка, "query_guidance");
 	КонецЕсли;
+	СкопироватьПолеДеталей(Детали, Данные, Ошибка, "query_guidance");
+	СкопироватьПолеДеталей(Детали, Данные, Ошибка, "domain_guidance");
 	Данные.Вставить("error", Ошибка);
 	ДобавитьИнформациюОМаскированииLLM(Данные);
 	ДанныеДляLLM = MCP_Security.МаскироватьПоляДляLLM(Данные);
@@ -852,7 +853,7 @@
 	Props.Вставить("return_format", _СхемаЕnum(СписокСтрок("rows,table")));
 	Props.Вставить("include_column_types", _Схема("boolean"));
 	Props.Вставить("include_navigation_url", _Схема("boolean"));
-	Props.Вставить("include_guidance", _Схема("boolean"));
+	Props.Вставить("include_guidance", _СхемаGuidance());
 	Возврат _Tool("run_1c_query",
 		"Выполнить безопасный read-only запрос 1С",
 		"Запрос на языке запросов 1С с параметрами. Постоянные данные строго read-only; временные таблицы в пакете разрешены через ПОМЕСТИТЬ/ИНДЕКСИРОВАТЬ ПО/УНИЧТОЖИТЬ. Для отчетной аналитики используйте быстрый путь: узкий search/list по сущностям, затем специализированные карты (get_accounting_accounts_map/get_calculation_types_map) и только выбранный источник. Сначала проверьте list_reports с query и малым limit; если найден готовый отчет, спросите пользователя: отчет или прямой запрос. Для зарплаты за период предпочитайте готовый зарплатный отчет/расчетные регистры; бухгалтерский fallback по счету 70 строится по кредитовому обороту 70, а не по дебету 70. Финальная команда пакета должна быть ВЫБРАТЬ. Для условий по агрегатам используйте ИМЕЮЩИЕ; при JOIN по Субконто из независимых подзапросов используйте УникальныйИдентификатор(...). Ссылки, даты и массивы в parameters передавайте как QueryParameterValue с kind=ref/datetime/array.",
@@ -865,6 +866,7 @@
 	Props.Вставить("parameters", _СхемаОбъект());
 	Props.Вставить("strict", _Схема("boolean"));
 	Props.Вставить("explain", _Схема("boolean"));
+	Props.Вставить("include_guidance", _СхемаGuidance());
 	Возврат _Tool("validate_1c_query",
 		"Проверить запрос 1С до выполнения",
 		"Проверка синтаксиса, объектов, параметров и рисков до run_1c_query. Возвращает подсказку report_or_direct_query_choice для отчетной аналитики, чтобы агент сначала проверил list_reports и спросил пользователя про готовый отчет. Разрешает временные таблицы, но блокирует изменения постоянных данных. ИМЕЮЩИЕ — корректное условие по агрегатам; ИМЕЯ будет диагностировано как ошибка.",
@@ -908,7 +910,7 @@
 	Props.Вставить("cursor", _Схема("string", , "Offset cursor строк карты счетов."));
 	Props.Вставить("include_query", _Схема("boolean", , "Вернуть использованный read-only запрос."));
 	Props.Вставить("include_raw_rows", _Схема("boolean", , "Вернуть технические rows/columns вместе с accounts."));
-	Props.Вставить("include_guidance", _Схема("boolean", , "Вернуть пояснение по позициям субконто."));
+	Props.Вставить("include_guidance", _СхемаGuidance("Вернуть пояснение по позициям субконто и domain_guidance."));
 	Возврат _Tool("get_accounting_accounts_map",
 		"Получить карту счетов и субконто",
 		"Универсально читает ПланСчетов.<Имя> и табличную часть ВидыСубконто, чтобы LLM видел соответствие счёта позициям Субконто1/2/3 без угадывания структуры конкретной базы. Для скорости в отчетной аналитике передавайте account_code_prefix и небольшой limit вместо чтения всей карты.",
@@ -931,6 +933,7 @@
 	Props.Вставить("include_query", _Схема("boolean"));
 	Props.Вставить("include_column_types", _Схема("boolean"));
 	Props.Вставить("include_navigation_url", _Схема("boolean"));
+	Props.Вставить("include_guidance", _СхемаGuidance());
 	Возврат _Tool("get_accounting_balances",
 		"Получить бухгалтерские остатки и обороты",
 		"Высокоуровневый быстрый tool для сальдо, задолженности, остатков и оборотов через виртуальные таблицы бухгалтерского регистра.",
@@ -943,7 +946,7 @@
 	Props.Вставить("as_of", _Схема("string", , "Дата остатков ISO 8601. Если не указана, используется текущая дата сервера."));
 	Props.Вставить("account_code_prefixes", _Схема("array", , "Префиксы кодов счетов. Бизнес-смысл счетов задает вызывающая сторона; сервер их не интерпретирует."));
 	Props.Вставить("balance_side", _СхемаЕnum(СписокСтрок("debit,credit")));
-	Props.Вставить("subconto_kinds", _Схема("array", , "Массив видов субконто из get_accounting_accounts_map в нужном порядке для параметра виртуальной таблицы Субконто."));
+	Props.Вставить("subconto_kinds", _Схема("array", , "Массив видов субконто в нужном порядке для параметра виртуальной таблицы Субконто: строки с Наименованием из get_accounting_accounts_map или QueryParameterValue kind=ref."));
 	Props.Вставить("group_subconto_index", _СхемаInt(1, 3, 1));
 	Props.Вставить("age_subconto_index", _СхемаInt(1, 3, 3));
 	Props.Вставить("extra_subconto_indexes", _Схема("array", , "Дополнительные позиции субконто 1..3, которые надо вернуть в детализации, например [2,3]."));
@@ -952,7 +955,7 @@
 	Props.Вставить("min_amount", _Схема("number", , "Минимальная сумма остатка для детализации и бакетов."));
 	Props.Вставить("order_by", _СхемаЕnum(СписокСтрок("amount_desc,age_desc,account")));
 	Props.Вставить("include_query", _Схема("boolean", , "Вернуть использованные read-only запросы."));
-	Props.Вставить("include_guidance", _Схема("boolean", , "Вернуть пояснение универсального маршрута."));
+	Props.Вставить("include_guidance", _СхемаGuidance("Вернуть пояснение универсального маршрута."));
 	Props.Вставить("limit", _СхемаInt(1, 1000, 100));
 	Props.Вставить("cursor", _Схема("string", , "Offset cursor строк детализации."));
 	Возврат _Tool("get_accounting_balances_by_subconto_age",
@@ -965,7 +968,7 @@
 	Props = Новый Структура;
 	Props.Вставить("accounting_register", _Схема("string", , "Бухгалтерский регистр, например РегистрБухгалтерии.Хозрасчетный. Если не указан, выбирается доступный или Хозрасчетный."));
 	Props.Вставить("as_of", _Схема("string", , "Дата остатков ISO 8601. Если не указана, используется текущая дата сервера."));
-	Props.Вставить("subconto_kinds", _Схема("array", , "Массив видов субконто из get_accounting_accounts_map в нужном порядке для параметра виртуальной таблицы Субконто."));
+	Props.Вставить("subconto_kinds", _Схема("array", , "Массив видов субконто в нужном порядке для параметра виртуальной таблицы Субконто: строки с Наименованием из get_accounting_accounts_map или QueryParameterValue kind=ref."));
 	Props.Вставить("match_subconto_index", _СхемаInt(1, 3, 1));
 	Props.Вставить("left_account_code_prefixes", _Схема("array", , "Префиксы счетов левого набора."));
 	Props.Вставить("left_balance_side", _СхемаЕnum(СписокСтрок("debit,credit")));
@@ -973,7 +976,7 @@
 	Props.Вставить("right_balance_side", _СхемаЕnum(СписокСтрок("debit,credit")));
 	Props.Вставить("min_amount", _Схема("number", , "Минимальная сумма по каждой стороне."));
 	Props.Вставить("include_query", _Схема("boolean", , "Вернуть использованный read-only запрос."));
-	Props.Вставить("include_guidance", _Схема("boolean", , "Вернуть пояснение универсального маршрута."));
+	Props.Вставить("include_guidance", _СхемаGuidance("Вернуть пояснение универсального маршрута."));
 	Props.Вставить("limit", _СхемаInt(1, 1000, 100));
 	Props.Вставить("cursor", _Схема("string", , "Offset cursor строк результата."));
 	Возврат _Tool("compare_accounting_balances_by_subconto",
@@ -995,7 +998,7 @@
 	Props.Вставить("group_by", _Схема("array", , "Опциональные группировки: period_month, registrar, debit_account, credit_account, debit_subconto, credit_subconto, subconto_kind. Для debit_subconto/credit_subconto укажите subconto_kind или добавьте subconto_kind в group_by, иначе разные виды аналитики будут смешаны."));
 	Props.Вставить("include_zero", _Схема("boolean", , "Если false, строки с нулевой суммой не возвращаются."));
 	Props.Вставить("include_query", _Схема("boolean", , "Вернуть использованный read-only запрос."));
-	Props.Вставить("include_guidance", _Схема("boolean", , "Вернуть пояснение по построенному запросу."));
+	Props.Вставить("include_guidance", _СхемаGuidance("Вернуть пояснение по построенному запросу."));
 	Props.Вставить("limit", _СхемаInt(1, 1000, 100));
 	Props.Вставить("cursor", _Схема("string", , "Offset cursor строк результата."));
 	Возврат _Tool("get_accounting_entries",
@@ -1024,7 +1027,7 @@
 	Props.Вставить("warehouse_subconto_name", _Схема("string", , "Имя вида субконто склада. По умолчанию Склады."));
 	Props.Вставить("include_zero", _Схема("boolean", , "Если true, не отбрасывать нулевые итоги."));
 	Props.Вставить("include_query", _Схема("boolean", , "Вернуть использованный read-only запрос."));
-	Props.Вставить("include_guidance", _Схема("boolean", , "Вернуть пояснение быстрого пути."));
+	Props.Вставить("include_guidance", _СхемаGuidance("Вернуть пояснение быстрого пути."));
 	Props.Вставить("limit", _СхемаInt(1, 1000, 100));
 	Возврат _Tool("get_inventory_balances_by_item",
 		"Остатки товара по складам и организациям",
@@ -1220,7 +1223,7 @@
 	Props.Вставить("query", _Схема("string"));
 	Props.Вставить("include_variants", _Схема("boolean"));
 	Props.Вставить("include_not_allowed", _Схема("boolean"));
-	Props.Вставить("include_guidance", _Схема("boolean"));
+	Props.Вставить("include_guidance", _СхемаGuidance());
 	Props.Вставить("limit", _СхемаInt(1, 500, 20));
 	Props.Вставить("cursor", _Схема("string"));
 	Возврат _Tool("list_reports",
@@ -1236,7 +1239,7 @@
 	Props.Вставить("include_schema", _Схема("boolean"));
 	Props.Вставить("include_variants", _Схема("boolean"));
 	Props.Вставить("include_default_settings", _Схема("boolean"));
-	Props.Вставить("include_guidance", _Схема("boolean"));
+	Props.Вставить("include_guidance", _СхемаGuidance());
 	Props.Вставить("limit", _СхемаInt(1, 1000, 100));
 	Props.Вставить("cursor", _Схема("string", , "Offset cursor параметров отчета."));
 	Возврат _Tool("get_report_info",
@@ -1258,7 +1261,7 @@
 	Props.Вставить("columns", _Схема("array"));
 	Props.Вставить("include_parameters_used", _Схема("boolean"));
 	Props.Вставить("include_navigation_url", _Схема("boolean"));
-	Props.Вставить("include_guidance", _Схема("boolean"));
+	Props.Вставить("include_guidance", _СхемаGuidance());
 	Возврат _Tool("run_1c_report",
 		"Выполнить отчёт 1С",
 		"Выполняет разрешённый отчёт через СКД и возвращает результат.",
@@ -1382,6 +1385,17 @@
 	Если НЕ ПустаяСтрока(Описание) Тогда
 		Стр.Вставить("description", Описание);
 	КонецЕсли;
+	Возврат Стр;
+КонецФункции
+
+Функция _СхемаGuidance(Описание = "")
+	Если ПустаяСтрока(Описание) Тогда
+		Описание = "Включить блок query_guidance/domain_guidance в успешный ответ. По умолчанию false. При ошибке выполнения guidance возвращается принудительно независимо от этого флага.";
+	Иначе
+		Описание = Описание + " По умолчанию false. При ошибке выполнения query_guidance/domain_guidance возвращается принудительно независимо от этого флага.";
+	КонецЕсли;
+	Стр = _Схема("boolean", , Описание);
+	Стр.Вставить("default", Ложь);
 	Возврат Стр;
 КонецФункции
 

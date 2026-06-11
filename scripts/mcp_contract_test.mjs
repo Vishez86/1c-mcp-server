@@ -558,6 +558,26 @@ class ContractRunner {
       return { detected: result.detected_objects };
     });
 
+    await this.test("tool.validate_1c_query_guidance_is_opt_in", async () => {
+      const fixture = this.context.genericCatalog;
+      if (!fixture) return { skipped: true, reason: "no generic catalog fixture" };
+      const query = `ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка КАК Продажи ИЗ ${fixture.full_name}`;
+      const compact = await okTool(this.client, "validate_1c_query", {
+        query,
+        strict: true,
+      });
+      assert(!Array.isArray(compact.query_guidance), "validate_1c_query must omit query_guidance by default");
+      assert(!Array.isArray(compact.domain_guidance), "validate_1c_query must omit domain_guidance by default");
+
+      const explained = await okTool(this.client, "validate_1c_query", {
+        query,
+        strict: true,
+        include_guidance: true,
+      });
+      assert(hasGuidance(explained, "returns_and_storno"), "validate_1c_query must include domain_guidance when requested");
+      return { compactGuidance: compact.domain_guidance, explainedGuidance: explained.domain_guidance?.length || 0 };
+    });
+
     await this.test("tool.validate_1c_query_warns_document_tabular_register_fanout", async () => {
       const documentWithTabular = await findFirstMetadataObject(this.client, ["Документ"], async (item) => {
         const structure = await rawTool(this.client, "get_metadata_structure", {
@@ -912,6 +932,28 @@ class ContractRunner {
       return { row };
     });
 
+    await this.test("tool.run_1c_query_guidance_is_opt_in", async () => {
+      const fixture = this.context.genericCatalog;
+      if (!fixture) return { skipped: true, reason: "no generic catalog fixture" };
+      const query = `ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка КАК Продажи ИЗ ${fixture.full_name}`;
+      const compact = await okTool(this.client, "run_1c_query", {
+        query,
+        limit: 1,
+      });
+      assert(!Array.isArray(compact.query_guidance), "run_1c_query must omit query_guidance by default");
+      assert(!Array.isArray(compact.domain_guidance), "run_1c_query must omit domain_guidance by default");
+      assert(!Array.isArray(compact.validation?.query_guidance), "run_1c_query validation.query_guidance must be opt-in");
+
+      const guided = await okTool(this.client, "run_1c_query", {
+        query,
+        limit: 1,
+        include_guidance: true,
+      });
+      assert(Array.isArray(guided.query_guidance), "run_1c_query must include query_guidance when requested");
+      assert(Array.isArray(guided.validation?.query_guidance), "run_1c_query validation.query_guidance must follow include_guidance");
+      return { compactRows: compact.rows?.length || 0, guidedQueryGuidance: guided.query_guidance.length };
+    });
+
     await this.test("tool.run_1c_query_counterparty_contact_info", async () => {
       const fixture = this.context.catalogWithTabular;
       if (!fixture?.tabularSection?.name) return { skipped: true, reason: "no tabular section fixture" };
@@ -985,6 +1027,25 @@ class ContractRunner {
       assert(columnNames.includes("КоличествоОстаток"), "balance query must expose КоличествоОстаток");
       assert(columnNames.includes("СуммаОстаток"), "balance query must expose СуммаОстаток");
       return { register: accountingRegister.fullName, columns: columnNames, rows: result.rows?.length || 0 };
+    });
+
+    await this.test("tool.run_1c_query_zero_row_subconto_position_warning", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) {
+        return { skipped: true, reason: "no accounting register in metadata" };
+      }
+      const result = await okTool(this.client, "run_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Остатки.Счет, Остатки.Субконто1 ИЗ ${accountingRegister.fullName}.Остатки(&Период) КАК Остатки ГДЕ Остатки.Счет.Код = &Код`,
+        parameters: {
+          Период: { kind: "datetime", value: CONTRACT_PERIOD.end },
+          Код: { kind: "string", value: "__mcp_no_such_account_code__" },
+        },
+        limit: 1,
+      });
+      assert(result.row_count === 0, "fixture query must return zero rows");
+      assert((result.warnings || []).some((item) => String(item).includes("позиция субконто")), "zero-row accounting subconto query must warn about subconto position");
+      assert(!Array.isArray(result.query_guidance), "position warning must not force query_guidance");
+      return { register: accountingRegister.fullName, warnings: result.warnings };
     });
   }
 
@@ -1279,7 +1340,7 @@ class ContractRunner {
       }
       const subcontoKinds = (accountWithSettlementDoc.subconto || [])
         .sort((left, right) => left.position - right.position)
-        .map((item) => item.ref);
+        .map((item) => item.name);
       const result = await okTool(this.client, "get_accounting_balances_by_subconto_age", {
         accounting_register: accountingRegister.name,
         as_of: CONTRACT_PERIOD.end,
@@ -1318,7 +1379,7 @@ class ContractRunner {
       }
       const subcontoKinds = (accountWithCounterparty.subconto || [])
         .sort((left, right) => left.position - right.position)
-        .map((item) => item.ref);
+        .map((item) => item.name);
       const result = await okTool(this.client, "compare_accounting_balances_by_subconto", {
         accounting_register: accountingRegister.name,
         as_of: CONTRACT_PERIOD.end,

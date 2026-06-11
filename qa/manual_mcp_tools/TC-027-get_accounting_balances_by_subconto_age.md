@@ -9,7 +9,7 @@
 - MCP-сервер 1С развернут и подключен к LLM-чату.
 - Пользователь в чате имеет права, достаточные для сценария.
 - Значения в угловых скобках нужно заменить реальными данными целевой базы.
-- Реальные UUID видов субконто получены через `get_accounting_accounts_map` для нужных счетов.
+- Реальные наименования видов субконто получены через `get_accounting_accounts_map` для нужных счетов.
 
 ## Диалоговый сценарий
 
@@ -30,9 +30,9 @@
     "account_code_prefixes": ["<account_prefix>"],
     "balance_side": "debit",
     "subconto_kinds": [
-      {"kind": "ref", "type": "<subconto_kind_type>", "uuid": "<subconto_kind_uuid_1>"},
-      {"kind": "ref", "type": "<subconto_kind_type>", "uuid": "<subconto_kind_uuid_2>"},
-      {"kind": "ref", "type": "<subconto_kind_type>", "uuid": "<subconto_kind_uuid_3>"}
+      "<subconto_kind_name_1>",
+      "<subconto_kind_name_2>",
+      "<subconto_kind_name_3>"
     ],
     "group_subconto_index": 1,
     "age_subconto_index": 3,
@@ -63,9 +63,9 @@
     "account_code_prefixes": ["<account_prefix>"],
     "balance_side": "debit",
     "subconto_kinds": [
-      {"kind": "ref", "type": "<subconto_kind_type>", "uuid": "<subconto_kind_uuid_1>"},
-      {"kind": "ref", "type": "<subconto_kind_type>", "uuid": "<subconto_kind_uuid_2>"},
-      {"kind": "ref", "type": "<subconto_kind_type>", "uuid": "<subconto_kind_uuid_3>"}
+      "<subconto_kind_name_1>",
+      "<subconto_kind_name_2>",
+      "<subconto_kind_name_3>"
     ],
     "group_subconto_index": 1,
     "age_subconto_index": 3,
@@ -83,6 +83,8 @@
 ## Дополнительная проверка
 
 Проверить вызов без `subconto_kinds`: ассистент должен получить структурированную ошибку и объяснить, что сначала нужна карта счетов.
+
+Проверить вызов с несуществующим строковым видом субконто: tool должен вернуть `invalid_arguments` до основного запроса и показать доступные значения из `ПланВидовХарактеристик.ВидыСубконтоХозрасчетные`.
 
 ## Общие критерии приемки
 
