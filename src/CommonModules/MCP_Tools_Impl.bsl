@@ -790,6 +790,20 @@
 			"subconto_value без subconto_kind неоднозначен: одна проводка может иметь несколько аналитик с разными видами. Сначала вызовите get_accounting_accounts_map и передайте выбранный вид субконто в subconto_kind.");
 	КонецЕсли;
 
+	SubcontoKindInfo = Неопределено;
+	Если ЕстьФильтрВидаСубконто Тогда
+		Если НужноПроверятьВидСубконтоПроводок(SubcontoKindArg, DebitPrefixes, CreditPrefixes, GroupBy, SubcontoValueArg) Тогда
+			Chart = ВыбратьПланСчетов(Получить(Аргументы, "chart", ""));
+			Если НЕ MCP_Security.ПолноеИмяБезопасноДляЗапроса(Chart) Тогда
+				MCP_Errors.ВозбудитьОшибку(MCP_Errors.Код_InvalidArguments(),
+					"Некорректное имя плана счетов: " + Chart);
+			КонецЕсли;
+			SubcontoKindInfo = ПроверитьВидСубконтоПроводокПередЗапросом(Chart, SubcontoKindArg, DebitPrefixes, CreditPrefixes);
+		Иначе
+			SubcontoKindInfo = РазрешитьВидСубконтоПроводок(SubcontoKindArg);
+		КонецЕсли;
+	КонецЕсли;
+
 	Параметры = Новый Структура;
 	Если PeriodFrom <> Неопределено Тогда
 		Параметры.Вставить("ПериодНачало", MCP_Values.ДекодироватьПараметр(СтруктураDate(PeriodFrom)));
@@ -798,7 +812,7 @@
 		Параметры.Вставить("ПериодКонец", MCP_Values.ДекодироватьПараметр(СтруктураDate(PeriodTo)));
 	КонецЕсли;
 	Если SubcontoKindArg <> Неопределено Тогда
-		Параметры.Вставить("ВидСубконто", MCP_Values.ДекодироватьПараметр(SubcontoKindArg));
+		Параметры.Вставить("ВидСубконто", SubcontoKindInfo.ref);
 	КонецЕсли;
 	Если SubcontoValueArg <> Неопределено Тогда
 		Параметры.Вставить("ЗначениеСубконто", MCP_Values.ДекодироватьПараметр(SubcontoValueArg));
@@ -2483,6 +2497,254 @@
 	Возврат Результат;
 
 КонецФункции
+
+Функция НужноПроверятьВидСубконтоПроводок(SubcontoKindArg, DebitPrefixes, CreditPrefixes, GroupBy, SubcontoValueArg)
+
+	Если SubcontoKindArg = Неопределено Тогда
+		Возврат Ложь;
+	КонецЕсли;
+	Если DebitPrefixes.Количество() = 0 И CreditPrefixes.Количество() = 0 Тогда
+		Возврат Ложь;
+	КонецЕсли;
+	Возврат МассивСодержитСтроку(GroupBy, "debit_subconto")
+		ИЛИ МассивСодержитСтроку(GroupBy, "credit_subconto")
+		ИЛИ SubcontoValueArg <> Неопределено;
+
+КонецФункции
+
+Функция ПроверитьВидСубконтоПроводокПередЗапросом(Chart, SubcontoKindArg, DebitPrefixes, CreditPrefixes)
+
+	AccountPrefixes = ОбъединитьПрефиксыСчетовПроводок(DebitPrefixes, CreditPrefixes);
+	SubcontoKindInfo = ОписаниеВходногоВидаСубконто(SubcontoKindArg);
+	AvailableKinds = ДоступныеВидыСубконтоПоПрефиксам(Chart, AccountPrefixes);
+
+	MatchedKind = НайтиДоступныйВидСубконто(SubcontoKindInfo, AvailableKinds);
+	Если MatchedKind <> Неопределено Тогда
+		SubcontoKindInfo.ref = MatchedKind.ref;
+		SubcontoKindInfo.uuid = MatchedKind.uuid;
+		SubcontoKindInfo.name = MatchedKind.name;
+		Возврат SubcontoKindInfo;
+	КонецЕсли;
+
+	ВозбудитьОшибкуНесовпаденияВидаСубконто(SubcontoKindInfo, AccountPrefixes, AvailableKinds);
+	Возврат SubcontoKindInfo;
+
+КонецФункции
+
+Функция ОбъединитьПрефиксыСчетовПроводок(DebitPrefixes, CreditPrefixes)
+
+	Результат = Новый Массив;
+	Ключи = Новый Соответствие;
+	ДобавитьУникальныеПрефиксыСчетов(Результат, Ключи, DebitPrefixes);
+	ДобавитьУникальныеПрефиксыСчетов(Результат, Ключи, CreditPrefixes);
+	Возврат Результат;
+
+КонецФункции
+
+Процедура ДобавитьУникальныеПрефиксыСчетов(Результат, Ключи, Prefixes)
+
+	Для Каждого Prefix Из Prefixes Цикл
+		PrefixString = СокрЛП(Строка(Prefix));
+		Если ПустаяСтрока(PrefixString) Тогда
+			Продолжить;
+		КонецЕсли;
+		Если Ключи.Получить(PrefixString) = Неопределено Тогда
+			Ключи.Вставить(PrefixString, Истина);
+			Результат.Добавить(PrefixString);
+		КонецЕсли;
+	КонецЦикла;
+
+КонецПроцедуры
+
+Функция ОписаниеВходногоВидаСубконто(SubcontoKindArg)
+
+	Результат = Новый Структура;
+	Результат.Вставить("ref", Неопределено);
+	Результат.Вставить("uuid", "");
+	Результат.Вставить("name", "");
+	Результат.Вставить("type", "ПланВидовХарактеристик.ВидыСубконтоХозрасчетные");
+
+	ТипАргумента = ТипЗнч(SubcontoKindArg);
+	Если ТипАргумента = Тип("Структура")
+		ИЛИ ТипАргумента = Тип("ФиксированнаяСтруктура")
+		ИЛИ ТипАргумента = Тип("Соответствие")
+		ИЛИ ТипАргумента = Тип("ФиксированноеСоответствие") Тогда
+		Результат.uuid = СокрЛП(Строка(Получить(SubcontoKindArg, "uuid", "")));
+		Результат.name = СокрЛП(Строка(Получить(SubcontoKindArg, "presentation", Получить(SubcontoKindArg, "name", ""))));
+		Результат.type = СокрЛП(Строка(Получить(SubcontoKindArg, "type", Результат.type)));
+	ИначеЕсли ТипАргумента = Тип("Строка") Тогда
+		Результат.name = СокрЛП(Строка(SubcontoKindArg));
+	КонецЕсли;
+
+	Если НЕ ПустаяСтрока(Результат.uuid) Тогда
+		Результат.ref = MCP_Values.СсылкаПоТипуИUUID(Результат.type, Результат.uuid);
+		Если ПустаяСтрока(Результат.name) Тогда
+			Результат.name = Строка(Результат.ref);
+		КонецЕсли;
+		Возврат Результат;
+	КонецЕсли;
+
+	Декодированное = MCP_Values.ДекодироватьПараметр(SubcontoKindArg);
+	UUIDДекодированного = UUIDСсылочногоЗначения(Декодированное);
+	Если НЕ ПустаяСтрока(UUIDДекодированного) Тогда
+		Результат.ref = Декодированное;
+		Результат.uuid = UUIDДекодированного;
+		Если ПустаяСтрока(Результат.name) Тогда
+			Результат.name = Строка(Декодированное);
+		КонецЕсли;
+	КонецЕсли;
+
+	Возврат Результат;
+
+КонецФункции
+
+Функция РазрешитьВидСубконтоПроводок(SubcontoKindArg)
+
+	Результат = ОписаниеВходногоВидаСубконто(SubcontoKindArg);
+	Если Результат.ref <> Неопределено Тогда
+		Возврат Результат;
+	КонецЕсли;
+	Если ПустаяСтрока(Результат.name) Тогда
+		MCP_Errors.ВозбудитьОшибку(MCP_Errors.Код_InvalidArguments(),
+			"subconto_kind должен содержать uuid или presentation.");
+	КонецЕсли;
+
+	Имена = Новый Массив;
+	Имена.Добавить(Результат.name);
+	НайденныеСсылки = РазрешитьИменаВидовСубконтоХозрасчетные(Имена);
+	Результат.ref = НайденныеСсылки.Получить(НормализованноеИмяСубконто(Результат.name));
+	Результат.uuid = UUIDСсылочногоЗначения(Результат.ref);
+	Возврат Результат;
+
+КонецФункции
+
+Функция UUIDСсылочногоЗначения(Значение)
+
+	Попытка
+		Возврат Строка(Значение.УникальныйИдентификатор());
+	Исключение
+		Возврат "";
+	КонецПопытки;
+
+КонецФункции
+
+Функция ДоступныеВидыСубконтоПоПрефиксам(Chart, AccountPrefixes)
+
+	Результат = Новый Массив;
+	Если AccountPrefixes.Количество() = 0 Тогда
+		Возврат Результат;
+	КонецЕсли;
+
+	Условия = Новый Массив;
+	Параметры = Новый Структура;
+	Индекс = 0;
+	Для Каждого Prefix Из AccountPrefixes Цикл
+		ИмяПараметра = "КодПрефикс" + Строка(Индекс);
+		Условия.Добавить("Виды.Ссылка.Код ПОДОБНО &" + ИмяПараметра);
+		Параметры.Вставить(ИмяПараметра, Строка(Prefix) + "%");
+		Индекс = Индекс + 1;
+	КонецЦикла;
+
+	ТекстЗапроса = "ВЫБРАТЬ РАЗЛИЧНЫЕ "
+		+ "Виды.ВидСубконто КАК ВидСубконто, "
+		+ "УникальныйИдентификатор(Виды.ВидСубконто) КАК UUIDВидаСубконто, "
+		+ "Виды.ВидСубконто.Наименование КАК НаименованиеВидаСубконто "
+		+ "ИЗ " + Chart + ".ВидыСубконто КАК Виды "
+		+ "ГДЕ " + СтрСоединить(Условия, " ИЛИ ")
+		+ " УПОРЯДОЧИТЬ ПО НаименованиеВидаСубконто";
+
+	Запрос = Новый Запрос(ТекстЗапроса);
+	Для Каждого КЗ Из Параметры Цикл
+		Запрос.УстановитьПараметр(Строка(КЗ.Ключ), КЗ.Значение);
+	КонецЦикла;
+	Таблица = Запрос.Выполнить().Выгрузить();
+
+	Для Каждого СтрокаТаблицы Из Таблица Цикл
+		Запись = Новый Структура;
+		Запись.Вставить("ref", СтрокаТаблицы.ВидСубконто);
+		Запись.Вставить("uuid", Строка(СтрокаТаблицы.UUIDВидаСубконто));
+		Запись.Вставить("name", Строка(СтрокаТаблицы.НаименованиеВидаСубконто));
+		Результат.Добавить(Запись);
+	КонецЦикла;
+
+	Возврат Результат;
+
+КонецФункции
+
+Функция НайтиДоступныйВидСубконто(SubcontoKindInfo, AvailableKinds)
+
+	ИскомыйUUID = ВРег(СокрЛП(Строка(SubcontoKindInfo.uuid)));
+	ИскомоеИмя = НормализованноеИмяСубконто(SubcontoKindInfo.name);
+	Для Каждого AvailableKind Из AvailableKinds Цикл
+		Если НЕ ПустаяСтрока(ИскомыйUUID)
+			И ВРег(Строка(AvailableKind.uuid)) = ИскомыйUUID Тогда
+			Возврат AvailableKind;
+		КонецЕсли;
+		Если ПустаяСтрока(ИскомыйUUID)
+			И НЕ ПустаяСтрока(ИскомоеИмя)
+			И НормализованноеИмяСубконто(AvailableKind.name) = ИскомоеИмя Тогда
+			Возврат AvailableKind;
+		КонецЕсли;
+	КонецЦикла;
+	Возврат Неопределено;
+
+КонецФункции
+
+Процедура ВозбудитьОшибкуНесовпаденияВидаСубконто(SubcontoKindInfo, AccountPrefixes, AvailableKinds)
+
+	AvailableForDetails = Новый Массив;
+	AvailableNames = Новый Массив;
+	Для Каждого AvailableKind Из AvailableKinds Цикл
+		KindDetails = Новый Структура;
+		KindDetails.Вставить("name", AvailableKind.name);
+		KindDetails.Вставить("uuid", AvailableKind.uuid);
+		AvailableForDetails.Добавить(KindDetails);
+		AvailableNames.Добавить(AvailableKind.name);
+	КонецЦикла;
+
+	Suggestions = Новый Массив;
+	Suggestions.Добавить("Передайте subconto_kind из списка available_subconto_kinds.");
+	ПервыйПрефикс = "";
+	Если AccountPrefixes.Количество() > 0 Тогда
+		ПервыйПрефикс = AccountPrefixes[0];
+	КонецЕсли;
+	Suggestions.Добавить("Вызовите get_accounting_accounts_map с account_code_prefix=""" + ПервыйПрефикс + """ для получения актуальной карты субконто.");
+
+	KindName = ?(ПустаяСтрока(SubcontoKindInfo.name), "<без наименования>", SubcontoKindInfo.name);
+	KindUUID = ?(ПустаяСтрока(SubcontoKindInfo.uuid), "<не указан>", SubcontoKindInfo.uuid);
+	AvailableNamesText = "<нет>";
+	Если AvailableNames.Количество() > 0 Тогда
+		AvailableNamesText = СтрСоединить(AvailableNames, ", ");
+	КонецЕсли;
+	Message = "subconto_kind """ + KindName + """ (uuid: " + KindUUID + ") не найден в субконто счетов ["""
+		+ СтрСоединить(AccountPrefixes, """, """) + """]. Доступные виды: "
+		+ AvailableNamesText + ".";
+
+	DiagnosticsDetails = Новый Структура;
+	DiagnosticsDetails.Вставить("subconto_kind_uuid", ?(ПустаяСтрока(SubcontoKindInfo.uuid), Null, SubcontoKindInfo.uuid));
+	DiagnosticsDetails.Вставить("subconto_kind_name", ?(ПустаяСтрока(SubcontoKindInfo.name), Null, SubcontoKindInfo.name));
+	DiagnosticsDetails.Вставить("account_prefixes", AccountPrefixes);
+	DiagnosticsDetails.Вставить("available_subconto_kinds", AvailableForDetails);
+	DiagnosticsDetails.Вставить("cache_hit", Ложь);
+
+	Diagnostics = Новый Структура;
+	Diagnostics.Вставить("error_code", "subconto_kind_mismatch");
+	Diagnostics.Вставить("details", DiagnosticsDetails);
+	Diagnostics.Вставить("suggestions", Suggestions);
+
+	Details = Новый Структура;
+	Details.Вставить("diagnostics", Diagnostics);
+	Details.Вставить("subconto_kind_uuid", ?(ПустаяСтрока(SubcontoKindInfo.uuid), Null, SubcontoKindInfo.uuid));
+	Details.Вставить("subconto_kind_name", ?(ПустаяСтрока(SubcontoKindInfo.name), Null, SubcontoKindInfo.name));
+	Details.Вставить("account_prefixes", AccountPrefixes);
+	Details.Вставить("available_subconto_kinds", AvailableForDetails);
+	Details.Вставить("suggestions", Suggestions);
+	Details.Вставить("query_guidance", MCP_Knowledge.ПодсказкиДляЗапроса("РегистрБухгалтерии Субконто ПланСчетов ВидыСубконто"));
+	Details.Вставить("cache_hit", Ложь);
+
+	MCP_Errors.ВозбудитьОшибку(MCP_Errors.Код_InvalidArguments(), Message, Details);
+
+КонецПроцедуры
 
 Функция ЗапросБухгалтерскихПроводок(AccountingRegister, GroupBy, SubcontoSide,
 	HasSubcontoKindFilter, HasSubcontoValueFilter, HasPeriodFrom, HasPeriodTo, DebitPrefixes, CreditPrefixes, IncludeZero)

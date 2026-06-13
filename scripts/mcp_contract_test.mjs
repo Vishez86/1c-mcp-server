@@ -842,6 +842,73 @@ class ContractRunner {
       return { register: accountingRegister.fullName, account: account.code, subconto: subconto.presentation, rows: result.rows?.length || 0 };
     });
 
+    await this.test("tool.get_accounting_entries_preflight_rejects_mismatched_subconto_kind", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) {
+        return { skipped: true, reason: "no accounting register in metadata" };
+      }
+      const charts = await okTool(this.client, "list_metadata_objects", {
+        kinds: ["ПланСчетов"],
+        limit: 1,
+      });
+      const chart = charts.objects?.[0]?.full_name;
+      if (!chart) return { skipped: true, reason: "no chart of accounts in metadata" };
+      const accountMap = await okTool(this.client, "get_accounting_accounts_map", {
+        chart,
+        include_empty_subconto: false,
+        limit: 1000,
+      });
+      const accounts = accountMap.accounts || [];
+      let fixture = null;
+      for (const account of accounts) {
+        const accountCode = String(account.code || "");
+        const familySubcontoUuids = new Set(
+          accounts
+            .filter((item) => String(item.code || "").startsWith(accountCode))
+            .flatMap((item) => item.subconto || [])
+            .map((item) => item.uuid)
+            .filter(Boolean),
+        );
+        const foreign = accounts
+          .flatMap((item) => item.subconto || [])
+          .find((item) => item.uuid && item.ref?.type && !familySubcontoUuids.has(item.uuid));
+        if (accountCode && account.subconto?.length && foreign) {
+          fixture = { account, foreign };
+          break;
+        }
+      }
+      if (!fixture) return { skipped: true, reason: "no mismatched subconto kind fixture", chart };
+
+      const result = await rawTool(this.client, "get_accounting_entries", {
+        accounting_register: accountingRegister.name,
+        chart,
+        debit_account_code_prefixes: [String(fixture.account.code)],
+        subconto_side: "debit",
+        subconto_kind: {
+          type: fixture.foreign.ref.type,
+          uuid: fixture.foreign.uuid,
+          presentation: fixture.foreign.name,
+        },
+        group_by: ["debit_subconto", "debit_account"],
+        include_query: true,
+        limit: 5,
+      });
+      assert(result.ok === false, "mismatched subconto kind must fail before query execution");
+      assert((result.error_code || result.error?.error_code) === "subconto_kind_mismatch", `unexpected smart error_code: ${JSON.stringify(result)}`);
+      const details = result.details || result.error?.details?.parsed_details || {};
+      assert(Array.isArray(details.available_subconto_kinds), "available_subconto_kinds must be present");
+      assert(details.available_subconto_kinds.length === (fixture.account.subconto || []).length
+        || details.available_subconto_kinds.length > 0, "available_subconto_kinds must not be empty for selected account");
+      assert(Array.isArray(result.suggestions || result.error?.suggestions), "suggestions must be present");
+      assert(Array.isArray(result.query_guidance || result.error?.query_guidance), "query_guidance must be forced on mismatch");
+      return {
+        account: fixture.account.code,
+        requestedSubconto: fixture.foreign.name,
+        available: details.available_subconto_kinds,
+        errorCode: result.error_code || result.error?.error_code,
+      };
+    });
+
     await this.test("tool.get_accounting_entries_rejects_ambiguous_subconto_grouping", async () => {
       const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
       if (!accountingRegister) {

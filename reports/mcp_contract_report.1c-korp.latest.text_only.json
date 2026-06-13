@@ -1,16 +1,16 @@
 {
   "target": "https://laba-1c.astondevs.ru/BUH_KORP/hs/mcp/rpc",
   "responseMode": "text_only",
-  "startedAt": "2026-06-09T14:34:18.169Z",
-  "finishedAt": "2026-06-09T14:36:17.358Z",
-  "total": 62,
-  "passed": 62,
+  "startedAt": "2026-06-11T14:55:36.576Z",
+  "finishedAt": "2026-06-11T14:58:06.928Z",
+  "total": 69,
+  "passed": 69,
   "failed": 0,
   "tests": [
     {
       "name": "protocol.initialize",
       "status": "PASS",
-      "elapsedMs": 319,
+      "elapsedMs": 307,
       "details": {
         "server": {
           "name": "universal-1c-mcp",
@@ -21,15 +21,15 @@
     {
       "name": "protocol.tools_list_has_expected_tools",
       "status": "PASS",
-      "elapsedMs": 341,
+      "elapsedMs": 391,
       "details": {
-        "count": 26
+        "count": 28
       }
     },
     {
       "name": "protocol.resources_list_and_read",
       "status": "PASS",
-      "elapsedMs": 370,
+      "elapsedMs": 393,
       "details": {
         "resources": [
           "1c://metadata",
@@ -51,7 +51,7 @@
     {
       "name": "fixtures.discover_generic_metadata",
       "status": "PASS",
-      "elapsedMs": 20911,
+      "elapsedMs": 20714,
       "details": {
         "catalog": "Справочник.АвансовыйОтчетПрисоединенныеФайлы",
         "document": "Документ.АвансовыйОтчет",
@@ -63,17 +63,17 @@
     {
       "name": "tool.get_current_user_context",
       "status": "PASS",
-      "elapsedMs": 16013,
+      "elapsedMs": 15846,
       "details": {
         "user": "web",
         "objects": 5668,
-        "tools": 26
+        "tools": 28
       }
     },
     {
       "name": "tool.list_metadata_objects_pagination",
       "status": "PASS",
-      "elapsedMs": 4521,
+      "elapsedMs": 4489,
       "details": {
         "first": "Справочник.АвансовыйОтчетПрисоединенныеФайлы",
         "second": "Справочник.АвансовыйПлатежИностранцаПоНДФЛПрисоединенныеФайлы"
@@ -82,7 +82,7 @@
     {
       "name": "tool.search_metadata_fields_pagination",
       "status": "PASS",
-      "elapsedMs": 2717,
+      "elapsedMs": 2508,
       "details": {
         "fields": [
           "Документ.АвансовыйОтчет.Дата",
@@ -94,7 +94,7 @@
     {
       "name": "tool.list_registers_pagination",
       "status": "PASS",
-      "elapsedMs": 6652,
+      "elapsedMs": 6251,
       "details": {
         "registers": [
           "РегистрСведений.АбонентыЭДО",
@@ -106,7 +106,7 @@
     {
       "name": "tool.list_metadata_objects_does_not_mask_technical_metadata",
       "status": "PASS",
-      "elapsedMs": 2740,
+      "elapsedMs": 2635,
       "details": {
         "checked": 50
       }
@@ -114,7 +114,7 @@
     {
       "name": "tool.list_metadata_objects_does_not_invent_missing_register",
       "status": "PASS",
-      "elapsedMs": 482,
+      "elapsedMs": 490,
       "details": {
         "found": 0
       }
@@ -122,7 +122,7 @@
     {
       "name": "tool.discovery_returns_guidance_is_contextual",
       "status": "PASS",
-      "elapsedMs": 6466,
+      "elapsedMs": 6380,
       "details": {
         "salesGuidance": [
           {
@@ -158,7 +158,7 @@
     {
       "name": "tool.get_metadata_structure_generic_reference_object",
       "status": "PASS",
-      "elapsedMs": 1924,
+      "elapsedMs": 1810,
       "details": {
         "attributes": 28,
         "tabularSections": [
@@ -175,7 +175,7 @@
     {
       "name": "tool.get_metadata_structure_information_register_schema",
       "status": "PASS",
-      "elapsedMs": 262,
+      "elapsedMs": 251,
       "details": {
         "periodicity": null,
         "dimensions": 1,
@@ -298,7 +298,7 @@
     {
       "name": "tool.get_metadata_structure_accumulation_resources_by_mode",
       "status": "PASS",
-      "elapsedMs": 1156,
+      "elapsedMs": 1136,
       "details": {
         "register": "РегистрНакопления.АвансовыеПлатежиИностранцевПоНДФЛ",
         "resourcesByMode": {
@@ -323,7 +323,7 @@
     {
       "name": "tool.validate_1c_query_existing_tabular_section",
       "status": "PASS",
-      "elapsedMs": 215,
+      "elapsedMs": 195,
       "details": {
         "detected": [
           "Документ.АвансовыйОтчет"
@@ -331,9 +331,17 @@
       }
     },
     {
+      "name": "tool.validate_1c_query_guidance_is_opt_in",
+      "status": "PASS",
+      "elapsedMs": 389,
+      "details": {
+        "explainedGuidance": 2
+      }
+    },
+    {
       "name": "tool.validate_1c_query_warns_document_tabular_register_fanout",
       "status": "PASS",
-      "elapsedMs": 4115,
+      "elapsedMs": 3928,
       "details": {
         "document": "Документ.АвансовыйОтчет",
         "tabularSection": "ВыданныеАвансы",
@@ -366,7 +374,7 @@
     {
       "name": "tool.validate_1c_query_warns_accounting_subconto_fanout",
       "status": "PASS",
-      "elapsedMs": 278,
+      "elapsedMs": 279,
       "details": {
         "register": "РегистрБухгалтерии.Хозрасчетный",
         "warnings": [
@@ -378,7 +386,7 @@
     {
       "name": "tool.validate_1c_query_returns_guidance_is_contextual",
       "status": "PASS",
-      "elapsedMs": 891,
+      "elapsedMs": 890,
       "details": {
         "salesValid": true,
         "assetsValid": true,
@@ -430,7 +438,7 @@
     {
       "name": "tool.validate_1c_query_rejects_main_register_subconto_dtkt",
       "status": "PASS",
-      "elapsedMs": 235,
+      "elapsedMs": 230,
       "details": {
         "errors": [
           {
@@ -444,7 +452,7 @@
     {
       "name": "tool.validate_1c_query_having_keyword",
       "status": "PASS",
-      "elapsedMs": 240,
+      "elapsedMs": 254,
       "details": {
         "detected": [
           "Справочник.АвансовыйОтчетПрисоединенныеФайлы"
@@ -454,7 +462,7 @@
     {
       "name": "tool.get_1c_query_guidance_contextual",
       "status": "PASS",
-      "elapsedMs": 1484,
+      "elapsedMs": 1445,
       "details": {
         "guidance": [
           "temporary_tables_read_only",
@@ -481,16 +489,17 @@
     {
       "name": "tool.get_accounting_accounts_map",
       "status": "PASS",
-      "elapsedMs": 1314,
+      "elapsedMs": 15157,
       "details": {
         "chart": "ПланСчетов.Хозрасчетный",
-        "rows": 5
+        "rows": 5,
+        "maxLimitAccounts": 425
       }
     },
     {
       "name": "tool.get_accounting_entries_grouped",
       "status": "PASS",
-      "elapsedMs": 378,
+      "elapsedMs": 487,
       "details": {
         "register": "РегистрБухгалтерии.Хозрасчетный",
         "rows": 5,
@@ -500,7 +509,7 @@
     {
       "name": "tool.get_accounting_entries_subconto_join",
       "status": "PASS",
-      "elapsedMs": 1811,
+      "elapsedMs": 1937,
       "details": {
         "register": "РегистрБухгалтерии.Хозрасчетный",
         "account": "01",
@@ -511,25 +520,25 @@
     {
       "name": "tool.get_accounting_entries_rejects_ambiguous_subconto_grouping",
       "status": "PASS",
-      "elapsedMs": 172,
+      "elapsedMs": 162,
       "details": {
         "error": {
           "code": "invalid_arguments",
           "message": "Группировка по debit_subconto/credit_subconto без subconto_kind неоднозначна: в поле попадают разные виды аналитики, например Контрагенты, Договоры и Документы расчетов. Сначала вызовите get_accounting_accounts_map, выберите нужный вид субконто и передайте его в subconto_kind либо добавьте group_by=subconto_kind.",
           "details": {
             "diagnostic_mode": true,
-            "correlation_id": "29d05bc5-0315-48e6-9091-ad4c6d3f2835",
+            "correlation_id": "afa18916-6e95-48e6-a0c7-9a0c81f8dd91",
             "raw_exception": "{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [invalid_arguments] Группировка по debit_subconto/credit_subconto без subconto_kind неоднозначна: в поле попадают разные виды аналитики, например Контрагенты, Договоры и Документы расчетов. Сначала вызовите get_accounting_accounts_map, выберите нужный вид субконто и передайте его в subconto_kind либо добавьте group_by=subconto_kind.",
             "parsed_details": {}
           },
-          "correlation_id": "29d05bc5-0315-48e6-9091-ad4c6d3f2835"
+          "correlation_id": "afa18916-6e95-48e6-a0c7-9a0c81f8dd91"
         }
       }
     },
     {
       "name": "tool.get_calculation_types_map",
       "status": "PASS",
-      "elapsedMs": 1130,
+      "elapsedMs": 1364,
       "details": {
         "plan": "ПланВидовРасчета.Начисления",
         "calculationTypes": 5,
@@ -539,7 +548,7 @@
     {
       "name": "tool.get_database_passport",
       "status": "PASS",
-      "elapsedMs": 11053,
+      "elapsedMs": 10528,
       "details": {
         "organizations": 5,
         "accountingRegisters": 1,
@@ -549,7 +558,7 @@
     {
       "name": "tool.run_1c_query_temporary_table_package",
       "status": "PASS",
-      "elapsedMs": 261,
+      "elapsedMs": 455,
       "details": {
         "skipped": true,
         "reason": "generic catalog fixture has no rows",
@@ -557,9 +566,18 @@
       }
     },
     {
+      "name": "tool.run_1c_query_guidance_is_opt_in",
+      "status": "PASS",
+      "elapsedMs": 502,
+      "details": {
+        "compactRows": 0,
+        "guidedQueryGuidance": 4
+      }
+    },
+    {
       "name": "tool.run_1c_query_counterparty_contact_info",
       "status": "PASS",
-      "elapsedMs": 180,
+      "elapsedMs": 230,
       "details": {
         "rows": 1,
         "firstRef": {
@@ -572,7 +590,7 @@
     {
       "name": "tool.run_1c_query_reference_encoding",
       "status": "PASS",
-      "elapsedMs": 190,
+      "elapsedMs": 239,
       "details": {
         "skipped": true,
         "reason": "generic catalog fixture has no rows",
@@ -582,7 +600,7 @@
     {
       "name": "tool.run_1c_query_accounting_debit_credit_subconto",
       "status": "PASS",
-      "elapsedMs": 264,
+      "elapsedMs": 358,
       "details": {
         "register": "РегистрБухгалтерии.Хозрасчетный",
         "columns": [
@@ -598,7 +616,7 @@
     {
       "name": "tool.run_1c_query_accounting_balance_subconto",
       "status": "PASS",
-      "elapsedMs": 380,
+      "elapsedMs": 402,
       "details": {
         "register": "РегистрБухгалтерии.Хозрасчетный",
         "columns": [
@@ -611,9 +629,20 @@
       }
     },
     {
+      "name": "tool.run_1c_query_zero_row_subconto_position_warning",
+      "status": "PASS",
+      "elapsedMs": 283,
+      "details": {
+        "register": "РегистрБухгалтерии.Хозрасчетный",
+        "warnings": [
+          "Запрос вернул 0 строк и использует позиционные поля Субконто1/2/3 бухгалтерского регистра. Возможная причина — выбранная позиция субконто не совпадает с настройкой счета в ПланСчетов.<Имя>.ВидыСубконто. Проверьте позицию через get_accounting_accounts_map с account_code_prefix или используйте профильный бухгалтерский shortcut."
+        ]
+      }
+    },
+    {
       "name": "tool.search_objects_returns_structured_refs",
       "status": "PASS",
-      "elapsedMs": 157,
+      "elapsedMs": 190,
       "details": {
         "skipped": true,
         "reason": "sample reference presentation is not searchable for this type",
@@ -624,7 +653,7 @@
     {
       "name": "tool.get_object_by_ref_with_tabular_section",
       "status": "PASS",
-      "elapsedMs": 226,
+      "elapsedMs": 589,
       "details": {
         "ref": {
           "type": "Документ.АвансовыйОтчет",
@@ -640,7 +669,7 @@
     {
       "name": "tool.find_object_by_id",
       "status": "PASS",
-      "elapsedMs": 6657,
+      "elapsedMs": 6670,
       "details": {
         "searchedTypes": 1,
         "matches": 1
@@ -649,7 +678,7 @@
     {
       "name": "tool.get_link_of_object",
       "status": "PASS",
-      "elapsedMs": 168,
+      "elapsedMs": 184,
       "details": {
         "links": [
           {
@@ -668,7 +697,7 @@
     {
       "name": "tool.find_references_to_object",
       "status": "PASS",
-      "elapsedMs": 779,
+      "elapsedMs": 7482,
       "details": {
         "groups": 2,
         "searchedTypes": 2,
@@ -678,7 +707,7 @@
     {
       "name": "tool.get_object_history_graceful",
       "status": "PASS",
-      "elapsedMs": 164,
+      "elapsedMs": 179,
       "details": {
         "supported": false,
         "events": 0,
@@ -692,7 +721,7 @@
     {
       "name": "tool.get_enum_values",
       "status": "PASS",
-      "elapsedMs": 171,
+      "elapsedMs": 166,
       "details": {
         "values": [
           "ПустаяСсылка",
@@ -705,7 +734,7 @@
     {
       "name": "tool.get_register_records_records_mode",
       "status": "PASS",
-      "elapsedMs": 189,
+      "elapsedMs": 194,
       "details": {
         "rows": 0,
         "truncated": false,
@@ -715,7 +744,7 @@
     {
       "name": "tool.get_register_records_accounting_debit_credit_mode",
       "status": "PASS",
-      "elapsedMs": 320,
+      "elapsedMs": 335,
       "details": {
         "register": "РегистрБухгалтерии.Хозрасчетный",
         "columns": [
@@ -731,7 +760,7 @@
     {
       "name": "tool.get_register_records_accounting_debit_credit_filter",
       "status": "PASS",
-      "elapsedMs": 366,
+      "elapsedMs": 439,
       "details": {
         "register": "РегистрБухгалтерии.Хозрасчетный",
         "account": "09",
@@ -742,7 +771,7 @@
     {
       "name": "tool.get_register_records_accounting_turnovers_filter",
       "status": "PASS",
-      "elapsedMs": 537,
+      "elapsedMs": 570,
       "details": {
         "register": "РегистрБухгалтерии.Хозрасчетный",
         "account": "60.01",
@@ -755,7 +784,7 @@
     {
       "name": "tool.get_accounting_balances",
       "status": "PASS",
-      "elapsedMs": 185,
+      "elapsedMs": 178,
       "details": {
         "register": "РегистрБухгалтерии.Хозрасчетный",
         "rows": 2,
@@ -763,27 +792,46 @@
       }
     },
     {
+      "name": "tool.get_accounting_balances_by_subconto_age",
+      "status": "PASS",
+      "elapsedMs": 2366,
+      "details": {
+        "register": "РегистрБухгалтерии.Хозрасчетный",
+        "rows": 5,
+        "buckets": 2
+      }
+    },
+    {
+      "name": "tool.compare_accounting_balances_by_subconto",
+      "status": "PASS",
+      "elapsedMs": 1767,
+      "details": {
+        "register": "РегистрБухгалтерии.Хозрасчетный",
+        "rows": 0
+      }
+    },
+    {
       "name": "tool.get_register_records_bad_mode_is_diagnostic",
       "status": "PASS",
-      "elapsedMs": 156,
+      "elapsedMs": 177,
       "details": {
         "error": {
           "code": "register_mode_not_supported",
           "message": "Режим balance не поддерживается для РегистрСведений",
           "details": {
             "diagnostic_mode": true,
-            "correlation_id": "1e6fd48b-52b2-43ca-9919-dc49ee1dd2a9",
+            "correlation_id": "0adb7886-a192-4220-87ee-c971bced1271",
             "raw_exception": "{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [register_mode_not_supported] Режим balance не поддерживается для РегистрСведений",
             "parsed_details": {}
           },
-          "correlation_id": "1e6fd48b-52b2-43ca-9919-dc49ee1dd2a9"
+          "correlation_id": "0adb7886-a192-4220-87ee-c971bced1271"
         }
       }
     },
     {
       "name": "fixture.query_document_with_movements",
       "status": "PASS",
-      "elapsedMs": 197,
+      "elapsedMs": 225,
       "details": {
         "ref": {
           "type": "Документ.АвансовыйОтчет",
@@ -795,7 +843,7 @@
     {
       "name": "tool.get_document_movements",
       "status": "PASS",
-      "elapsedMs": 1658,
+      "elapsedMs": 1644,
       "details": {
         "registers": [
           "РегистрНакопления.НДСПредъявленный"
@@ -806,7 +854,7 @@
     {
       "name": "tool.list_reports",
       "status": "PASS",
-      "elapsedMs": 2774,
+      "elapsedMs": 2757,
       "details": {
         "reports": [
           "Отчет.АнализВерсийОбъектов",
@@ -821,7 +869,7 @@
     {
       "name": "tool.get_report_info",
       "status": "PASS",
-      "elapsedMs": 202,
+      "elapsedMs": 218,
       "details": {
         "report": "Отчет.АнализВерсийОбъектов",
         "variants": [
@@ -835,7 +883,7 @@
     {
       "name": "tool.run_1c_report_graceful",
       "status": "PASS",
-      "elapsedMs": 205,
+      "elapsedMs": 293,
       "details": {
         "report": "Отчет.АнализВерсийОбъектов",
         "executionSupported": false,
@@ -849,7 +897,7 @@
     {
       "name": "negative.validate_missing_metadata_is_invalid",
       "status": "PASS",
-      "elapsedMs": 185,
+      "elapsedMs": 208,
       "details": {
         "errors": [
           {
@@ -863,7 +911,7 @@
     {
       "name": "negative.run_missing_metadata_is_diagnostic",
       "status": "PASS",
-      "elapsedMs": 262,
+      "elapsedMs": 259,
       "details": {
         "errorCode": "query_validation_failed",
         "message": "Запрос не прошёл проверку.",
@@ -903,9 +951,50 @@
       }
     },
     {
+      "name": "negative.run_validate_before_run_false_is_ignored",
+      "status": "PASS",
+      "elapsedMs": 257,
+      "details": {
+        "errorCode": "query_validation_failed",
+        "parsedDetails": {
+          "validation_errors": [
+            {
+              "code": "metadata_not_found",
+              "message": "Объект метаданных не найден: РегистрСведений.MCP_НесуществующийРегистр",
+              "location": "РегистрСведений.MCP_НесуществующийРегистр"
+            }
+          ],
+          "validation_warnings": [],
+          "detected_objects": [
+            "РегистрСведений.MCP_НесуществующийРегистр"
+          ],
+          "detected_parameters": [],
+          "estimated_risk": "blocked",
+          "query_guidance": [
+            {
+              "id": "metadata_first",
+              "title": "Сначала проверьте метаданные",
+              "instruction": "Не угадывайте имена объектов, реквизитов, табличных частей, регистров и ресурсов. Начинайте с узкого discovery: list_metadata_objects с query/kinds/limit или специализированная карта вроде get_accounting_accounts_map/get_calculation_types_map. get_metadata_structure вызывайте только для уже выбранного объекта и только с нужными include_* флагами.",
+              "resource_uri": "1c://knowledge/query",
+              "severity": "high",
+              "configuration_agnostic": true
+            },
+            {
+              "id": "mcp_query_safety",
+              "title": "Граница read-only",
+              "instruction": "Сервер не изменяет постоянные данные: запрещены запись, проведение, удаление и DDL/DML. Исключение - временные таблицы языка запросов 1С внутри выполнения запроса пользователя.",
+              "resource_uri": "1c://knowledge/query",
+              "severity": "high",
+              "configuration_agnostic": true
+            }
+          ]
+        }
+      }
+    },
+    {
       "name": "negative.validate_forbidden_keyword",
       "status": "PASS",
-      "elapsedMs": 204,
+      "elapsedMs": 216,
       "details": {
         "errors": [
           {
@@ -919,7 +1008,7 @@
     {
       "name": "negative.validate_invalid_imeya_keyword",
       "status": "PASS",
-      "elapsedMs": 237,
+      "elapsedMs": 249,
       "details": {
         "errors": [
           {
@@ -933,7 +1022,7 @@
     {
       "name": "negative.get_accounting_entries_rejects_subconto_value_without_kind",
       "status": "PASS",
-      "elapsedMs": 180,
+      "elapsedMs": 201,
       "details": {
         "skipped": true,
         "reason": "no reference row"
@@ -942,16 +1031,31 @@
     {
       "name": "negative.run_main_register_subconto_dtkt_is_smart_error",
       "status": "PASS",
-      "elapsedMs": 424,
+      "elapsedMs": 420,
       "details": {
         "errorCode": "subconto_wrong_table",
         "hint": "Используйте таблицу РегистрБухгалтерии.Хозрасчетный.Субконто с полями: Период, Регистратор, НомерСтроки, ВидДвижения, Вид, Значение. Соединяйте с основной таблицей по Регистратор и НомерСтроки."
       }
     },
     {
+      "name": "negative.validate_rejects_accounting_balance_vt_deref_params",
+      "status": "PASS",
+      "elapsedMs": 830,
+      "details": {
+        "validationErrors": [
+          {
+            "code": "vt_param_field_error",
+            "message": "В параметрах виртуальной таблицы Остатки/ОстаткиИОбороты нельзя использовать разыменование через точку: СчетДт.Код. Передайте счёт ссылкой/ЗНАЧЕНИЕ(...) или перенесите условия по .Код/.Наименование в секцию ГДЕ внешнего запроса.",
+            "location": "СчетДт.Код"
+          }
+        ],
+        "runErrorCode": "query_validation_failed"
+      }
+    },
+    {
       "name": "negative.validate_plain_batch_without_temp_tables",
       "status": "PASS",
-      "elapsedMs": 280,
+      "elapsedMs": 247,
       "details": {
         "errors": [
           {
@@ -965,7 +1069,7 @@
     {
       "name": "negative.validate_temp_table_without_final_select",
       "status": "PASS",
-      "elapsedMs": 228,
+      "elapsedMs": 248,
       "details": {
         "errors": [
           {
@@ -979,25 +1083,25 @@
     {
       "name": "negative.get_object_by_ref_bad_uuid",
       "status": "PASS",
-      "elapsedMs": 165,
+      "elapsedMs": 178,
       "details": {
         "error": {
           "code": "invalid_arguments",
           "message": "Некорректный UUID: not-a-uuid",
           "details": {
             "diagnostic_mode": true,
-            "correlation_id": "34dbf477-6f07-47d3-a69c-5616f5312eaf",
+            "correlation_id": "274689d8-be2c-49af-9050-d4cbc63626b5",
             "raw_exception": "{MCP ОбщийМодуль.MCP_Errors.Модуль(82)}: [invalid_arguments] Некорректный UUID: not-a-uuid",
             "parsed_details": {}
           },
-          "correlation_id": "34dbf477-6f07-47d3-a69c-5616f5312eaf"
+          "correlation_id": "274689d8-be2c-49af-9050-d4cbc63626b5"
         }
       }
     },
     {
       "name": "negative.unknown_tool",
       "status": "PASS",
-      "elapsedMs": 153,
+      "elapsedMs": 166,
       "details": {
         "error": {
           "code": "unknown_tool",
@@ -1005,14 +1109,14 @@
           "details": {
             "tool": "definitely_not_a_tool"
           },
-          "correlation_id": "b200f6cc-3cfc-499c-810f-b1eeebe91901"
+          "correlation_id": "fe5a9f09-fecb-4d10-a25f-f0bc588b9e76"
         }
       }
     },
     {
       "name": "crosscheck.every_listed_query_object_has_basic_structure_sample",
       "status": "PASS",
-      "elapsedMs": 11506,
+      "elapsedMs": 16147,
       "details": {
         "checked": [
           "Документ.АвансовыйОтчет",
