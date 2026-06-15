@@ -2,12 +2,12 @@
 
 Универсальный MCP-сервер для безопасного read-only доступа к данным и метаданным 1С:Предприятия 8. Постоянные данные не изменяются; временные таблицы языка запросов 1С разрешены как рабочая область выполнения аналитического запроса.
 
-Сервер реализует протокол **Model Context Protocol (MCP) 2025-11-25** поверх HTTP-сервиса 1С и предоставляет LLM-агентам 28 read-only инструментов согласно спецификации `mcp_1c_tools_spec.md`.
+Сервер реализует протокол **Model Context Protocol (MCP) 2025-11-25** поверх HTTP-сервиса 1С и предоставляет LLM-агентам 30 read-only инструментов согласно спецификации `mcp_1c_tools_spec.md`.
 
 ## Возможности
 
 - Полностью read-only: создание/изменение/удаление объектов невозможно.
-- 28 tools: discovery → inspect → search → retrieve → explain → navigate → report → query guidance → data passport.
+- 30 tools: discovery → inspect → search → retrieve → explain → navigate → report → query guidance → data passport.
 - Allowlist/denylist типов метаданных и полей.
 - Маскирование заданных полей перед передачей ответа в LLM.
 - Лимиты строк, времени и размера результата.
@@ -25,31 +25,33 @@
 | 1 | `list_metadata_objects` | Список объектов метаданных |
 | 2 | `get_metadata_structure` | Структура объекта метаданных |
 | 3 | `search_metadata_fields` | Компактный поиск полей метаданных |
-| 4 | `run_1c_query` | Безопасный read-only запрос 1С |
-| 5 | `validate_1c_query` | Проверка запроса до выполнения |
-| 6 | `get_1c_query_guidance` | Универсальные подсказки по языку запросов 1С |
-| 7 | `list_registers` | Компактный список регистров |
-| 8 | `get_accounting_accounts_map` | Карта счетов и субконто плана счетов |
-| 9 | `get_accounting_balances` | Бухгалтерские остатки и обороты |
-| 10 | `get_accounting_balances_by_subconto_age` | Aging бухгалтерских остатков по выбранному субконто |
-| 11 | `compare_accounting_balances_by_subconto` | Сравнение двух наборов остатков по одной аналитике |
-| 12 | `get_accounting_entries` | Бухгалтерские проводки с универсальным join к субконто |
-| 13 | `get_inventory_balances_by_item` | Быстрые остатки товара по складам и организациям |
-| 14 | `get_calculation_types_map` | Карта видов расчёта |
-| 15 | `get_database_passport` | Паспорт фактических данных базы |
-| 16 | `get_object_by_ref` | Получение объекта по типу и UUID |
-| 17 | `find_object_by_id` | Поиск объекта по UUID без знания типа |
-| 18 | `search_objects` | Поиск по строке/коду/ИНН/артикулу |
-| 19 | `get_link_of_object` | Навигационная ссылка на объект |
-| 20 | `find_references_to_object` | Поиск ссылок на объект |
-| 21 | `get_enum_values` | Значения перечисления |
-| 22 | `get_register_records` | Записи / срезы / остатки / обороты |
-| 23 | `get_document_movements` | Движения документа по регистрам |
-| 24 | `list_reports` | Список отчётов |
-| 25 | `get_report_info` | Параметры и структура отчёта |
-| 26 | `run_1c_report` | Выполнение отчёта |
-| 27 | `get_object_history` | История объекта / журнал регистрации |
-| 28 | `get_current_user_context` | Контекст пользователя и базы |
+| 4 | `count_event_subscriptions_by_event` | Статистика подписок на события |
+| 5 | `list_event_subscriptions` | Список подписок на события |
+| 6 | `run_1c_query` | Безопасный read-only запрос 1С |
+| 7 | `validate_1c_query` | Проверка запроса до выполнения |
+| 8 | `get_1c_query_guidance` | Универсальные подсказки по языку запросов 1С |
+| 9 | `list_registers` | Компактный список регистров |
+| 10 | `get_accounting_accounts_map` | Карта счетов и субконто плана счетов |
+| 11 | `get_accounting_balances` | Бухгалтерские остатки и обороты |
+| 12 | `get_accounting_balances_by_subconto_age` | Aging бухгалтерских остатков по выбранному субконто |
+| 13 | `compare_accounting_balances_by_subconto` | Сравнение двух наборов остатков по одной аналитике |
+| 14 | `get_accounting_entries` | Бухгалтерские проводки с универсальным join к субконто |
+| 15 | `get_inventory_balances_by_item` | Быстрые остатки товара по складам и организациям |
+| 16 | `get_calculation_types_map` | Карта видов расчёта |
+| 17 | `get_database_passport` | Паспорт фактических данных базы |
+| 18 | `get_object_by_ref` | Получение объекта по типу и UUID |
+| 19 | `find_object_by_id` | Поиск объекта по UUID без знания типа |
+| 20 | `search_objects` | Поиск по строке/коду/ИНН/артикулу |
+| 21 | `get_link_of_object` | Навигационная ссылка на объект |
+| 22 | `find_references_to_object` | Поиск ссылок на объект |
+| 23 | `get_enum_values` | Значения перечисления |
+| 24 | `get_register_records` | Записи / срезы / остатки / обороты |
+| 25 | `get_document_movements` | Движения документа по регистрам |
+| 26 | `list_reports` | Список отчётов |
+| 27 | `get_report_info` | Параметры и структура отчёта |
+| 28 | `run_1c_report` | Выполнение отчёта |
+| 29 | `get_object_history` | История объекта / журнал регистрации |
+| 30 | `get_current_user_context` | Контекст пользователя и базы |
 
 ## Подробное описание tools
 
@@ -119,6 +121,45 @@
 **Выходящая схема:** `metadata { kind, name, full_name, synonym, attributes[], standard_attributes[], tabular_sections[], register_schema?, query_table?, virtual_tables?, supports_ref?, supports_query? }`.
 
 **Ограничения:** возвращаются только разрешённые поля и объекты. Формы и команды обычно не нужны LLM и могут увеличить ответ.
+
+### `count_event_subscriptions_by_event`
+
+**Назначение:** компактно посчитать подписки на события по имени события, чтобы перед аудитом не выгружать полный список подписок.
+
+**Параметры:** `include_top_handlers: boolean = false` добавляет топ модулей-обработчиков по каждому событию; `top_handlers_limit: integer 1..20 = 5`.
+
+**Пример:**
+
+```json
+{
+  "include_top_handlers": true,
+  "top_handlers_limit": 5
+}
+```
+
+**Выходящая схема:** `events[] { event, count, top_handlers?[] { module, count } }`, `event_count`, `subscription_count`, `include_top_handlers`, `top_handlers_limit?`, `guidance`.
+
+**Ограничения:** это metadata discovery, а не чтение BSL-кода обработчика. Подписки с источниками, запрещенными allowlist/правами MCP, не возвращаются.
+
+### `list_event_subscriptions`
+
+**Назначение:** получить список подписок на события с точечными фильтрами по событию и обработчику.
+
+**Параметры:** `event: string` exact match по имени события; `handler_contains: string` поиск подстроки в имени обработчика без учета регистра; `limit: integer 1..1000 = 50`; `cursor`.
+
+**Пример:**
+
+```json
+{
+  "event": "ПередЗаписью",
+  "handler_contains": "ДатыЗапретаИзменения",
+  "limit": 20
+}
+```
+
+**Выходящая схема:** `subscriptions[] { name, synonym, comment, event, handler, handler_module, handler_routine, source, source_name, source_full_name }`, `subscription_count`, `total_estimated`, `truncated`, `next_cursor`, `filters`, `guidance`.
+
+**Ограничения:** на больших конфигурациях сначала вызывайте `count_event_subscriptions_by_event`, затем сужайте список через `event` и `handler_contains`.
 
 ### `run_1c_query`
 

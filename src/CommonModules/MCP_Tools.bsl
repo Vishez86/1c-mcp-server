@@ -14,6 +14,8 @@
 	Результат.Добавить(Tool_list_metadata_objects(РежимРезультата));
 	Результат.Добавить(Tool_get_metadata_structure(РежимРезультата));
 	Результат.Добавить(Tool_search_metadata_fields(РежимРезультата));
+	Результат.Добавить(Tool_count_event_subscriptions_by_event(РежимРезультата));
+	Результат.Добавить(Tool_list_event_subscriptions(РежимРезультата));
 	Результат.Добавить(Tool_run_1c_query(РежимРезультата));
 	Результат.Добавить(Tool_validate_1c_query(РежимРезультата));
 	Результат.Добавить(Tool_get_1c_query_guidance(РежимРезультата));
@@ -68,6 +70,10 @@
 			Данные = MCP_Tools_Impl.GetMetadataStructure(Аргументы);
 		ИначеЕсли ИмяТула = "search_metadata_fields" Тогда
 			Данные = MCP_Tools_Impl.SearchMetadataFields(Аргументы);
+		ИначеЕсли ИмяТула = "count_event_subscriptions_by_event" Тогда
+			Данные = MCP_Tools_Impl.CountEventSubscriptionsByEvent(Аргументы);
+		ИначеЕсли ИмяТула = "list_event_subscriptions" Тогда
+			Данные = MCP_Tools_Impl.ListEventSubscriptions(Аргументы);
 		ИначеЕсли ИмяТула = "run_1c_query" Тогда
 			Данные = MCP_Tools_Impl.Run1CQuery(Аргументы);
 		ИначеЕсли ИмяТула = "validate_1c_query" Тогда
@@ -338,6 +344,7 @@
 	ДобавитьРазмерКоллекцииВСводку(Части, Данные, "rows", "rows");
 	ДобавитьРазмерКоллекцииВСводку(Части, Данные, "objects", "objects");
 	ДобавитьРазмерКоллекцииВСводку(Части, Данные, "fields", "fields");
+	ДобавитьРазмерКоллекцииВСводку(Части, Данные, "subscriptions", "subscriptions");
 	ДобавитьРазмерКоллекцииВСводку(Части, Данные, "registers", "registers");
 	ДобавитьРазмерКоллекцииВСводку(Части, Данные, "accounts", "accounts");
 	ДобавитьРазмерКоллекцииВСводку(Части, Данные, "calculation_types", "calculation_types");
@@ -840,6 +847,28 @@
 	Возврат _Tool("search_metadata_fields",
 		"Найти поля в метаданных",
 		"Компактный поиск реквизитов, измерений и ресурсов без чтения полной структуры объекта.",
+		Props, Неопределено, РежимРезультата);
+КонецФункции
+
+Функция Tool_count_event_subscriptions_by_event(РежимРезультата = "")
+	Props = Новый Структура;
+	Props.Вставить("include_top_handlers", _Схема("boolean", , "Добавить top_handlers по модулям-обработчикам для каждого события."));
+	Props.Вставить("top_handlers_limit", _СхемаInt(1, 20, 5));
+	Возврат _Tool("count_event_subscriptions_by_event",
+		"Посчитать подписки на события по событиям",
+		"Discovery tool для паттерна statistics before data: сначала получите компактную статистику подписок по event, затем вызывайте list_event_subscriptions с event и handler_contains.",
+		Props, Неопределено, РежимРезультата);
+КонецФункции
+
+Функция Tool_list_event_subscriptions(РежимРезультата = "")
+	Props = Новый Структура;
+	Props.Вставить("event", _Схема("string", , "Точное имя события, например Проведение или ПередЗаписью. Exact match."));
+	Props.Вставить("handler_contains", _Схема("string", , "Подстрока в имени обработчика, без учета регистра."));
+	Props.Вставить("limit", _СхемаInt(1, 1000, 50));
+	Props.Вставить("cursor", _Схема("string", , "Offset cursor списка подписок."));
+	Возврат _Tool("list_event_subscriptions",
+		"Получить подписки на события",
+		"Список подписок на события метаданных 1С. Для экономии контекста сначала используйте count_event_subscriptions_by_event, затем уточняйте event и handler_contains.",
 		Props, Неопределено, РежимРезультата);
 КонецФункции
 

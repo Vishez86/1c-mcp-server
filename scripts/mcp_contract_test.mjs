@@ -9,6 +9,8 @@ const EXPECTED_TOOLS = [
   "list_metadata_objects",
   "get_metadata_structure",
   "search_metadata_fields",
+  "count_event_subscriptions_by_event",
+  "list_event_subscriptions",
   "run_1c_query",
   "validate_1c_query",
   "get_1c_query_guidance",
@@ -386,6 +388,66 @@ class ContractRunner {
       assert("truncated" in result, "truncated flag must be present");
       if (result.truncated) assert(result.next_cursor, "truncated field search must expose next_cursor");
       return { fields: result.fields.map((item) => `${item.owner_type}.${item.path}`), truncated: result.truncated };
+    });
+
+    await this.test("tool.count_event_subscriptions_by_event", async () => {
+      const result = await okTool(this.client, "count_event_subscriptions_by_event", {});
+      assert(Array.isArray(result.events), "events must be an array");
+      assert(typeof result.event_count === "number", "event_count must be numeric");
+      assert(typeof result.subscription_count === "number", "subscription_count must be numeric");
+      for (let index = 0; index < result.events.length; index += 1) {
+        const row = result.events[index];
+        assert(typeof row.event === "string" && row.event.length > 0, "event must be a non-empty string");
+        assert(typeof row.count === "number" && row.count > 0, `count must be positive for ${row.event}`);
+        if (index > 0) {
+          const prev = result.events[index - 1];
+          assert(prev.count >= row.count, "events must be sorted by count desc");
+        }
+      }
+      const extended = await okTool(this.client, "count_event_subscriptions_by_event", {
+        include_top_handlers: true,
+        top_handlers_limit: 2,
+      });
+      assert(Array.isArray(extended.events), "extended events must be an array");
+      for (const row of extended.events) {
+        assert(Array.isArray(row.top_handlers), `top_handlers must be present for ${row.event}`);
+        assert(row.top_handlers.length <= 2, `top_handlers_limit was not applied for ${row.event}`);
+        for (const handler of row.top_handlers) {
+          assert(typeof handler.module === "string" && handler.module.length > 0, "handler module must be a non-empty string");
+          assert(typeof handler.count === "number" && handler.count > 0, "handler count must be positive");
+        }
+      }
+      this.context.eventSubscriptionEvent = result.events[0]?.event || "";
+      this.context.eventSubscriptionHandlerModule = extended.events[0]?.top_handlers?.[0]?.module || "";
+      return { events: result.event_count, subscriptions: result.subscription_count };
+    });
+
+    await this.test("tool.list_event_subscriptions_filters", async () => {
+      const event = this.context.eventSubscriptionEvent || "";
+      const listArgs = event ? { event, limit: 5 } : { limit: 5 };
+      const result = await okTool(this.client, "list_event_subscriptions", listArgs);
+      assert(Array.isArray(result.subscriptions), "subscriptions must be an array");
+      assert("truncated" in result, "truncated flag must be present");
+      if (event) {
+        for (const row of result.subscriptions) {
+          assert(row.event === event, `subscription event must match filter: ${row.event} !== ${event}`);
+        }
+      }
+      const handlerContains = this.context.eventSubscriptionHandlerModule || "";
+      if (event && handlerContains) {
+        const filtered = await okTool(this.client, "list_event_subscriptions", {
+          event,
+          handler_contains: handlerContains.toLowerCase(),
+          limit: 5,
+        });
+        for (const row of filtered.subscriptions) {
+          assert(row.event === event, "combined filter must preserve event");
+          assert(String(row.handler || "").toLowerCase().includes(handlerContains.toLowerCase()),
+            `handler_contains did not match ${row.handler}`);
+        }
+        return { event, handler_contains: handlerContains, filtered: filtered.subscriptions.length };
+      }
+      return { event, listed: result.subscriptions.length };
     });
 
     await this.test("tool.list_registers_pagination", async () => {
