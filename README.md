@@ -2,12 +2,12 @@
 
 Универсальный MCP-сервер для безопасного read-only доступа к данным и метаданным 1С:Предприятия 8. Постоянные данные не изменяются; временные таблицы языка запросов 1С разрешены как рабочая область выполнения аналитического запроса.
 
-Сервер реализует протокол **Model Context Protocol (MCP) 2025-11-25** поверх HTTP-сервиса 1С и предоставляет LLM-агентам 30 read-only инструментов согласно спецификации `mcp_1c_tools_spec.md`.
+Сервер реализует протокол **Model Context Protocol (MCP) 2025-11-25** поверх HTTP-сервиса 1С и предоставляет LLM-агентам 34 read-only инструмента согласно спецификации `mcp_1c_tools_spec.md`.
 
 ## Возможности
 
 - Полностью read-only: создание/изменение/удаление объектов невозможно.
-- 30 tools: discovery → inspect → search → retrieve → explain → navigate → report → query guidance → data passport.
+- 34 tools: discovery → inspect → search → retrieve → explain → navigate → report → query guidance → generated language docs → data passport.
 - Allowlist/denylist типов метаданных и полей.
 - Маскирование заданных полей перед передачей ответа в LLM.
 - Лимиты строк, времени и размера результата.
@@ -30,28 +30,32 @@
 | 6 | `run_1c_query` | Безопасный read-only запрос 1С |
 | 7 | `validate_1c_query` | Проверка запроса до выполнения |
 | 8 | `get_1c_query_guidance` | Универсальные подсказки по языку запросов 1С |
-| 9 | `list_registers` | Компактный список регистров |
-| 10 | `get_accounting_accounts_map` | Карта счетов и субконто плана счетов |
-| 11 | `get_accounting_balances` | Бухгалтерские остатки и обороты |
-| 12 | `get_accounting_balances_by_subconto_age` | Aging бухгалтерских остатков по выбранному субконто |
-| 13 | `compare_accounting_balances_by_subconto` | Сравнение двух наборов остатков по одной аналитике |
-| 14 | `get_accounting_entries` | Бухгалтерские проводки с универсальным join к субконто |
-| 15 | `get_inventory_balances_by_item` | Быстрые остатки товара по складам и организациям |
-| 16 | `get_calculation_types_map` | Карта видов расчёта |
-| 17 | `get_database_passport` | Паспорт фактических данных базы |
-| 18 | `get_object_by_ref` | Получение объекта по типу и UUID |
-| 19 | `find_object_by_id` | Поиск объекта по UUID без знания типа |
-| 20 | `search_objects` | Поиск по строке/коду/ИНН/артикулу |
-| 21 | `get_link_of_object` | Навигационная ссылка на объект |
-| 22 | `find_references_to_object` | Поиск ссылок на объект |
-| 23 | `get_enum_values` | Значения перечисления |
-| 24 | `get_register_records` | Записи / срезы / остатки / обороты |
-| 25 | `get_document_movements` | Движения документа по регистрам |
-| 26 | `list_reports` | Список отчётов |
-| 27 | `get_report_info` | Параметры и структура отчёта |
-| 28 | `run_1c_report` | Выполнение отчёта |
-| 29 | `get_object_history` | История объекта / журнал регистрации |
-| 30 | `get_current_user_context` | Контекст пользователя и базы |
+| 9 | `list_1c_language_doc_topics` | Темы встроенной документации языка 1С 8.3.37 |
+| 10 | `search_1c_language_docs` | Поиск по встроенной документации языка 1С |
+| 11 | `read_1c_language_doc_section` | Чтение одной секции документации языка 1С |
+| 12 | `get_1c_language_doc_provenance` | Версия и источники документации языка 1С |
+| 13 | `list_registers` | Компактный список регистров |
+| 14 | `get_accounting_accounts_map` | Карта счетов и субконто плана счетов |
+| 15 | `get_accounting_balances` | Бухгалтерские остатки и обороты |
+| 16 | `get_accounting_balances_by_subconto_age` | Aging бухгалтерских остатков по выбранному субконто |
+| 17 | `compare_accounting_balances_by_subconto` | Сравнение двух наборов остатков по одной аналитике |
+| 18 | `get_accounting_entries` | Бухгалтерские проводки с универсальным join к субконто |
+| 19 | `get_inventory_balances_by_item` | Быстрые остатки товара по складам и организациям |
+| 20 | `get_calculation_types_map` | Карта видов расчёта |
+| 21 | `get_database_passport` | Паспорт фактических данных базы |
+| 22 | `get_object_by_ref` | Получение объекта по типу и UUID |
+| 23 | `find_object_by_id` | Поиск объекта по UUID без знания типа |
+| 24 | `search_objects` | Поиск по строке/коду/ИНН/артикулу |
+| 25 | `get_link_of_object` | Навигационная ссылка на объект |
+| 26 | `find_references_to_object` | Поиск ссылок на объект |
+| 27 | `get_enum_values` | Значения перечисления |
+| 28 | `get_register_records` | Записи / срезы / остатки / обороты |
+| 29 | `get_document_movements` | Движения документа по регистрам |
+| 30 | `list_reports` | Список отчётов |
+| 31 | `get_report_info` | Параметры и структура отчёта |
+| 32 | `run_1c_report` | Выполнение отчёта |
+| 33 | `get_object_history` | История объекта / журнал регистрации |
+| 34 | `get_current_user_context` | Контекст пользователя и базы |
 
 ## Подробное описание tools
 
@@ -222,6 +226,81 @@
 **Выходящая схема:** `configuration_agnostic`, `source`, `topics[]`, `guidance[] { topic, title, text, examples? }`.
 
 **Ограничения:** это справка, а не метаданные конкретной базы; прикладные имена всё равно нужно брать через discovery tools.
+
+### `list_1c_language_doc_topics`
+
+**Назначение:** вернуть компактную карту встроенной документации по языку запросов 1С 8.3.37.
+
+**Параметры:** `version: string = "8.3.37"`; `domain: string = "query-language"`.
+
+**Пример:**
+
+```json
+{
+  "version": "8.3.37"
+}
+```
+
+**Выходящая схема:** `version`, `domain`, `topics[] { id, title, section_count, source_file, resource_uri }`.
+
+**Ограничения:** tool не возвращает полный текст документации; для текста используйте `search_1c_language_docs` и `read_1c_language_doc_section`.
+
+### `search_1c_language_docs`
+
+**Назначение:** найти релевантные секции в сгенерированном read-only индексе документации языка запросов 1С.
+
+**Параметры:** обязательный `query: string`; `version: string = "8.3.37"`; `domain: string = "query-language"`; `top_k: integer 1..10 = 5`; `max_chars_per_result: integer 500..4000 = 1800`.
+
+**Пример:**
+
+```json
+{
+  "query": "СрезПоследних ГДЕ Условие",
+  "top_k": 5,
+  "max_chars_per_result": 1200
+}
+```
+
+**Выходящая схема:** `version`, `domain`, `query`, `results[] { section_id, title, source_file, resource_uri, score, excerpt }`, `truncated`, опционально `notes`.
+
+**Ограничения:** search возвращает только короткие выдержки. Полный markdown/corpus не находится в `tools/list` и не отдается через description, чтобы не тратить токены заранее.
+
+### `read_1c_language_doc_section`
+
+**Назначение:** прочитать одну секцию документации по `section_id` или `resource_uri`, полученному из поиска.
+
+**Параметры:** ровно один из `section_id` или `resource_uri`; `max_chars: integer 1000..20000 = 8000`; `cursor: string` для продолжения, если `truncated=true`.
+
+**Пример:**
+
+```json
+{
+  "section_id": "references/info-register.md#kritichnoe-otlichie-gde-vs-parametr-uslovie",
+  "max_chars": 8000
+}
+```
+
+**Выходящая схема:** `version`, `domain`, `section_id`, `title`, `source_file`, `resource_uri`, `heading_path`, `content`, `truncated`, `next_cursor`.
+
+**Ограничения:** это документация платформы/методики; фактические поля конкретной базы всё равно проверяются через metadata/data tools.
+
+### `get_1c_language_doc_provenance`
+
+**Назначение:** вернуть версию, источники и правила разрешения конфликтов для встроенной документации.
+
+**Параметры:** `version: string = "8.3.37"`; `domain: string = "query-language"`.
+
+**Пример:**
+
+```json
+{
+  "version": "8.3.37"
+}
+```
+
+**Выходящая схема:** `version`, `domain`, `source_file`, `content`, `rules { default_version, official_docs_priority, live_metadata_priority }`.
+
+**Ограничения:** если пользователь спрашивает про другую версию платформы, агент должен явно сообщить, что встроенный корпус сейчас сгенерирован для `8.3.37`.
 
 ### `get_accounting_accounts_map`
 
@@ -681,6 +760,11 @@
 ├── config/
 │   ├── allowlist.json         -- пример allowlist метаданных
 │   └── server_config.json     -- пример лимитов и настроек
+├── scripts/
+│   ├── generate_1c_language_docs_bsl.mjs -- генератор BSL-индекса документации
+│   └── mcp_contract_test.mjs             -- контрактные проверки MCP
+├── skills/
+│   └── 1c-query-language/                -- markdown source-of-truth для справочника
 └── src/
     ├── HTTPServices/
     │   └── MCP_HTTPService.bsl              -- HTTP-сервис, точка входа
@@ -694,6 +778,7 @@
         ├── MCP_Metadata.bsl                 -- обход метаданных
         ├── MCP_Query.bsl                    -- безопасные запросы 1С
         ├── MCP_Knowledge.bsl                -- встроенные правила языка запросов 1С для LLM
+        ├── MCP_Knowledge_1CQueryDocs.bsl    -- сгенерированный read-only индекс документации 8.3.37
         ├── MCP_Registers.bsl                -- работа с регистрами
         ├── MCP_Reports.bsl                  -- работа с отчётами (СКД)
         ├── MCP_History.bsl                  -- история объектов
@@ -732,9 +817,10 @@ ping                 -- ping
 
 ## Встроенная база знаний для LLM
 
-Сервер отдаёт знания из `doc/skills` через MCP, чтобы агент мог составлять запросы 1С без привязки к конкретной конфигурации:
+Сервер отдаёт знания через MCP, чтобы агент мог составлять запросы 1С без привязки к конкретной конфигурации:
 
 - tool `get_1c_query_guidance` возвращает короткие контекстные подсказки по теме или черновику запроса;
+- tools `list_1c_language_doc_topics`, `search_1c_language_docs`, `read_1c_language_doc_section` и `get_1c_language_doc_provenance` работают со сгенерированным read-only индексом `MCP_Knowledge_1CQueryDocs.bsl` для документации 1С 8.3.37;
 - tool `get_accounting_accounts_map` читает live-таблицу `ПланСчетов.<Имя>.ВидыСубконто` и возвращает `accounts[].subconto[]`, чтобы агент не угадывал позиции `Субконто1/2/3`;
 - tool `get_calculation_types_map` читает `ПланВидовРасчета.<Имя>` и возвращает реальные виды расчёта для ЗУП-подобных конфигураций;
 - для зарплатных запросов база знаний закрепляет порядок выбора источника: готовый зарплатный отчёт или расчётные регистры, затем бухгалтерский fallback по кредитовому обороту 70 через `Обороты`;
@@ -742,8 +828,145 @@ ping                 -- ping
 - `validate_1c_query` и `run_1c_query` возвращают `query_guidance` opt-in через `include_guidance=true`; при ошибках выполнения диагностический guidance возвращается принудительно;
 - `run_1c_query` без дополнительного discovery добавляет компактный warning, если нулевой результат похож на неверно угаданную позицию бухгалтерского `Субконто1/2/3`;
 - resources `1c://knowledge/query/*` дают полную встроенную справку: syntax, functions, optimization, temporary-tables, compound-types, subconto, parameters, reports-vs-query, report-fast-path, payroll.
+- resources `1c-docs://8.3.37/query-language/*` дают доступ к сгенерированной документации по языку запросов 1С.
 
 Главное правило этой базы знаний: сначала получить метаданные через `list_metadata_objects` / `get_metadata_structure`, затем писать запрос по фактическим именам объектов и полей текущей базы.
+
+### Генерация документации языка 1С
+
+Markdown-источники справочника лежат в `skills/1c-query-language`. Production endpoint 1С не читает эти markdown-файлы с диска: перед поставкой они превращаются в обычный BSL-модуль `src/CommonModules/MCP_Knowledge_1CQueryDocs.bsl`.
+
+Генератор:
+
+```powershell
+node scripts\generate_1c_language_docs_bsl.mjs
+```
+
+Что делает генератор:
+
+1. Читает allowlist файлов из `skills/1c-query-language/SKILL.md` и `skills/1c-query-language/references`.
+2. Разбивает markdown на секции по заголовкам.
+3. Формирует `section_id`, `resource_uri`, `heading_path`, `tags` и `content`.
+4. Генерирует `src/CommonModules/MCP_Knowledge_1CQueryDocs.bsl`.
+5. Не добавляет top-level `Перем`; массив секций строится внутри функций.
+
+Когда запускать:
+
+1. После изменения любого файла в `skills/1c-query-language`.
+2. Перед коммитом изменений документации.
+3. В CI как проверку актуальности generated-файла: запустить генератор и убедиться, что `git diff` пустой.
+4. Перед сборкой/деплоем расширения, если CI не делает это автоматически.
+
+Пошаговый workflow разработчика:
+
+```powershell
+# 1. Изменить markdown-источник
+notepad skills\1c-query-language\references\query-syntax.md
+
+# 2. Перегенерировать BSL-индекс
+node scripts\generate_1c_language_docs_bsl.mjs
+
+# 3. Проверить, что CommonModules не получили top-level Перем
+rg -n "^\s*Перем\b" src\CommonModules -S
+
+# 4. Проверить синтаксис JS-скриптов
+node --check scripts\generate_1c_language_docs_bsl.mjs
+node --check scripts\mcp_contract_test.mjs
+
+# 5. Проверить diff и закоммитить вместе markdown + generated BSL
+git diff -- skills\1c-query-language src\CommonModules\MCP_Knowledge_1CQueryDocs.bsl scripts\generate_1c_language_docs_bsl.mjs
+```
+
+Требования к системе, где вызывается генератор:
+
+- Node.js с поддержкой ESM `.mjs`;
+- доступ на чтение к репозиторию и запись в `src/CommonModules`;
+- корректная UTF-8 обработка русского текста;
+- Windows/PowerShell совместимость;
+- интернет, 1С runtime и живой MCP endpoint не нужны.
+
+В репозитории уже хранится сгенерированный `MCP_Knowledge_1CQueryDocs.bsl`, поэтому для первого использования после деплоя расширения ничего дополнительно генерировать не нужно.
+
+### Установка skill для LLM-клиентов
+
+`skills/1c-query-language` не является обязательной частью production-доступа к документации. После деплоя расширения основным источником справки становятся MCP tools:
+
+- `list_1c_language_doc_topics`
+- `search_1c_language_docs`
+- `read_1c_language_doc_section`
+- `get_1c_language_doc_provenance`
+
+Skill нужен как routing-инструкция для агента: когда пользователь спрашивает про язык запросов 1С, виртуальные таблицы, `СрезПоследних`, `ОборотыДтКт`, `ИМЕЮЩИЕ`, `ПОМЕСТИТЬ` и похожие темы, агент должен сначала вызвать documentation tools, а не читать весь markdown или отвечать из памяти.
+
+#### ChatGPT
+
+В ChatGPT не требуется устанавливать локальный `skills/1c-query-language` как файловый skill. Подключайте опубликованный 1С MCP как remote MCP / custom connector, а routing-инструкцию добавьте в инструкции GPT/проекта/коннектора:
+
+```text
+Для вопросов по языку запросов 1С используй MCP tools:
+list_1c_language_doc_topics, search_1c_language_docs,
+read_1c_language_doc_section, get_1c_language_doc_provenance.
+Не угадывай поля конкретной базы: сначала используй metadata/data tools.
+Документация по умолчанию: 1С 8.3.37.
+```
+
+Если ChatGPT-клиент не поддерживает MCP в вашем окружении, используйте этот репозиторий как источник текста для project/custom instructions, но фактический retrieval по документации будет хуже, чем через MCP tools.
+
+#### Codex
+
+Для Codex в этом репозитории можно оставить папку:
+
+```text
+skills/1c-query-language/
+```
+
+Если среда Codex поддерживает repo-local skills, она сможет использовать `SKILL.md` как маршрутизатор. При этом основной путь всё равно такой:
+
+1. Подключить 1С MCP endpoint.
+2. Дать Codex доступ к MCP tools.
+3. Оставить `skills/1c-query-language` в репозитории как подсказку поведения и fallback.
+4. При изменении markdown-источников запустить `node scripts\generate_1c_language_docs_bsl.mjs`.
+
+Если repo-local skills не поддерживаются, достаточно MCP tools плюс короткая инструкция из блока ChatGPT.
+
+#### Claude Code
+
+Для Claude Code skill можно использовать как project-level skill или упаковать в plugin, если ваша установка Claude Code это поддерживает. Минимальный вариант для проекта:
+
+```text
+skills/1c-query-language/
+  SKILL.md
+  references/*.md
+```
+
+Рекомендуемый порядок:
+
+1. Подключить текущий 1С MCP endpoint.
+2. Оставить `skills/1c-query-language` в репозитории.
+3. В project instructions или plugin-инструкциях указать, что для документации языка 1С сначала используются `search_1c_language_docs` и `read_1c_language_doc_section`.
+4. Использовать markdown `references/*.md` только если MCP tools недоступны.
+
+#### Claude Desktop / Claude for Windows / Claude Web
+
+Для Claude Desktop и Claude Web основной путь - remote MCP/custom connector к опубликованному 1С MCP endpoint. Локальная папка `skills/1c-query-language` сама по себе не развернет документацию внутри Claude Desktop.
+
+Используйте один из вариантов:
+
+- подключить remote MCP/custom connector и добавить routing-инструкцию в проект/чат;
+- для Claude Code/плагина дополнительно включить `skills/1c-query-language`;
+- если доступен только чат без MCP, вставить короткую routing-инструкцию вручную, но понимать, что tools документации вызываться не будут.
+
+#### Короткая routing-инструкция
+
+Эту инструкцию можно вставлять в ChatGPT custom GPT, Claude project instructions, Codex instructions или plugin manifest:
+
+```text
+Для вопросов по языку запросов 1С не отвечай из памяти. Сначала используй
+search_1c_language_docs(version="8.3.37"). Если нужен полный фрагмент,
+используй read_1c_language_doc_section. При сомнении в источнике используй
+get_1c_language_doc_provenance. Имена объектов, полей, регистров и ресурсов
+конкретной базы проверяй через 1С metadata/data tools.
+```
 
 ## Быстрый старт
 

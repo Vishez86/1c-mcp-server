@@ -454,6 +454,50 @@
 
 КонецФункции
 
+Функция List1CLanguageDocTopics(Аргументы) Экспорт
+
+	Аргументы = НормализоватьСтруктуру(Аргументы);
+	Version = СокрЛП(Строка(Получить(Аргументы, "version", "")));
+	Domain = СокрЛП(Строка(Получить(Аргументы, "domain", "")));
+	Возврат MCP_Knowledge_1CQueryDocs.ListTopics(Version, Domain);
+
+КонецФункции
+
+Функция Search1CLanguageDocs(Аргументы) Экспорт
+
+	Аргументы = НормализоватьСтруктуру(Аргументы);
+	Query = СокрЛП(Строка(Получить(Аргументы, "query", "")));
+	Если ПустаяСтрока(Query) Тогда
+		MCP_Errors.ВозбудитьОшибку(MCP_Errors.Код_InvalidArguments(), "Параметр query обязателен.");
+	КонецЕсли;
+	Version = СокрЛП(Строка(Получить(Аргументы, "version", "")));
+	Domain = СокрЛП(Строка(Получить(Аргументы, "domain", "")));
+	TopK = ЦелоеВДиапазонеИзАргумента(Аргументы, "top_k", 5, 1, 10);
+	MaxCharsPerResult = ЦелоеВДиапазонеИзАргумента(Аргументы, "max_chars_per_result", 1800, 500, 4000);
+	Возврат MCP_Knowledge_1CQueryDocs.SearchDocs(Query, Version, Domain, TopK, MaxCharsPerResult);
+
+КонецФункции
+
+Функция Read1CLanguageDocSection(Аргументы) Экспорт
+
+	Аргументы = НормализоватьСтруктуру(Аргументы);
+	SectionID = СокрЛП(Строка(Получить(Аргументы, "section_id", "")));
+	ResourceURI = СокрЛП(Строка(Получить(Аргументы, "resource_uri", "")));
+	MaxChars = ЦелоеВДиапазонеИзАргумента(Аргументы, "max_chars", 8000, 1000, 20000);
+	Cursor = СокрЛП(Строка(Получить(Аргументы, "cursor", "")));
+	Возврат MCP_Knowledge_1CQueryDocs.ReadSection(SectionID, ResourceURI, MaxChars, Cursor);
+
+КонецФункции
+
+Функция Get1CLanguageDocProvenance(Аргументы) Экспорт
+
+	Аргументы = НормализоватьСтруктуру(Аргументы);
+	Version = СокрЛП(Строка(Получить(Аргументы, "version", "")));
+	Domain = СокрЛП(Строка(Получить(Аргументы, "domain", "")));
+	Возврат MCP_Knowledge_1CQueryDocs.Provenance(Version, Domain);
+
+КонецФункции
+
 // ----------------------------------------------------------------------
 // 6. list_registers
 // ----------------------------------------------------------------------

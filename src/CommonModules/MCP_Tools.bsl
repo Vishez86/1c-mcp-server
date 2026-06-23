@@ -19,6 +19,10 @@
 	Результат.Добавить(Tool_run_1c_query(РежимРезультата));
 	Результат.Добавить(Tool_validate_1c_query(РежимРезультата));
 	Результат.Добавить(Tool_get_1c_query_guidance(РежимРезультата));
+	Результат.Добавить(Tool_list_1c_language_doc_topics(РежимРезультата));
+	Результат.Добавить(Tool_search_1c_language_docs(РежимРезультата));
+	Результат.Добавить(Tool_read_1c_language_doc_section(РежимРезультата));
+	Результат.Добавить(Tool_get_1c_language_doc_provenance(РежимРезультата));
 	Результат.Добавить(Tool_list_registers(РежимРезультата));
 	Результат.Добавить(Tool_get_accounting_accounts_map(РежимРезультата));
 	Результат.Добавить(Tool_get_accounting_balances(РежимРезультата));
@@ -80,6 +84,14 @@
 			Данные = MCP_Tools_Impl.Validate1CQuery(Аргументы);
 		ИначеЕсли ИмяТула = "get_1c_query_guidance" Тогда
 			Данные = MCP_Tools_Impl.Get1CQueryGuidance(Аргументы);
+		ИначеЕсли ИмяТула = "list_1c_language_doc_topics" Тогда
+			Данные = MCP_Tools_Impl.List1CLanguageDocTopics(Аргументы);
+		ИначеЕсли ИмяТула = "search_1c_language_docs" Тогда
+			Данные = MCP_Tools_Impl.Search1CLanguageDocs(Аргументы);
+		ИначеЕсли ИмяТула = "read_1c_language_doc_section" Тогда
+			Данные = MCP_Tools_Impl.Read1CLanguageDocSection(Аргументы);
+		ИначеЕсли ИмяТула = "get_1c_language_doc_provenance" Тогда
+			Данные = MCP_Tools_Impl.Get1CLanguageDocProvenance(Аргументы);
 		ИначеЕсли ИмяТула = "list_registers" Тогда
 			Данные = MCP_Tools_Impl.ListRegisters(Аргументы);
 		ИначеЕсли ИмяТула = "get_accounting_accounts_map" Тогда
@@ -913,6 +925,51 @@
 	Возврат _Tool("get_1c_query_guidance",
 		"Получить подсказки по языку запросов 1С",
 		"Возвращает встроенные универсальные правила из doc/skills: синтаксис, функции, временные таблицы, составные типы, субконто, быстрый путь отчетной аналитики, зарплатные источники, оптимизация и ограничения read-only MCP. Используйте перед сложными запросами и при исправлении ошибок validate_1c_query.",
+		Props, Неопределено, РежимРезультата);
+КонецФункции
+
+Функция Tool_list_1c_language_doc_topics(РежимРезультата = "")
+	Props = Новый Структура;
+	Props.Вставить("version", _Схема("string", , "Версия платформы. Поддерживается 8.3.37; по умолчанию 8.3.37."));
+	Props.Вставить("domain", _Схема("string", , "Домен документации. По умолчанию query-language."));
+	Возврат _Tool("list_1c_language_doc_topics",
+		"Список тем документации языка 1С",
+		"Возвращает компактную карту встроенной документации 1С 8.3.37 без полного текста.",
+		Props, Неопределено, РежимРезультата);
+КонецФункции
+
+Функция Tool_search_1c_language_docs(РежимРезультата = "")
+	Props = Новый Структура;
+	Props.Вставить("query", _Схема("string", , "Поисковый запрос по документации языка 1С."));
+	Props.Вставить("version", _Схема("string", , "Версия платформы. Поддерживается 8.3.37; по умолчанию 8.3.37."));
+	Props.Вставить("domain", _Схема("string", , "Домен документации. По умолчанию query-language."));
+	Props.Вставить("top_k", _СхемаInt(1, 10, 5));
+	Props.Вставить("max_chars_per_result", _СхемаInt(500, 4000, 1800));
+	Возврат _Tool("search_1c_language_docs",
+		"Поиск по документации языка 1С",
+		"Ищет релевантные секции встроенной документации 1С 8.3.37 и возвращает короткие выдержки.",
+		Props, _Required("query"), РежимРезультата);
+КонецФункции
+
+Функция Tool_read_1c_language_doc_section(РежимРезультата = "")
+	Props = Новый Структура;
+	Props.Вставить("section_id", _Схема("string", , "ID секции из search_1c_language_docs."));
+	Props.Вставить("resource_uri", _Схема("string", , "URI секции вида 1c-docs://8.3.37/query-language/...#..."));
+	Props.Вставить("max_chars", _СхемаInt(1000, 20000, 8000));
+	Props.Вставить("cursor", _Схема("string", , "Offset cursor для продолжения урезанной секции."));
+	Возврат _Tool("read_1c_language_doc_section",
+		"Прочитать секцию документации языка 1С",
+		"Возвращает одну секцию встроенной документации 1С 8.3.37 с лимитом размера.",
+		Props, Неопределено, РежимРезультата);
+КонецФункции
+
+Функция Tool_get_1c_language_doc_provenance(РежимРезультата = "")
+	Props = Новый Структура;
+	Props.Вставить("version", _Схема("string", , "Версия платформы. Поддерживается 8.3.37; по умолчанию 8.3.37."));
+	Props.Вставить("domain", _Схема("string", , "Домен документации. По умолчанию query-language."));
+	Возврат _Tool("get_1c_language_doc_provenance",
+		"Provenance документации языка 1С",
+		"Возвращает версию, источники и правила разрешения конфликтов для встроенной документации 1С.",
 		Props, Неопределено, РежимРезультата);
 КонецФункции
 
