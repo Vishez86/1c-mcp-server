@@ -595,6 +595,8 @@ class ContractRunner {
       const debitCredit = virtualTables.find((item) => item.name === "ОборотыДтКт");
       assert((debitCredit.common_fields || []).includes("СубконтоДт1"), "ОборотыДтКт must advertise СубконтоДт1");
       assert((debitCredit.common_fields || []).includes("СубконтоКт1"), "ОборотыДтКт must advertise СубконтоКт1");
+      assert((debitCredit.common_fields || []).includes("СуммаПРОборотДт"), "ОборотыДтКт must advertise СуммаПРОборотДт");
+      assert((debitCredit.common_fields || []).includes("СуммаПРОборотКт"), "ОборотыДтКт must advertise СуммаПРОборотКт");
       assert(!(debitCredit.common_fields || []).includes("ВидСубконтоДт1"), "ОборотыДтКт must not advertise non-universal ВидСубконтоДт1 field");
       return { register: accountingRegister.fullName, virtualTables };
     });
