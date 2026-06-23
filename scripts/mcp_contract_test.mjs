@@ -335,8 +335,8 @@ class ContractRunner {
       assert(resources.some((item) => item.uri === "1c://context/current-user"), "current-user resource is missing");
       assert(resources.some((item) => item.uri === "1c://knowledge/query"), "query knowledge resource is missing");
       assert(resources.some((item) => item.uri === "1c://knowledge/query/subkonto"), "subkonto knowledge resource is missing");
-      assert(resources.some((item) => item.uri === "1c-docs://8.3.37/query-language/index"), "1C language docs index resource is missing");
-      assert(resources.some((item) => item.uri === "1c-docs://8.3.37/query-language/provenance"), "1C language docs provenance resource is missing");
+      assert(resources.some((item) => item.uri === "1c-docs://8.3.27/query-language/index"), "1C language docs index resource is missing");
+      assert(resources.some((item) => item.uri === "1c-docs://8.3.27/query-language/provenance"), "1C language docs provenance resource is missing");
       const read = await this.client.rpc("resources/read", { uri: "1c://context/current-user" });
       const text = read.result?.contents?.[0]?.text || "";
       assert(text.includes("user"), "current-user resource must contain user data");
@@ -344,9 +344,9 @@ class ContractRunner {
       const knowledgeText = knowledge.result?.contents?.[0]?.text || "";
       assert(knowledgeText.includes("ПОМЕСТИТЬ"), "temporary-table knowledge must mention ПОМЕСТИТЬ");
       assert(knowledgeText.includes("read-only"), "temporary-table knowledge must explain read-only boundary");
-      const docsIndex = await this.client.rpc("resources/read", { uri: "1c-docs://8.3.37/query-language/index" });
+      const docsIndex = await this.client.rpc("resources/read", { uri: "1c-docs://8.3.27/query-language/index" });
       const docsText = docsIndex.result?.contents?.[0]?.text || "";
-      assert(docsText.includes("Документация по языку запросов 1С 8.3.37"), "docs index must mention 8.3.37");
+      assert(docsText.includes("Документация по языку запросов 1С 8.3.27"), "docs index must mention 8.3.27");
       assert(docsText.includes("query-syntax"), "docs index must list query-syntax");
       return { resources: resources.map((item) => item.uri) };
     });
@@ -821,9 +821,9 @@ class ContractRunner {
 
     await this.test("tool.1c_language_docs_generated_index", async () => {
       const topics = await okTool(this.client, "list_1c_language_doc_topics", {
-        version: "8.3.37",
+        version: "8.3.27",
       });
-      assert(topics.version === "8.3.37", "topics must use documentation version 8.3.37");
+      assert(topics.version === "8.3.27", "topics must use documentation version 8.3.27");
       assert(Array.isArray(topics.topics), "topics must be an array");
       assert(topics.topics.some((item) => item.id === "query-syntax"), "query-syntax topic is missing");
       assert(topics.topics.some((item) => item.id === "version-provenance"), "version-provenance topic is missing");
@@ -833,7 +833,7 @@ class ContractRunner {
         top_k: 5,
         max_chars_per_result: 1200,
       });
-      assert(slice.version === "8.3.37", "search must use documentation version 8.3.37");
+      assert(slice.version === "8.3.27", "search must use documentation version 8.3.27");
       assert(Array.isArray(slice.results), "search results must be an array");
       assert(slice.results.some((item) => String(item.source_file || "").includes("info-register")), "СрезПоследних search must find info-register docs");
       assert(slice.results.every((item) => String(item.excerpt || "").length <= 1200), "search excerpts must respect max_chars_per_result");
@@ -854,11 +854,11 @@ class ContractRunner {
       assert(read.content.length <= 1000, "read section must respect max_chars");
 
       const provenance = await okTool(this.client, "get_1c_language_doc_provenance", {
-        version: "8.3.37",
+        version: "8.3.27",
       });
-      assert(provenance.version === "8.3.37", "provenance must use documentation version 8.3.37");
+      assert(provenance.version === "8.3.27", "provenance must use documentation version 8.3.27");
       assert(String(provenance.source_file || "").includes("version-provenance"), "provenance must cite version-provenance source");
-      assert(provenance.rules?.default_version === "8.3.37", "provenance must include default_version rule");
+      assert(provenance.rules?.default_version === "8.3.27", "provenance must include default_version rule");
       return {
         topics: topics.topics.length,
         sliceResults: slice.results.map((item) => item.section_id),

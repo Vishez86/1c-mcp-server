@@ -4,7 +4,7 @@
 **Дата:** 2026-06-22
 **Приоритет:** Medium
 **Компонент:** `skills/1c-query-language` + встроенный read-only индекс секций в 1С MCP
-**Целевая версия документации:** `1С:Предприятие 8.3.37`
+**Целевая версия документации:** `1С:Предприятие 8.3.27`
 
 ---
 
@@ -17,7 +17,7 @@
 - документация включается в поставку как сгенерированный read-only индекс секций, а не как markdown целиком в tool description;
 - provenance фиксирует версию платформы, источники и границы применимости.
 
-Целевой результат: агент умеет отвечать на вопросы и писать запросы 1С с опорой на документацию `8.3.37`, не загружая в контекст весь справочник целиком.
+Целевой результат: агент умеет отвечать на вопросы и писать запросы 1С с опорой на документацию `8.3.27`, не загружая в контекст весь справочник целиком.
 
 ---
 
@@ -77,7 +77,7 @@ skills/1c-query-language/
 - отдельный Node/Python/stdio MCP как обязательная часть production-деплоя;
 - runtime-чтение произвольных файлов с диска из 1С;
 - автоматическое скачивание закрытой ИТС-документации;
-- поддержка версий платформы кроме `8.3.37`, кроме архитектурной готовности к версиям.
+- поддержка версий платформы кроме `8.3.27`, кроме архитектурной готовности к версиям.
 
 ---
 
@@ -88,7 +88,7 @@ skills/1c-query-language/
 `skills/1c-query-language/SKILL.md` должен оставаться коротким и выполнять роль маршрутизатора:
 
 - когда использовать справочник;
-- версия по умолчанию: `8.3.37`;
+- версия по умолчанию: `8.3.27`;
 - критичные правила, которые должны быть в контексте сразу;
 - порядок действий: сначала проверить metadata через 1С tools, затем писать запрос;
 - если доступны tools документации в 1С MCP, искать подробности через них;
@@ -148,7 +148,7 @@ skills/1c-query-language/references/bsl-query-api.md
 
 ```json
 {
-  "version": "8.3.37",
+  "version": "8.3.27",
   "domain": "query-language"
 }
 ```
@@ -157,7 +157,7 @@ skills/1c-query-language/references/bsl-query-api.md
 
 | Параметр | Тип | Обязательный | По умолчанию | Описание |
 |---|---|---:|---|---|
-| `version` | string | нет | `8.3.37` | Версия платформы |
+| `version` | string | нет | `8.3.27` | Версия платформы |
 | `domain` | string | нет | `query-language` | Домен документации |
 
 Ответ:
@@ -165,14 +165,14 @@ skills/1c-query-language/references/bsl-query-api.md
 ```json
 {
   "ok": true,
-  "version": "8.3.37",
+  "version": "8.3.27",
   "domain": "query-language",
   "topics": [
     {
       "id": "query-syntax",
       "title": "Синтаксис языка запросов 1С",
       "section_count": 42,
-      "resource_uri": "1c-docs://8.3.37/query-language/query-syntax"
+      "resource_uri": "1c-docs://8.3.27/query-language/query-syntax"
     }
   ]
 }
@@ -187,7 +187,7 @@ skills/1c-query-language/references/bsl-query-api.md
 ```json
 {
   "query": "СрезПоследних условие в параметре и ГДЕ",
-  "version": "8.3.37",
+  "version": "8.3.27",
   "domain": "query-language",
   "top_k": 5,
   "max_chars_per_result": 1800
@@ -199,7 +199,7 @@ skills/1c-query-language/references/bsl-query-api.md
 | Параметр | Тип | Обязательный | По умолчанию | Ограничения | Описание |
 |---|---|---:|---|---|---|
 | `query` | string | да | - | `1..500` символов | Поисковый запрос |
-| `version` | string | нет | `8.3.37` | allowlist версий | Версия платформы |
+| `version` | string | нет | `8.3.27` | allowlist версий | Версия платформы |
 | `domain` | string | нет | `query-language` | allowlist доменов | Домен документации |
 | `top_k` | integer | нет | `5` | `1..10` | Число результатов |
 | `max_chars_per_result` | integer | нет | `1800` | `500..4000` | Максимальный размер одного фрагмента |
@@ -209,14 +209,14 @@ skills/1c-query-language/references/bsl-query-api.md
 ```json
 {
   "ok": true,
-  "version": "8.3.37",
+  "version": "8.3.27",
   "query": "СрезПоследних условие в параметре и ГДЕ",
   "results": [
     {
       "section_id": "info-register.md#kritichnoe-otlichie-gde-vs-parametr-uslovie",
       "title": "Критичное отличие: ГДЕ vs параметр Условие",
       "source_file": "references/info-register.md",
-      "resource_uri": "1c-docs://8.3.37/query-language/info-register#kritichnoe-otlichie-gde-vs-parametr-uslovie",
+      "resource_uri": "1c-docs://8.3.27/query-language/info-register#kritichnoe-otlichie-gde-vs-parametr-uslovie",
       "score": 0.91,
       "excerpt": "..."
     }
@@ -260,7 +260,7 @@ skills/1c-query-language/references/bsl-query-api.md
 ```json
 {
   "ok": true,
-  "version": "8.3.37",
+  "version": "8.3.27",
   "section_id": "info-register.md#kritichnoe-otlichie-gde-vs-parametr-uslovie",
   "title": "Критичное отличие: ГДЕ vs параметр Условие",
   "source_file": "references/info-register.md",
@@ -280,7 +280,7 @@ skills/1c-query-language/references/bsl-query-api.md
 
 ```json
 {
-  "version": "8.3.37",
+  "version": "8.3.27",
   "domain": "query-language"
 }
 ```
@@ -290,12 +290,12 @@ skills/1c-query-language/references/bsl-query-api.md
 ```json
 {
   "ok": true,
-  "version": "8.3.37",
+  "version": "8.3.27",
   "domain": "query-language",
   "source_file": "references/version-provenance.md",
   "content": "...",
   "rules": {
-    "default_version": "8.3.37",
+    "default_version": "8.3.27",
     "official_docs_priority": "highest_for_syntax",
     "live_metadata_priority": "highest_for_infobase_specific_fields"
   }
@@ -311,15 +311,15 @@ skills/1c-query-language/references/bsl-query-api.md
 Рекомендуемые URI:
 
 ```text
-1c-docs://8.3.37/query-language/index
-1c-docs://8.3.37/query-language/provenance
-1c-docs://8.3.37/query-language/query-syntax
-1c-docs://8.3.37/query-language/functions-and-expressions
-1c-docs://8.3.37/query-language/virtual-tables
-1c-docs://8.3.37/query-language/accumulation-register
-1c-docs://8.3.37/query-language/info-register
-1c-docs://8.3.37/query-language/chart-of-accounts
-1c-docs://8.3.37/query-language/bsl-query-api
+1c-docs://8.3.27/query-language/index
+1c-docs://8.3.27/query-language/provenance
+1c-docs://8.3.27/query-language/query-syntax
+1c-docs://8.3.27/query-language/functions-and-expressions
+1c-docs://8.3.27/query-language/virtual-tables
+1c-docs://8.3.27/query-language/accumulation-register
+1c-docs://8.3.27/query-language/info-register
+1c-docs://8.3.27/query-language/chart-of-accounts
+1c-docs://8.3.27/query-language/bsl-query-api
 ```
 
 Resources могут возвращать целый файл, но tools должны по умолчанию возвращать секции и выдержки.
@@ -347,7 +347,7 @@ Resources могут возвращать целый файл, но tools дол
   "title": "ВЫБРАТЬ - список полей",
   "heading_path": ["Синтаксис языка запросов 1С", "ВЫБРАТЬ - список полей"],
   "source_file": "references/query-syntax.md",
-  "version": "8.3.37",
+  "version": "8.3.27",
   "domain": "query-language",
   "tags": ["select", "syntax", "fields"]
 }
@@ -402,11 +402,11 @@ Markdown-файлы не читаются в runtime из 1С. Они являю
 ```json
 {
   "section_id": "query-syntax.md#vybrat-spisok-polei",
-  "resource_uri": "1c-docs://8.3.37/query-language/query-syntax#vybrat-spisok-polei",
+  "resource_uri": "1c-docs://8.3.27/query-language/query-syntax#vybrat-spisok-polei",
   "title": "ВЫБРАТЬ - список полей",
   "source_file": "references/query-syntax.md",
   "heading_path": ["Синтаксис языка запросов 1С", "ВЫБРАТЬ - список полей"],
-  "version": "8.3.37",
+  "version": "8.3.27",
   "domain": "query-language",
   "tags": ["select", "syntax", "fields"],
   "content": "..."
@@ -520,7 +520,7 @@ Plugin - это упаковка. Логика поиска остается в 
     "message": "Версия документации не поддерживается.",
     "details": {
       "requested_version": "8.3.28",
-      "supported_versions": ["8.3.37"]
+      "supported_versions": ["8.3.27"]
     }
   }
 }
@@ -560,13 +560,13 @@ Plugin - это упаковка. Логика поиска остается в 
    - неизвестная секция возвращает `section_not_found`.
 
 4. `get_1c_language_doc_provenance`
-   - возвращает `version=8.3.37`;
+   - возвращает `version=8.3.27`;
    - содержит источник `version-provenance.md`;
    - содержит правила приоритетов источников.
 
 5. Resources
-   - `1c-docs://8.3.37/query-language/index` доступен;
-   - `1c-docs://8.3.37/query-language/provenance` доступен;
+   - `1c-docs://8.3.27/query-language/index` доступен;
+   - `1c-docs://8.3.27/query-language/provenance` доступен;
    - неизвестный URI отклоняется.
 
 6. Лимиты
@@ -599,7 +599,7 @@ Plugin - это упаковка. Логика поиска остается в 
 - сгенерирован read-only модуль `src/CommonModules/MCP_Knowledge_1CQueryDocs.bsl`;
 - модуль индексирует секции из `skills/1c-query-language/references` на build-time, а не читает markdown в runtime;
 - реализованы tools `list_1c_language_doc_topics`, `search_1c_language_docs`, `read_1c_language_doc_section`, `get_1c_language_doc_provenance`;
-- реализованы MCP resources `1c-docs://8.3.37/query-language/...`;
+- реализованы MCP resources `1c-docs://8.3.27/query-language/...`;
 - `SKILL.md` обновлен под гибридный порядок использования;
 - контрактные тесты проходят локально;
 - проверено, что `src/CommonModules` не получил top-level `Перем`;

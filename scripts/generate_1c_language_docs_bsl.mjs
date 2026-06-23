@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SKILL_ROOT = resolve(REPO_ROOT, "skills/1c-query-language");
 const OUTPUT = resolve(REPO_ROOT, "src/CommonModules/MCP_Knowledge_1CQueryDocs.bsl");
-const DEFAULT_VERSION = "8.3.37";
+const DEFAULT_VERSION = "8.3.27";
 const DOMAIN = "query-language";
 const RESOURCE_PREFIX = `1c-docs://${DEFAULT_VERSION}/${DOMAIN}`;
 
@@ -37,7 +37,7 @@ const TOPIC_TITLES = {
 
 const EXTRA_TAGS = {
   skill: ["skill", "router", "mcp", "retrieval"],
-  "version-provenance": ["version", "provenance", "source", "8.3.37"],
+  "version-provenance": ["version", "provenance", "source", "8.3.27"],
   "query-syntax": ["syntax", "select", "where", "join", "group", "order"],
   "functions-and-expressions": ["functions", "expressions", "null", "date", "string", "math"],
   "virtual-tables": ["accounting", "virtual-tables", "ОборотыДтКт", "Остатки", "Обороты"],

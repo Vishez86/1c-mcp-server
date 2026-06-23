@@ -30,7 +30,7 @@
 | 6 | `run_1c_query` | Безопасный read-only запрос 1С |
 | 7 | `validate_1c_query` | Проверка запроса до выполнения |
 | 8 | `get_1c_query_guidance` | Универсальные подсказки по языку запросов 1С |
-| 9 | `list_1c_language_doc_topics` | Темы встроенной документации языка 1С 8.3.37 |
+| 9 | `list_1c_language_doc_topics` | Темы встроенной документации языка 1С 8.3.27 |
 | 10 | `search_1c_language_docs` | Поиск по встроенной документации языка 1С |
 | 11 | `read_1c_language_doc_section` | Чтение одной секции документации языка 1С |
 | 12 | `get_1c_language_doc_provenance` | Версия и источники документации языка 1С |
@@ -229,15 +229,15 @@
 
 ### `list_1c_language_doc_topics`
 
-**Назначение:** вернуть компактную карту встроенной документации по языку запросов 1С 8.3.37.
+**Назначение:** вернуть компактную карту встроенной документации по языку запросов 1С 8.3.27.
 
-**Параметры:** `version: string = "8.3.37"`; `domain: string = "query-language"`.
+**Параметры:** `version: string = "8.3.27"`; `domain: string = "query-language"`.
 
 **Пример:**
 
 ```json
 {
-  "version": "8.3.37"
+  "version": "8.3.27"
 }
 ```
 
@@ -249,7 +249,7 @@
 
 **Назначение:** найти релевантные секции в сгенерированном read-only индексе документации языка запросов 1С.
 
-**Параметры:** обязательный `query: string`; `version: string = "8.3.37"`; `domain: string = "query-language"`; `top_k: integer 1..10 = 5`; `max_chars_per_result: integer 500..4000 = 1800`.
+**Параметры:** обязательный `query: string`; `version: string = "8.3.27"`; `domain: string = "query-language"`; `top_k: integer 1..10 = 5`; `max_chars_per_result: integer 500..4000 = 1800`.
 
 **Пример:**
 
@@ -288,19 +288,19 @@
 
 **Назначение:** вернуть версию, источники и правила разрешения конфликтов для встроенной документации.
 
-**Параметры:** `version: string = "8.3.37"`; `domain: string = "query-language"`.
+**Параметры:** `version: string = "8.3.27"`; `domain: string = "query-language"`.
 
 **Пример:**
 
 ```json
 {
-  "version": "8.3.37"
+  "version": "8.3.27"
 }
 ```
 
 **Выходящая схема:** `version`, `domain`, `source_file`, `content`, `rules { default_version, official_docs_priority, live_metadata_priority }`.
 
-**Ограничения:** если пользователь спрашивает про другую версию платформы, агент должен явно сообщить, что встроенный корпус сейчас сгенерирован для `8.3.37`.
+**Ограничения:** если пользователь спрашивает про другую версию платформы, агент должен явно сообщить, что встроенный корпус сейчас сгенерирован для `8.3.27`.
 
 ### `get_accounting_accounts_map`
 
@@ -778,7 +778,7 @@
         ├── MCP_Metadata.bsl                 -- обход метаданных
         ├── MCP_Query.bsl                    -- безопасные запросы 1С
         ├── MCP_Knowledge.bsl                -- встроенные правила языка запросов 1С для LLM
-        ├── MCP_Knowledge_1CQueryDocs.bsl    -- сгенерированный read-only индекс документации 8.3.37
+        ├── MCP_Knowledge_1CQueryDocs.bsl    -- сгенерированный read-only индекс документации 8.3.27
         ├── MCP_Registers.bsl                -- работа с регистрами
         ├── MCP_Reports.bsl                  -- работа с отчётами (СКД)
         ├── MCP_History.bsl                  -- история объектов
@@ -820,7 +820,7 @@ ping                 -- ping
 Сервер отдаёт знания через MCP, чтобы агент мог составлять запросы 1С без привязки к конкретной конфигурации:
 
 - tool `get_1c_query_guidance` возвращает короткие контекстные подсказки по теме или черновику запроса;
-- tools `list_1c_language_doc_topics`, `search_1c_language_docs`, `read_1c_language_doc_section` и `get_1c_language_doc_provenance` работают со сгенерированным read-only индексом `MCP_Knowledge_1CQueryDocs.bsl` для документации 1С 8.3.37;
+- tools `list_1c_language_doc_topics`, `search_1c_language_docs`, `read_1c_language_doc_section` и `get_1c_language_doc_provenance` работают со сгенерированным read-only индексом `MCP_Knowledge_1CQueryDocs.bsl` для документации 1С 8.3.27;
 - tool `get_accounting_accounts_map` читает live-таблицу `ПланСчетов.<Имя>.ВидыСубконто` и возвращает `accounts[].subconto[]`, чтобы агент не угадывал позиции `Субконто1/2/3`;
 - tool `get_calculation_types_map` читает `ПланВидовРасчета.<Имя>` и возвращает реальные виды расчёта для ЗУП-подобных конфигураций;
 - для зарплатных запросов база знаний закрепляет порядок выбора источника: готовый зарплатный отчёт или расчётные регистры, затем бухгалтерский fallback по кредитовому обороту 70 через `Обороты`;
@@ -828,7 +828,7 @@ ping                 -- ping
 - `validate_1c_query` и `run_1c_query` возвращают `query_guidance` opt-in через `include_guidance=true`; при ошибках выполнения диагностический guidance возвращается принудительно;
 - `run_1c_query` без дополнительного discovery добавляет компактный warning, если нулевой результат похож на неверно угаданную позицию бухгалтерского `Субконто1/2/3`;
 - resources `1c://knowledge/query/*` дают полную встроенную справку: syntax, functions, optimization, temporary-tables, compound-types, subconto, parameters, reports-vs-query, report-fast-path, payroll.
-- resources `1c-docs://8.3.37/query-language/*` дают доступ к сгенерированной документации по языку запросов 1С.
+- resources `1c-docs://8.3.27/query-language/*` дают доступ к сгенерированной документации по языку запросов 1С.
 
 Главное правило этой базы знаний: сначала получить метаданные через `list_metadata_objects` / `get_metadata_structure`, затем писать запрос по фактическим именам объектов и полей текущей базы.
 
@@ -907,7 +907,7 @@ Skill нужен как routing-инструкция для агента: ког
 list_1c_language_doc_topics, search_1c_language_docs,
 read_1c_language_doc_section, get_1c_language_doc_provenance.
 Не угадывай поля конкретной базы: сначала используй metadata/data tools.
-Документация по умолчанию: 1С 8.3.37.
+Документация по умолчанию: 1С 8.3.27.
 ```
 
 Если ChatGPT-клиент не поддерживает MCP в вашем окружении, используйте этот репозиторий как источник текста для project/custom instructions, но фактический retrieval по документации будет хуже, чем через MCP tools.
@@ -962,7 +962,7 @@ skills/1c-query-language/
 
 ```text
 Для вопросов по языку запросов 1С не отвечай из памяти. Сначала используй
-search_1c_language_docs(version="8.3.37"). Если нужен полный фрагмент,
+search_1c_language_docs(version="8.3.27"). Если нужен полный фрагмент,
 используй read_1c_language_doc_section. При сомнении в источнике используй
 get_1c_language_doc_provenance. Имена объектов, полей, регистров и ресурсов
 конкретной базы проверяй через 1С metadata/data tools.
