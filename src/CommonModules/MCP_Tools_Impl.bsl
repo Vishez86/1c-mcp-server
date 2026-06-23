@@ -485,7 +485,9 @@
 	ResourceURI = СокрЛП(Строка(Получить(Аргументы, "resource_uri", "")));
 	MaxChars = ЦелоеВДиапазонеИзАргумента(Аргументы, "max_chars", 8000, 1000, 20000);
 	Cursor = СокрЛП(Строка(Получить(Аргументы, "cursor", "")));
-	Возврат MCP_Knowledge_1CQueryDocs.ReadSection(SectionID, ResourceURI, MaxChars, Cursor);
+	Version = СокрЛП(Строка(Получить(Аргументы, "version", "")));
+	Domain = СокрЛП(Строка(Получить(Аргументы, "domain", "")));
+	Возврат MCP_Knowledge_1CQueryDocs.ReadSection(SectionID, ResourceURI, MaxChars, Cursor, Version, Domain);
 
 КонецФункции
 

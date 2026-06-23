@@ -77,7 +77,7 @@ skills/1c-query-language/
 - отдельный Node/Python/stdio MCP как обязательная часть production-деплоя;
 - runtime-чтение произвольных файлов с диска из 1С;
 - автоматическое скачивание закрытой ИТС-документации;
-- поддержка версий платформы кроме `8.3.27`, кроме архитектурной готовности к версиям.
+- наполнение corpus для версий платформы кроме `8.3.27`; архитектура и BSL-индекс должны уже хранить `version` на уровне тем и секций.
 
 ---
 
@@ -89,6 +89,7 @@ skills/1c-query-language/
 
 - когда использовать справочник;
 - версия по умолчанию: `8.3.27`;
+- список доступных версий должен возвращаться в `supported_versions`;
 - критичные правила, которые должны быть в контексте сразу;
 - порядок действий: сначала проверить metadata через 1С tools, затем писать запрос;
 - если доступны tools документации в 1С MCP, искать подробности через них;
@@ -167,8 +168,11 @@ skills/1c-query-language/references/bsl-query-api.md
   "ok": true,
   "version": "8.3.27",
   "domain": "query-language",
+  "supported_versions": ["8.3.27"],
   "topics": [
     {
+      "version": "8.3.27",
+      "domain": "query-language",
       "id": "query-syntax",
       "title": "Синтаксис языка запросов 1С",
       "section_count": 42,
@@ -210,9 +214,13 @@ skills/1c-query-language/references/bsl-query-api.md
 {
   "ok": true,
   "version": "8.3.27",
+  "domain": "query-language",
+  "supported_versions": ["8.3.27"],
   "query": "СрезПоследних условие в параметре и ГДЕ",
   "results": [
     {
+      "version": "8.3.27",
+      "domain": "query-language",
       "section_id": "info-register.md#kritichnoe-otlichie-gde-vs-parametr-uslovie",
       "title": "Критичное отличие: ГДЕ vs параметр Условие",
       "source_file": "references/info-register.md",
@@ -229,7 +237,7 @@ skills/1c-query-language/references/bsl-query-api.md
 
 - результаты сортируются по релевантности;
 - `excerpt` не должен превышать `max_chars_per_result`;
-- каждый результат должен содержать `section_id`, `title`, `source_file`, `resource_uri`;
+- каждый результат должен содержать `version`, `domain`, `section_id`, `title`, `source_file`, `resource_uri`;
 - если найдено мало уверенных результатов, вернуть пустой массив и пояснение в `notes`, а не нерелевантный текст.
 
 ### 5.3 `read_1c_language_doc_section`
@@ -241,6 +249,8 @@ skills/1c-query-language/references/bsl-query-api.md
 ```json
 {
   "section_id": "info-register.md#kritichnoe-otlichie-gde-vs-parametr-uslovie",
+  "version": "8.3.27",
+  "domain": "query-language",
   "max_chars": 8000
 }
 ```
@@ -251,6 +261,8 @@ skills/1c-query-language/references/bsl-query-api.md
 |---|---|---:|---|---|---|
 | `section_id` | string | нет | - | - | ID секции из search/list |
 | `resource_uri` | string | нет | - | `1c-docs://...` | URI ресурса |
+| `version` | string | нет | `8.3.27` | allowlist версий | Версия платформы при чтении по `section_id`; при `resource_uri` берется из URI |
+| `domain` | string | нет | `query-language` | allowlist доменов | Домен документации |
 | `max_chars` | integer | нет | `8000` | `1000..20000` | Максимальный размер ответа |
 
 Должен быть указан ровно один из параметров: `section_id` или `resource_uri`.
@@ -261,6 +273,8 @@ skills/1c-query-language/references/bsl-query-api.md
 {
   "ok": true,
   "version": "8.3.27",
+  "domain": "query-language",
+  "supported_versions": ["8.3.27"],
   "section_id": "info-register.md#kritichnoe-otlichie-gde-vs-parametr-uslovie",
   "title": "Критичное отличие: ГДЕ vs параметр Условие",
   "source_file": "references/info-register.md",
@@ -389,9 +403,10 @@ Markdown-файлы не читаются в runtime из 1С. Они являю
 
 Генератор `scripts/generate_1c_language_docs_bsl.mjs` должен:
 
+- поддерживать несколько наборов источников через build-time список `DOC_SETS`, где каждый набор задает `version`, корневую папку и allowlist файлов;
 - прочитать allowlist markdown-файлов из `skills/1c-query-language`;
 - разбить их на секции по правилам чанкинга;
-- построить stable `section_id`, `resource_uri`, `heading_path`, `tags`, `content`;
+- построить stable `section_id`, `resource_uri`, `version`, `domain`, `heading_path`, `tags`, `content`;
 - сгенерировать BSL-модуль `src/CommonModules/MCP_Knowledge_1CQueryDocs.bsl`;
 - экранировать строки BSL корректно, включая кавычки, переносы строк и backticks;
 - не генерировать top-level `Перем` и исполняемый код вне процедур/функций;
@@ -545,17 +560,19 @@ Plugin - это упаковка. Логика поиска остается в 
 
 1. `list_1c_language_doc_topics`
    - `ok=true`;
+   - ответ содержит `supported_versions`;
    - есть тема `query-syntax`;
-   - каждый topic содержит `id`, `title`, `section_count`, `resource_uri`.
+   - каждый topic содержит `version`, `domain`, `id`, `title`, `section_count`, `resource_uri`.
 
 2. `search_1c_language_docs`
    - запрос `СрезПоследних ГДЕ Условие` возвращает `info-register`;
    - запрос `АБС функция` возвращает `functions-and-expressions`;
    - запрос `ОборотыДтКт КоличествоОборот` возвращает `virtual-tables`;
+   - каждый результат содержит запрошенную `version`;
    - `excerpt.length <= max_chars_per_result`.
 
 3. `read_1c_language_doc_section`
-   - секция из search читается по `section_id`;
+   - секция из search читается по `section_id` и `version`;
    - при маленьком `max_chars` возвращает `truncated=true`;
    - неизвестная секция возвращает `section_not_found`.
 

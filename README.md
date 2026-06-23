@@ -229,7 +229,7 @@
 
 ### `list_1c_language_doc_topics`
 
-**Назначение:** вернуть компактную карту встроенной документации по языку запросов 1С 8.3.27.
+**Назначение:** вернуть компактную карту встроенной документации по языку запросов 1С для выбранной версии. Сейчас предзагружена `8.3.27`.
 
 **Параметры:** `version: string = "8.3.27"`; `domain: string = "query-language"`.
 
@@ -241,7 +241,7 @@
 }
 ```
 
-**Выходящая схема:** `version`, `domain`, `topics[] { id, title, section_count, source_file, resource_uri }`.
+**Выходящая схема:** `version`, `domain`, `supported_versions[]`, `topics[] { version, domain, id, title, section_count, source_file, resource_uri }`.
 
 **Ограничения:** tool не возвращает полный текст документации; для текста используйте `search_1c_language_docs` и `read_1c_language_doc_section`.
 
@@ -261,7 +261,7 @@
 }
 ```
 
-**Выходящая схема:** `version`, `domain`, `query`, `results[] { section_id, title, source_file, resource_uri, score, excerpt }`, `truncated`, опционально `notes`.
+**Выходящая схема:** `version`, `domain`, `supported_versions[]`, `query`, `results[] { version, domain, section_id, title, source_file, resource_uri, score, excerpt }`, `truncated`, опционально `notes`.
 
 **Ограничения:** search возвращает только короткие выдержки. Полный markdown/corpus не находится в `tools/list` и не отдается через description, чтобы не тратить токены заранее.
 
@@ -269,7 +269,7 @@
 
 **Назначение:** прочитать одну секцию документации по `section_id` или `resource_uri`, полученному из поиска.
 
-**Параметры:** ровно один из `section_id` или `resource_uri`; `max_chars: integer 1000..20000 = 8000`; `cursor: string` для продолжения, если `truncated=true`.
+**Параметры:** ровно один из `section_id` или `resource_uri`; `version: string = "8.3.27"` и `domain: string = "query-language"` используются при чтении по `section_id`; при `resource_uri` версия берется из URI; `max_chars: integer 1000..20000 = 8000`; `cursor: string` для продолжения, если `truncated=true`.
 
 **Пример:**
 
@@ -280,7 +280,7 @@
 }
 ```
 
-**Выходящая схема:** `version`, `domain`, `section_id`, `title`, `source_file`, `resource_uri`, `heading_path`, `content`, `truncated`, `next_cursor`.
+**Выходящая схема:** `version`, `domain`, `supported_versions[]`, `section_id`, `title`, `source_file`, `resource_uri`, `heading_path`, `content`, `truncated`, `next_cursor`.
 
 **Ограничения:** это документация платформы/методики; фактические поля конкретной базы всё равно проверяются через metadata/data tools.
 
@@ -298,9 +298,9 @@
 }
 ```
 
-**Выходящая схема:** `version`, `domain`, `source_file`, `content`, `rules { default_version, official_docs_priority, live_metadata_priority }`.
+**Выходящая схема:** `version`, `domain`, `supported_versions[]`, `source_file`, `content`, `rules { default_version, supported_versions, official_docs_priority, live_metadata_priority }`.
 
-**Ограничения:** если пользователь спрашивает про другую версию платформы, агент должен явно сообщить, что встроенный корпус сейчас сгенерирован для `8.3.27`.
+**Ограничения:** если пользователь спрашивает про версию платформы, которой нет в `supported_versions`, агент должен явно сообщить, что такой корпус не встроен в текущую поставку.
 
 ### `get_accounting_accounts_map`
 
@@ -778,7 +778,7 @@
         ├── MCP_Metadata.bsl                 -- обход метаданных
         ├── MCP_Query.bsl                    -- безопасные запросы 1С
         ├── MCP_Knowledge.bsl                -- встроенные правила языка запросов 1С для LLM
-        ├── MCP_Knowledge_1CQueryDocs.bsl    -- сгенерированный read-only индекс документации 8.3.27
+        ├── MCP_Knowledge_1CQueryDocs.bsl    -- сгенерированный read-only индекс документации по версиям
         ├── MCP_Registers.bsl                -- работа с регистрами
         ├── MCP_Reports.bsl                  -- работа с отчётами (СКД)
         ├── MCP_History.bsl                  -- история объектов
@@ -820,7 +820,7 @@ ping                 -- ping
 Сервер отдаёт знания через MCP, чтобы агент мог составлять запросы 1С без привязки к конкретной конфигурации:
 
 - tool `get_1c_query_guidance` возвращает короткие контекстные подсказки по теме или черновику запроса;
-- tools `list_1c_language_doc_topics`, `search_1c_language_docs`, `read_1c_language_doc_section` и `get_1c_language_doc_provenance` работают со сгенерированным read-only индексом `MCP_Knowledge_1CQueryDocs.bsl` для документации 1С 8.3.27;
+- tools `list_1c_language_doc_topics`, `search_1c_language_docs`, `read_1c_language_doc_section` и `get_1c_language_doc_provenance` работают со сгенерированным read-only индексом `MCP_Knowledge_1CQueryDocs.bsl`; сейчас в поставке предзагружена документация 1С `8.3.27`, а ответы возвращают `supported_versions`;
 - tool `get_accounting_accounts_map` читает live-таблицу `ПланСчетов.<Имя>.ВидыСубконто` и возвращает `accounts[].subconto[]`, чтобы агент не угадывал позиции `Субконто1/2/3`;
 - tool `get_calculation_types_map` читает `ПланВидовРасчета.<Имя>` и возвращает реальные виды расчёта для ЗУП-подобных конфигураций;
 - для зарплатных запросов база знаний закрепляет порядок выбора источника: готовый зарплатный отчёт или расчётные регистры, затем бухгалтерский fallback по кредитовому обороту 70 через `Обороты`;
@@ -828,7 +828,7 @@ ping                 -- ping
 - `validate_1c_query` и `run_1c_query` возвращают `query_guidance` opt-in через `include_guidance=true`; при ошибках выполнения диагностический guidance возвращается принудительно;
 - `run_1c_query` без дополнительного discovery добавляет компактный warning, если нулевой результат похож на неверно угаданную позицию бухгалтерского `Субконто1/2/3`;
 - resources `1c://knowledge/query/*` дают полную встроенную справку: syntax, functions, optimization, temporary-tables, compound-types, subconto, parameters, reports-vs-query, report-fast-path, payroll.
-- resources `1c-docs://8.3.27/query-language/*` дают доступ к сгенерированной документации по языку запросов 1С.
+- resources `1c-docs://<version>/query-language/*` дают доступ к сгенерированной документации по языку запросов 1С для версий из `supported_versions`; сейчас доступен префикс `1c-docs://8.3.27/query-language/*`.
 
 Главное правило этой базы знаний: сначала получить метаданные через `list_metadata_objects` / `get_metadata_structure`, затем писать запрос по фактическим именам объектов и полей текущей базы.
 
@@ -844,11 +844,19 @@ node scripts\generate_1c_language_docs_bsl.mjs
 
 Что делает генератор:
 
-1. Читает allowlist файлов из `skills/1c-query-language/SKILL.md` и `skills/1c-query-language/references`.
+1. Читает список наборов документации `DOC_SETS` в `scripts/generate_1c_language_docs_bsl.mjs`. Каждый набор задает `version`, корневую папку и allowlist markdown-файлов.
 2. Разбивает markdown на секции по заголовкам.
-3. Формирует `section_id`, `resource_uri`, `heading_path`, `tags` и `content`.
+3. Формирует `version`, `domain`, `section_id`, `resource_uri`, `heading_path`, `tags` и `content`.
 4. Генерирует `src/CommonModules/MCP_Knowledge_1CQueryDocs.bsl`.
 5. Не добавляет top-level `Перем`; массив секций строится внутри функций.
+
+Как добавить следующую реальную версию платформы:
+
+1. Подготовить отдельный набор markdown-источников для этой версии или явно переиспользовать общий набор, если тексты действительно совпадают.
+2. Добавить элемент в `DOC_SETS` с новой `version`, `root` и `sourceFiles`.
+3. Запустить `node scripts\generate_1c_language_docs_bsl.mjs`.
+4. Проверить, что `list_1c_language_doc_topics`, `search_1c_language_docs`, `read_1c_language_doc_section` и `get_1c_language_doc_provenance` возвращают новую версию в `supported_versions`.
+5. Закоммитить markdown-источники, генератор и сгенерированный `src/CommonModules/MCP_Knowledge_1CQueryDocs.bsl`, чтобы первое использование не требовало генерации на машине пользователя.
 
 Когда запускать:
 

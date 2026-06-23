@@ -824,7 +824,9 @@ class ContractRunner {
         version: "8.3.27",
       });
       assert(topics.version === "8.3.27", "topics must use documentation version 8.3.27");
+      assert(Array.isArray(topics.supported_versions) && topics.supported_versions.includes("8.3.27"), "topics must expose supported_versions");
       assert(Array.isArray(topics.topics), "topics must be an array");
+      assert(topics.topics.every((item) => item.version === "8.3.27"), "topics must be filtered by requested version");
       assert(topics.topics.some((item) => item.id === "query-syntax"), "query-syntax topic is missing");
       assert(topics.topics.some((item) => item.id === "version-provenance"), "version-provenance topic is missing");
 
@@ -834,7 +836,9 @@ class ContractRunner {
         max_chars_per_result: 1200,
       });
       assert(slice.version === "8.3.27", "search must use documentation version 8.3.27");
+      assert(Array.isArray(slice.supported_versions) && slice.supported_versions.includes("8.3.27"), "search must expose supported_versions");
       assert(Array.isArray(slice.results), "search results must be an array");
+      assert(slice.results.every((item) => item.version === "8.3.27"), "search results must include requested version");
       assert(slice.results.some((item) => String(item.source_file || "").includes("info-register")), "СрезПоследних search must find info-register docs");
       assert(slice.results.every((item) => String(item.excerpt || "").length <= 1200), "search excerpts must respect max_chars_per_result");
 
@@ -847,9 +851,12 @@ class ContractRunner {
       const section = slice.results[0];
       const read = await okTool(this.client, "read_1c_language_doc_section", {
         section_id: section.section_id,
+        version: section.version,
         max_chars: 1000,
       });
       assert(read.section_id === section.section_id, "read section must return requested section_id");
+      assert(read.version === section.version, "read section must return requested version");
+      assert(Array.isArray(read.supported_versions) && read.supported_versions.includes("8.3.27"), "read section must expose supported_versions");
       assert(typeof read.content === "string" && read.content.length > 0, "read section must return content");
       assert(read.content.length <= 1000, "read section must respect max_chars");
 
@@ -857,6 +864,7 @@ class ContractRunner {
         version: "8.3.27",
       });
       assert(provenance.version === "8.3.27", "provenance must use documentation version 8.3.27");
+      assert(Array.isArray(provenance.rules?.supported_versions) && provenance.rules.supported_versions.includes("8.3.27"), "provenance rules must expose supported_versions");
       assert(String(provenance.source_file || "").includes("version-provenance"), "provenance must cite version-provenance source");
       assert(provenance.rules?.default_version === "8.3.27", "provenance must include default_version rule");
       return {
