@@ -79,7 +79,7 @@
 		ИначеЕсли ИмяТула = "list_event_subscriptions" Тогда
 			Данные = MCP_Tools_Impl.ListEventSubscriptions(Аргументы);
 		ИначеЕсли ИмяТула = "run_1c_query" Тогда
-			Данные = MCP_Tools_Impl.Run1CQuery(Аргументы);
+			Данные = MCP_Tools_Impl.Run1CQuery(Аргументы, CorrelationID);
 		ИначеЕсли ИмяТула = "validate_1c_query" Тогда
 			Данные = MCP_Tools_Impl.Validate1CQuery(Аргументы);
 		ИначеЕсли ИмяТула = "get_1c_query_guidance" Тогда

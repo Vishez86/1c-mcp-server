@@ -1205,6 +1205,43 @@ class ContractRunner {
       return { register: accountingRegister.fullName, columns: columnNames, rows: result.rows?.length || 0 };
     });
 
+    await this.test("negative.run_1c_query_virtual_table_field_not_found_is_enriched", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) {
+        return { skipped: true, reason: "no accounting register in metadata" };
+      }
+      const result = await rawTool(this.client, "run_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Обороты.СуммаПРОборот ИЗ ${accountingRegister.fullName}.ОборотыДтКт(&Начало, &Конец) КАК Обороты`,
+        parameters: {
+          Начало: { kind: "datetime", value: CONTRACT_PERIOD.start },
+          Конец: { kind: "datetime", value: CONTRACT_PERIOD.end },
+        },
+        limit: 1,
+      });
+      const errorCode = result.error_code || result.error?.error_code;
+      const sourceTable = result.source_table || result.error?.source_table;
+      const availableFields = result.available_fields || result.error?.available_fields || [];
+      const availableFieldsSample = result.available_fields_sample || result.error?.available_fields_sample || [];
+      const hint = result.hint || result.error?.hint || "";
+      const field = result.field || result.error?.field;
+      const object = result.object || result.error?.object;
+      const correlationId = result.error?.correlation_id;
+      assert(result.ok === false, "invalid ОборотыДтКт field must fail");
+      assert(errorCode === "field_not_found", `unexpected diagnostic code: ${errorCode}`);
+      assert(field === "СуммаПРОборот", `unexpected field: ${field}`);
+      assert(object === accountingRegister.fullName, `unexpected object: ${object}`);
+      assert(typeof correlationId === "string" && correlationId.length > 0, "correlation_id must be preserved");
+      assert(sourceTable === `${accountingRegister.fullName}.ОборотыДтКт`, `unexpected source_table: ${sourceTable}`);
+      assert(availableFields.includes("СуммаПРОборотДт"), "available_fields must include СуммаПРОборотДт");
+      assert(availableFields.includes("СуммаПРОборотКт"), "available_fields must include СуммаПРОборотКт");
+      assert(!availableFields.includes("Содержание"), "available_fields must not contain main register fields");
+      assert(availableFieldsSample[0]?.type === sourceTable, "available_fields_sample type must point to the virtual table");
+      assert((availableFieldsSample[0]?.fields || []).includes("СуммаПРОборотДт"), "available_fields_sample must expose virtual-table fields");
+      assert(hint.includes("ОборотыДтКт"), "hint must mention ОборотыДтКт");
+      assert(hint.includes("СуммаПРОборотДт") && hint.includes("СуммаПРОборотКт"), "hint must suggest debit and credit replacements");
+      return { register: accountingRegister.fullName, errorCode, sourceTable, availableFields, hint };
+    });
+
     await this.test("tool.run_1c_query_accounting_balance_subconto", async () => {
       const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
       if (!accountingRegister) {
