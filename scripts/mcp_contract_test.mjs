@@ -755,6 +755,54 @@ class ContractRunner {
       };
     });
 
+    await this.test("tool.domain_guidance_parity_payroll_and_balance_TC029", async () => {
+      // --- P2: payroll-salary-source-selection должен быть на ОБОИХ путях ---
+      const payrollDiscovery = await okTool(this.client, "list_reports", {
+        query: "начисленная зарплата сотрудников за период",
+        include_variants: true,
+        include_guidance: true,
+        limit: 1,
+      });
+      const payrollQuery = await okTool(this.client, "validate_1c_query", {
+        query: "ВЫБРАТЬ Обороты.СуммаОборотКт ИЗ РегистрБухгалтерии.Хозрасчетный.Обороты(&Нач, &Кон, , Счет = &Счет70) КАК Обороты",
+        parameters: {
+          Нач: { kind: "datetime", value: CONTRACT_PERIOD.start },
+          Кон: { kind: "datetime", value: CONTRACT_PERIOD.end },
+        },
+        strict: true,
+        include_guidance: true,
+      });
+      assert(hasGuidance(payrollDiscovery, "payroll-salary-source-selection"),
+        "P2: payroll guidance must appear on discovery path (list_reports)");
+      assert(hasGuidance(payrollQuery, "payroll-salary-source-selection"),
+        "P2: payroll guidance must appear on query path (credit turnover of account 70)");
+
+      // --- P3: accounting-balance-vs-turnover должен быть на ОБОИХ путях ---
+      const balanceQuery = await okTool(this.client, "validate_1c_query", {
+        query: "ВЫБРАТЬ Остатки.СуммаОстаток ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&НаДату, Счет = &Счет62) КАК Остатки",
+        parameters: { НаДату: { kind: "datetime", value: CONTRACT_PERIOD.end } },
+        strict: true,
+        include_guidance: true,
+      });
+      const balanceDiscovery = await okTool(this.client, "list_reports", {
+        query: "долг контрагента на конец 2024 года",
+        include_variants: true,
+        include_guidance: true,
+        limit: 1,
+      });
+      assert(hasGuidance(balanceQuery, "accounting-balance-vs-turnover"),
+        "P3: balance guidance must appear on query path (validate_1c_query)");
+      assert(hasGuidance(balanceDiscovery, "accounting-balance-vs-turnover"),
+        "P3: balance guidance must appear on discovery path (list_reports)");
+
+      return {
+        payrollDiscovery: (payrollDiscovery.domain_guidance || []).map((i) => i.id),
+        payrollQuery: (payrollQuery.domain_guidance || []).map((i) => i.id),
+        balanceQuery: (balanceQuery.domain_guidance || []).map((i) => i.id),
+        balanceDiscovery: (balanceDiscovery.domain_guidance || []).map((i) => i.id),
+      };
+    });
+
     await this.test("tool.validate_1c_query_rejects_main_register_subconto_dtkt", async () => {
       const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
       if (!accountingRegister) return { skipped: true, reason: "no accounting register" };
