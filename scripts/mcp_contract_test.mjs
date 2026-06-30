@@ -1253,7 +1253,10 @@ class ContractRunner {
       return { register: accountingRegister.fullName, columns: columnNames, rows: result.rows?.length || 0 };
     });
 
-    await this.test("negative.run_1c_query_virtual_table_field_not_found_is_enriched", async () => {
+    await this.test("negative.run_1c_query_vt_field_rejected_pre_flight", async () => {
+      // ТЗ pre-flight: несуществующее поле ВТ отсекается ДО движка с детерминированным
+      // validation_failed_before_run (критерии приёмки 1 и 7). СуммаПРОборот в ОборотыДтКт
+      // не существует (есть только СуммаПРОборотДт/Кт), поэтому запрос блокируется заранее.
       const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
       if (!accountingRegister) {
         return { skipped: true, reason: "no accounting register in metadata" };
@@ -1267,27 +1270,142 @@ class ContractRunner {
         limit: 1,
       });
       const errorCode = result.error_code || result.error?.error_code;
+      const topCode = result.error?.code;
       const sourceTable = result.source_table || result.error?.source_table;
       const availableFields = result.available_fields || result.error?.available_fields || [];
+      const availableFieldsSource = result.available_fields_source || result.error?.available_fields_source;
       const availableFieldsSample = result.available_fields_sample || result.error?.available_fields_sample || [];
       const hint = result.hint || result.error?.hint || "";
       const field = result.field || result.error?.field;
       const object = result.object || result.error?.object;
       const correlationId = result.error?.correlation_id;
       assert(result.ok === false, "invalid ОборотыДтКт field must fail");
-      assert(errorCode === "field_not_found", `unexpected diagnostic code: ${errorCode}`);
+      assert(errorCode === "validation_failed_before_run", `expected pre-flight rejection, got: ${errorCode}`);
+      assert(topCode === "validation_failed_before_run", `error.code must be validation_failed_before_run, got: ${topCode}`);
       assert(field === "СуммаПРОборот", `unexpected field: ${field}`);
       assert(object === accountingRegister.fullName, `unexpected object: ${object}`);
       assert(typeof correlationId === "string" && correlationId.length > 0, "correlation_id must be preserved");
       assert(sourceTable === `${accountingRegister.fullName}.ОборотыДтКт`, `unexpected source_table: ${sourceTable}`);
+      assert(availableFieldsSource === "virtual_table", `available_fields_source must be virtual_table, got: ${availableFieldsSource}`);
       assert(availableFields.includes("СуммаПРОборотДт"), "available_fields must include СуммаПРОборотДт");
       assert(availableFields.includes("СуммаПРОборотКт"), "available_fields must include СуммаПРОборотКт");
+      assert(!availableFields.includes("СуммаПРОборот"), "ОборотыДтКт must not advertise plain СуммаПРОборот (Дт/Кт only)");
       assert(!availableFields.includes("Содержание"), "available_fields must not contain main register fields");
       assert(availableFieldsSample[0]?.type === sourceTable, "available_fields_sample type must point to the virtual table");
       assert((availableFieldsSample[0]?.fields || []).includes("СуммаПРОборотДт"), "available_fields_sample must expose virtual-table fields");
       assert(hint.includes("ОборотыДтКт"), "hint must mention ОборотыДтКт");
       assert(hint.includes("СуммаПРОборотДт") && hint.includes("СуммаПРОборотКт"), "hint must suggest debit and credit replacements");
-      return { register: accountingRegister.fullName, errorCode, sourceTable, availableFields, hint };
+      return { register: accountingRegister.fullName, errorCode, sourceTable, availableFieldsCount: availableFields.length, hint };
+    });
+
+    await this.test("tool.vt_field_generator_authoritative_superset", async () => {
+      // ТЗ критерии 3/4: генератор полей ВТ возвращает надмножество авторитетной схемы.
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) return { skipped: true, reason: "no accounting register" };
+      const result = await okTool(this.client, "get_metadata_structure", {
+        type: accountingRegister.fullName,
+        include_standard_attributes: true,
+        include_tabular_sections: false,
+        include_virtual_tables: true,
+      });
+      const vts = result.metadata?.register_schema?.virtual_tables || [];
+      const fieldsOf = (name) => (vts.find((v) => v.name === name)?.common_fields) || [];
+
+      const balance = fieldsOf("Остатки");
+      for (const f of ["СуммаОстаток", "СуммаОстатокДт", "СуммаОстатокКт", "СуммаРазвернутыйОстатокДт", "СуммаРазвернутыйОстатокКт", "КоличествоОстаток"]) {
+        assert(balance.includes(f), `Остатки superset must include ${f}`);
+      }
+
+      const dtkt = fieldsOf("ОборотыДтКт");
+      for (const f of ["СубконтоДт1", "СубконтоКт1", "СуммаОборот", "СуммаОборотДт", "СуммаОборотКт", "СуммаПРОборотДт", "СуммаПРОборотКт"]) {
+        assert(dtkt.includes(f), `ОборотыДтКт superset must include ${f}`);
+      }
+      assert(!dtkt.includes("Субконто1"), "ОборотыДтКт must NOT include bare Субконто1");
+      assert(!dtkt.includes("СуммаПРОборот"), "ОборотыДтКт must NOT include plain СуммаПРОборот");
+
+      const balTurn = fieldsOf("ОстаткиИОбороты");
+      for (const f of ["СуммаНачальныйОстаток", "СуммаОборот", "СуммаКонечныйОстаток"]) {
+        assert(balTurn.includes(f), `ОстаткиИОбороты superset must include ${f}`);
+      }
+      return { balance: balance.length, dtkt: dtkt.length, balTurn: balTurn.length };
+    });
+
+    await this.test("regression.run_1c_query_developed_balance_fields_not_rejected", async () => {
+      // ТЗ критерий 2 (прямая защита от регресса F4): валидные Дт/Кт/Развернутый поля
+      // НЕ должны ложно отклоняться pre-flight.
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) return { skipped: true, reason: "no accounting register" };
+      const result = await rawTool(this.client, "run_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 3 Остатки.Счет, Остатки.СуммаОстатокДт, Остатки.СуммаОстатокКт, Остатки.СуммаРазвернутыйОстатокКт ИЗ ${accountingRegister.fullName}.Остатки(&Период) КАК Остатки`,
+        parameters: { Период: { kind: "datetime", value: CONTRACT_PERIOD.end } },
+        limit: 3,
+      });
+      const code = result.error_code || result.error?.error_code;
+      assert(code !== "validation_failed_before_run",
+        `F4 regression: valid developed balance fields must NOT be rejected pre-flight (got ${code})`);
+      if (!result.ok) {
+        return { softFail: true, reason: `engine rejected (likely non-correspondence register): ${code}` };
+      }
+      return { register: accountingRegister.fullName, rows: result.rows?.length ?? 0 };
+    });
+
+    await this.test("parity.pre_flight_and_metadata_fields_match", async () => {
+      // ТЗ F-08: available_fields в pre-flight отказе и common_fields из метаданных
+      // строятся одним генератором и должны совпадать для одного источника.
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) return { skipped: true, reason: "no accounting register" };
+      const meta = await okTool(this.client, "get_metadata_structure", {
+        type: accountingRegister.fullName,
+        include_virtual_tables: true,
+      });
+      const metaFields = ((meta.metadata?.register_schema?.virtual_tables || [])
+        .find((v) => v.name === "ОборотыДтКт")?.common_fields) || [];
+      const rejected = await rawTool(this.client, "run_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Обороты.ПолеКоторогоНет ИЗ ${accountingRegister.fullName}.ОборотыДтКт(&Начало, &Конец) КАК Обороты`,
+        parameters: {
+          Начало: { kind: "datetime", value: CONTRACT_PERIOD.start },
+          Конец: { kind: "datetime", value: CONTRACT_PERIOD.end },
+        },
+        limit: 1,
+      });
+      const preFlightFields = rejected.available_fields || rejected.error?.available_fields || [];
+      assert((rejected.error_code || rejected.error?.error_code) === "validation_failed_before_run", "bad field must be pre-flight rejected");
+      assert(metaFields.length > 0 && preFlightFields.length > 0, "both field sets must be non-empty");
+      const norm = (a) => [...a].map((x) => x.toUpperCase()).sort().join("|");
+      assert(norm(metaFields) === norm(preFlightFields), "F-08: pre-flight available_fields must equal metadata common_fields");
+      return { count: preFlightFields.length };
+    });
+
+    await this.test("negative.run_1c_query_accumulation_vt_field_rejected_pre_flight", async () => {
+      // ТЗ критерий 5 (устранение F5): для регистров накопления pre-flight теперь
+      // тоже отсекает несуществующее поле ВТ и отдаёт available_fields.
+      const accumulationRegister = this.context.accumulationRegister || await findAccumulationRegister(this.client);
+      if (!accumulationRegister) return { skipped: true, reason: "no accumulation register" };
+      const meta = await okTool(this.client, "get_metadata_structure", {
+        type: accumulationRegister.fullName,
+        include_virtual_tables: true,
+      });
+      const vts = meta.metadata?.register_schema?.virtual_tables || [];
+      const target = vts.find((v) => Array.isArray(v.common_fields) && v.common_fields.length > 0
+        && (v.name === "Остатки" || v.name === "Обороты" || v.name === "ОстаткиИОбороты"));
+      if (!target) return { skipped: true, reason: "accumulation register exposes no balance/turnover VT fields" };
+      const paramText = target.name === "Остатки" ? "(&Период)" : "(&Начало, &Конец)";
+      const params = target.name === "Остатки"
+        ? { Период: { kind: "datetime", value: CONTRACT_PERIOD.end } }
+        : { Начало: { kind: "datetime", value: CONTRACT_PERIOD.start }, Конец: { kind: "datetime", value: CONTRACT_PERIOD.end } };
+      const result = await rawTool(this.client, "run_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Т.ПолеКоторогоТочноНет ИЗ ${accumulationRegister.fullName}.${target.name}${paramText} КАК Т`,
+        parameters: params,
+        limit: 1,
+      });
+      const code = result.error_code || result.error?.error_code;
+      const availableFields = result.available_fields || result.error?.available_fields || [];
+      const sourceTable = result.source_table || result.error?.source_table;
+      assert(result.ok === false, "non-existent accumulation VT field must fail");
+      assert(code === "validation_failed_before_run", `expected pre-flight rejection for accumulation register, got: ${code}`);
+      assert(sourceTable === `${accumulationRegister.fullName}.${target.name}`, `unexpected source_table: ${sourceTable}`);
+      assert(availableFields.length > 0, "accumulation VT rejection must expose available_fields (F5 fixed)");
+      return { register: accumulationRegister.fullName, vt: target.name, availableFieldsCount: availableFields.length };
     });
 
     await this.test("tool.run_1c_query_accounting_balance_subconto", async () => {
