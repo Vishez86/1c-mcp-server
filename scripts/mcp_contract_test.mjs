@@ -186,6 +186,30 @@ class McpHttpClient {
     const { result, elapsedMs } = await this.rpc("tools/call", { name, arguments: args });
     return { result, elapsedMs };
   }
+
+  // Низкоуровневый POST сырого тела (в т.ч. заведомо битого JSON): в отличие от rpc()
+  // не бросает на json.error, чтобы тест мог проверить содержимое error/error.data.
+  async rawPost(bodyText) {
+    const started = Date.now();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      const response = await fetch(this.url, {
+        method: "POST",
+        headers: this.headers,
+        body: bodyText,
+        signal: controller.signal,
+      });
+      const text = await response.text();
+      let json = null;
+      if (text) {
+        try { json = JSON.parse(text); } catch (_) { json = null; }
+      }
+      return { status: response.status, text, json, elapsedMs: Date.now() - started };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
 }
 
 class ContractRunner {
@@ -2083,6 +2107,22 @@ class ContractRunner {
       assert(result.ok === false, "unknown tool must return ok=false");
       assert(result.error?.code, "unknown tool error code must be present");
       return { error: result.error };
+    });
+
+    await this.test("negative.parse_error_hides_internal_details", async () => {
+      // Битый JSON → -32700. Проверяем, что внутренние детали (текст исключения платформы,
+      // тело запроса) не утекают в error.data, а наружу идёт нейтральное сообщение + correlation_id.
+      const response = await this.client.rawPost('{"jsonrpc":"2.0","id":1,"method":');
+      assert(response.json, `parse error must return a JSON-RPC body, got: ${String(response.text).slice(0, 200)}`);
+      const error = response.json.error;
+      assert(error?.code === -32700, `expected -32700, got ${error?.code}`);
+      assert(error.message === "Parse error", `error.message must stay neutral, got: ${error.message}`);
+      const data = error.data || {};
+      assert(!("raw_exception" in data), "error.data must not leak raw_exception");
+      assert(!("request_body" in data), "error.data must not leak request_body");
+      assert(typeof data.correlation_id === "string" && data.correlation_id.length > 0,
+        "error.data.correlation_id must be present for support correlation");
+      return { code: error.code, correlation_id: data.correlation_id };
     });
 
     if (process.env.MCP_DENIED_TYPE) {
