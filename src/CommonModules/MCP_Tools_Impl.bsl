@@ -395,7 +395,7 @@
 
 	Результат = MCP_Query.ВыполнитьЗапросСОграничениями(
 		ТекстЗапроса, Параметры, Лимит, Timeout, Курсор,
-		IncludeNavigationURL, Истина, IncludeGuidance, CorrelationID);
+		IncludeNavigationURL, Истина, IncludeGuidance, CorrelationID, ValidateBeforeRun);
 	Если НЕ ValidateBeforeRun Тогда
 		Результат.warnings.Добавить("validate_before_run=false проигнорирован: проверка безопасности всегда выполняется сервером.");
 	КонецЕсли;
