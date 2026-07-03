@@ -841,13 +841,13 @@
 Функция Tool_get_metadata_structure(РежимРезультата = "")
 	Props = Новый Структура;
 	Props.Вставить("type", _Схема("string", , "Полное имя объекта метаданных, например Справочник.<Имя>."));
-	Props.Вставить("include_standard_attributes", _Схема("boolean"));
-	Props.Вставить("include_tabular_sections", _Схема("boolean"));
+	Props.Вставить("include_standard_attributes", _СхемаBoolean(Истина));
+	Props.Вставить("include_tabular_sections", _СхемаBoolean(Ложь));
 	Props.Вставить("include_forms", _Схема("boolean"));
 	Props.Вставить("include_commands", _Схема("boolean"));
-	Props.Вставить("include_query_names", _Схема("boolean"));
-	Props.Вставить("include_sensitive_flags", _Схема("boolean"));
-	Props.Вставить("include_virtual_tables", _Схема("boolean"));
+	Props.Вставить("include_query_names", _СхемаBoolean(Ложь));
+	Props.Вставить("include_sensitive_flags", _СхемаBoolean(Ложь));
+	Props.Вставить("include_virtual_tables", _СхемаBoolean(Ложь));
 	Props.Вставить("section", _СхемаЕnum(СписокСтрок("all,attributes,standard_attributes,tabular_sections,register_schema,virtual_tables")));
 	Props.Вставить("limit", _СхемаInt(1, 1000, 100));
 	Props.Вставить("cursor", _Схема("string", , "Offset cursor внутри выбранной section."));
@@ -900,10 +900,10 @@
 	Props.Вставить("limit", _СхемаInt(1, 1000, 100));
 	Props.Вставить("cursor", _Схема("string", , "Offset cursor для следующей страницы строк."));
 	Props.Вставить("timeout_seconds", _СхемаInt(1, 60, 15));
-	Props.Вставить("validate_before_run", _Схема("boolean"));
+	Props.Вставить("validate_before_run", _СхемаBoolean(Истина));
 	Props.Вставить("return_format", _СхемаЕnum(СписокСтрок("rows,table")));
-	Props.Вставить("include_column_types", _Схема("boolean"));
-	Props.Вставить("include_navigation_url", _Схема("boolean"));
+	Props.Вставить("include_column_types", _СхемаBoolean(Ложь));
+	Props.Вставить("include_navigation_url", _СхемаBoolean(Ложь));
 	Props.Вставить("include_guidance", _СхемаGuidance());
 	Возврат _Tool("run_1c_query",
 		"Выполнить безопасный read-only запрос 1С",
@@ -915,7 +915,7 @@
 	Props = Новый Структура;
 	Props.Вставить("query", _Схема("string"));
 	Props.Вставить("parameters", _СхемаОбъект());
-	Props.Вставить("strict", _Схема("boolean"));
+	Props.Вставить("strict", _СхемаBoolean(Истина));
 	Props.Вставить("explain", _Схема("boolean"));
 	Props.Вставить("include_guidance", _СхемаGuidance());
 	Возврат _Tool("validate_1c_query",
@@ -1028,9 +1028,9 @@
 	Props.Вставить("order_by", _Схема("array"));
 	Props.Вставить("limit", _СхемаInt(1, 1000, 100));
 	Props.Вставить("cursor", _Схема("string", , "Offset cursor строк результата."));
-	Props.Вставить("include_query", _Схема("boolean"));
-	Props.Вставить("include_column_types", _Схема("boolean"));
-	Props.Вставить("include_navigation_url", _Схема("boolean"));
+	Props.Вставить("include_query", _СхемаBoolean(Ложь));
+	Props.Вставить("include_column_types", _СхемаBoolean(Ложь));
+	Props.Вставить("include_navigation_url", _СхемаBoolean(Ложь));
 	Props.Вставить("include_guidance", _СхемаGuidance());
 	Возврат _Tool("get_accounting_balances",
 		"Получить бухгалтерские остатки и обороты",
@@ -1176,12 +1176,12 @@
 	Props.Вставить("type", _Схема("string"));
 	Props.Вставить("uuid", _Схема("string"));
 	Props.Вставить("fields", _Схема("array"));
-	Props.Вставить("include_standard_fields", _Схема("boolean"));
-	Props.Вставить("include_tabular_sections", _Схема("boolean"));
+	Props.Вставить("include_standard_fields", _СхемаBoolean(Истина));
+	Props.Вставить("include_tabular_sections", _СхемаBoolean(Ложь));
 	Props.Вставить("tabular_sections", _Схема("array"));
 	Props.Вставить("tabular_section_row_limit", _СхемаInt(1, 1000, 100));
 	Props.Вставить("tabular_section_cursor", _Схема("string", , "Offset cursor строк табличных частей."));
-	Props.Вставить("include_navigation_url", _Схема("boolean"));
+	Props.Вставить("include_navigation_url", _СхемаBoolean(Ложь));
 	Возврат _Tool("get_object_by_ref",
 		"Получить объект по типу и UUID ссылки",
 		"Точное получение ссылочного объекта по полному имени типа и UUID.",
@@ -1195,7 +1195,7 @@
 	Props.Вставить("kinds", _Схема("array"));
 	Props.Вставить("limit", _СхемаInt(1, 100, 10));
 	Props.Вставить("cursor", _Схема("string", , "Offset cursor по проверяемым типам."));
-	Props.Вставить("include_deleted", _Схема("boolean"));
+	Props.Вставить("include_deleted", _СхемаBoolean(Ложь));
 	Возврат _Tool("find_object_by_id",
 		"Найти объект по UUID без знания типа",
 		"Перебор разрешённых ссылочных типов по UUID.",
@@ -1213,11 +1213,11 @@
 	Props.Вставить("date_to", _Схема("string"));
 	Props.Вставить("limit", _СхемаInt(1, 100, 20));
 	Props.Вставить("cursor", _Схема("string", , "Offset cursor по найденным объектам."));
-	Props.Вставить("include_deleted", _Схема("boolean"));
+	Props.Вставить("include_deleted", _СхемаBoolean(Ложь));
 	Props.Вставить("include_fields", _Схема("array"));
 	Props.Вставить("match_mode", _СхемаЕnum(СписокСтрок("auto,exact,prefix,contains")));
-	Props.Вставить("include_matched_fields", _Схема("boolean"));
-	Props.Вставить("include_navigation_url", _Схема("boolean"));
+	Props.Вставить("include_matched_fields", _СхемаBoolean(Ложь));
+	Props.Вставить("include_navigation_url", _СхемаBoolean(Ложь));
 	Возврат _Tool("search_objects",
 		"Поиск объектов по строке, коду, номеру, ИНН, артикулу",
 		"Human-friendly поиск по разрешённым полям.",
@@ -1230,7 +1230,7 @@
 	Props.Вставить("uuid", _Схема("string"));
 	Props.Вставить("link_type", _СхемаЕnum(СписокСтрок("auto,e1cib,web_client,thin_client")));
 	Props.Вставить("base_url", _Схема("string"));
-	Props.Вставить("include_presentation", _Схема("boolean"));
+	Props.Вставить("include_presentation", _СхемаBoolean(Истина));
 	Возврат _Tool("get_link_of_object",
 		"Получить навигационную ссылку на объект",
 		"Возвращает e1cib/web-client/thin-client ссылки на объект 1С.",
@@ -1255,8 +1255,8 @@
 	Props.Вставить("limit_per_type", _СхемаInt(1, 100, 20));
 	Props.Вставить("max_types", _СхемаInt(1, 200, 50));
 	Props.Вставить("cursor", _Схема("string", , "Offset cursor по группам ссылок."));
-	Props.Вставить("include_counts", _Схема("boolean"));
-	Props.Вставить("include_samples", _Схема("boolean"));
+	Props.Вставить("include_counts", _СхемаBoolean(Истина));
+	Props.Вставить("include_samples", _СхемаBoolean(Ложь));
 	Возврат _Tool("find_references_to_object",
 		"Найти ссылки на объект",
 		"Поиск документов, справочников, регистров, ссылающихся на target.",
@@ -1266,7 +1266,7 @@
 Функция Tool_get_enum_values(РежимРезультата = "")
 	Props = Новый Структура;
 	Props.Вставить("type", _Схема("string"));
-	Props.Вставить("include_order", _Схема("boolean"));
+	Props.Вставить("include_order", _СхемаBoolean(Ложь));
 	Props.Вставить("include_empty", _Схема("boolean"));
 	Props.Вставить("limit", _СхемаInt(1, 1000, 100));
 	Props.Вставить("cursor", _Схема("string", , "Offset cursor значений перечисления."));
@@ -1291,9 +1291,9 @@
 	Props.Вставить("order_by", _Схема("array"));
 	Props.Вставить("limit", _СхемаInt(1, 1000, 100));
 	Props.Вставить("cursor", _Схема("string", , "Offset cursor записей регистра."));
-	Props.Вставить("include_query", _Схема("boolean"));
-	Props.Вставить("include_column_types", _Схема("boolean"));
-	Props.Вставить("include_navigation_url", _Схема("boolean"));
+	Props.Вставить("include_query", _СхемаBoolean(Ложь));
+	Props.Вставить("include_column_types", _СхемаBoolean(Ложь));
+	Props.Вставить("include_navigation_url", _СхемаBoolean(Ложь));
 	Возврат _Tool("get_register_records",
 		"Получить записи, срезы, остатки и обороты регистров",
 		"Универсальный tool для чтения регистров любого вида. Для долга/задолженности/сальдо/остатка на дату используйте mode=balance с period; для движения за период используйте mode=turnovers с period_from/period_to; если нужны начальное и конечное сальдо вместе с оборотами, используйте balance_and_turnovers.",
@@ -1320,8 +1320,8 @@
 Функция Tool_list_reports(РежимРезультата = "")
 	Props = Новый Структура;
 	Props.Вставить("query", _Схема("string"));
-	Props.Вставить("include_variants", _Схема("boolean"));
-	Props.Вставить("include_not_allowed", _Схема("boolean"));
+	Props.Вставить("include_variants", _СхемаBoolean(Ложь));
+	Props.Вставить("include_not_allowed", _СхемаBoolean(Ложь));
 	Props.Вставить("include_guidance", _СхемаGuidance());
 	Props.Вставить("limit", _СхемаInt(1, 500, 20));
 	Props.Вставить("cursor", _Схема("string"));
@@ -1335,9 +1335,9 @@
 	Props = Новый Структура;
 	Props.Вставить("report", _Схема("string"));
 	Props.Вставить("variant", _Схема("string"));
-	Props.Вставить("include_schema", _Схема("boolean"));
-	Props.Вставить("include_variants", _Схема("boolean"));
-	Props.Вставить("include_default_settings", _Схема("boolean"));
+	Props.Вставить("include_schema", _СхемаBoolean(Ложь));
+	Props.Вставить("include_variants", _СхемаBoolean(Ложь));
+	Props.Вставить("include_default_settings", _СхемаBoolean(Ложь));
 	Props.Вставить("include_guidance", _СхемаGuidance());
 	Props.Вставить("limit", _СхемаInt(1, 1000, 100));
 	Props.Вставить("cursor", _Схема("string", , "Offset cursor параметров отчета."));
@@ -1356,10 +1356,10 @@
 	Props.Вставить("limit", _СхемаInt(1, 1000, 200));
 	Props.Вставить("cursor", _Схема("string", , "Offset cursor строк отчёта."));
 	Props.Вставить("timeout_seconds", _СхемаInt(1, 180, 60));
-	Props.Вставить("include_totals", _Схема("boolean"));
+	Props.Вставить("include_totals", _СхемаBoolean(Ложь));
 	Props.Вставить("columns", _Схема("array"));
-	Props.Вставить("include_parameters_used", _Схема("boolean"));
-	Props.Вставить("include_navigation_url", _Схема("boolean"));
+	Props.Вставить("include_parameters_used", _СхемаBoolean(Ложь));
+	Props.Вставить("include_navigation_url", _СхемаBoolean(Ложь));
 	Props.Вставить("include_guidance", _СхемаGuidance());
 	Возврат _Tool("run_1c_report",
 		"Выполнить отчёт 1С",
@@ -1381,7 +1381,7 @@
 	Props.Вставить("mode", _СхемаЕnum(СписокСтрок("auto,versions,event_log,status_changes")));
 	Props.Вставить("period_from", _Схема("string"));
 	Props.Вставить("period_to", _Схема("string"));
-	Props.Вставить("include_diff", _Схема("boolean"));
+	Props.Вставить("include_diff", _СхемаBoolean(Ложь));
 	Props.Вставить("limit", _СхемаInt(1, 500, 20));
 	Props.Вставить("cursor", _Схема("string", , "Offset cursor событий истории."));
 	Возврат _Tool("get_object_history",
@@ -1392,10 +1392,10 @@
 
 Функция Tool_get_current_user_context(РежимРезультата = "")
 	Props = Новый Структура;
-	Props.Вставить("include_roles", _Схема("boolean"));
-	Props.Вставить("include_limits", _Схема("boolean"));
-	Props.Вставить("include_allowed_metadata_summary", _Схема("boolean"));
-	Props.Вставить("include_server_info", _Схема("boolean"));
+	Props.Вставить("include_roles", _СхемаBoolean(Ложь));
+	Props.Вставить("include_limits", _СхемаBoolean(Ложь));
+	Props.Вставить("include_allowed_metadata_summary", _СхемаBoolean(Ложь));
+	Props.Вставить("include_server_info", _СхемаBoolean(Ложь));
 	Возврат _Tool("get_current_user_context",
 		"Получить текущий контекст пользователя и базы",
 		"Пользователь, роли, база, версия конфигурации и MCP-сервера, лимиты.",
@@ -1495,6 +1495,14 @@
 	КонецЕсли;
 	Стр = _Схема("boolean", , Описание);
 	Стр.Вставить("default", Ложь);
+	Возврат Стр;
+КонецФункции
+
+// Булева схема с явно объявленным default (для видимости дефолта в tools/list).
+// Значение должно совпадать с фактическим рантайм-дефолтом флага в MCP_Tools_Impl.
+Функция _СхемаBoolean(ПоУмолчанию, Описание = "")
+	Стр = _Схема("boolean", , Описание);
+	Стр.Вставить("default", ПоУмолчанию);
 	Возврат Стр;
 КонецФункции
 
