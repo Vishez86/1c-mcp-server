@@ -258,7 +258,7 @@ string, number, boolean, date, datetime, uuid, ref, enum, array, null
 **Протокольные параметры (не per-tool аргументы).** Ряд параметров передаётся на уровне JSON-RPC (в `params`), а не в `arguments` конкретного инструмента, и поэтому не входит в `inputSchema` (`additionalProperties:false`):
 
 - `_response_mode` (`text_only|structured_only|both`) — временно переопределяет режим результата для `tools/list` / `tools/call`.
-- `include_auth_context: boolean` — при `true` в ответ добавляется полный `auth_context` (по умолчанию отдаётся минимальный). Передаётся как JSON-RPC-параметр по образцу `_response_mode`; не является аргументом инструмента.
+- `_include_auth_context: boolean` (legacy-алиас `include_auth_context`) — при `true` в ответ добавляется полный `auth_context` (по умолчанию отдаётся минимальный). Передаётся на уровне `params` по образцу `_response_mode`; не является аргументом инструмента. Для `get_current_user_context` полный контекст возвращается всегда.
 
 ---
 
