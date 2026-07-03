@@ -837,6 +837,19 @@ Discovery tool. Возвращает справочники, документы,
     "include_column_types": {
       "type": "boolean",
       "default": false
+    },
+    "include_navigation_url": {
+      "type": "boolean",
+      "default": false
+    },
+    "include_guidance": {
+      "type": "boolean",
+      "default": false,
+      "description": "Включить query_guidance/domain_guidance в успешный ответ. По умолчанию false. Независимо от флага сервер может добавить краткий диагностический query_guidance при row_count=0 без явного ПЕРВЫЕ."
+    },
+    "cursor": {
+      "type": "string",
+      "description": "Курсор пагинации."
     }
   },
   "required": [
@@ -1303,6 +1316,11 @@ shortcut.
       "type": "boolean",
       "default": false,
       "description": "Включить guidance/domain_guidance в успешный ответ. По умолчанию false."
+    },
+    "include_raw_rows": {
+      "type": "boolean",
+      "default": false,
+      "description": "Вернуть плоские rows/columns. По умолчанию false — они удаляются из ответа."
     }
   },
   "additionalProperties": false
@@ -1590,7 +1608,8 @@ Tool не знает, что левый или правый набор озна�
     "code_prefix": {"type": "string"},
     "limit": {"type": "integer", "minimum": 1, "maximum": 1000, "default": 500},
     "cursor": {"type": "string"},
-    "include_query": {"type": "boolean"}
+    "include_query": {"type": "boolean"},
+    "include_raw_rows": {"type": "boolean", "default": false, "description": "Вернуть плоские rows/columns. По умолчанию false."}
   },
   "additionalProperties": false
 }
@@ -1638,12 +1657,17 @@ Tool не знает, что левый или правый набор озна�
   "properties": {
     "accounting_register": {"type": "string"},
     "include_organizations": {"type": "boolean"},
-    "include_period": {"type": "boolean"},
+    "include_period": {"type": "boolean", "default": true},
+    "include_accounting_registers": {"type": "boolean", "description": "Deprecated alias для include_period; сохранён для обратной совместимости."},
     "include_closed_periods": {"type": "boolean"},
     "include_accumulation_registers": {"type": "boolean"},
+    "include_information_registers": {"type": "boolean"},
+    "include_calculation_registers": {"type": "boolean"},
     "organization_limit": {"type": "integer", "minimum": 1, "maximum": 200, "default": 50},
     "accounting_register_limit": {"type": "integer", "minimum": 1, "maximum": 50, "default": 10},
     "accumulation_register_limit": {"type": "integer", "minimum": 1, "maximum": 200, "default": 100},
+    "information_register_limit": {"type": "integer", "minimum": 1, "maximum": 200, "default": 50},
+    "calculation_register_limit": {"type": "integer", "minimum": 1, "maximum": 200, "default": 50},
     "include_empty_registers": {"type": "boolean"},
     "force_refresh": {"type": "boolean"}
   },
@@ -1679,6 +1703,14 @@ Tool не знает, что левый или правый набор озна�
     {"register": "РегистрНакопления.<Имя>", "name": "<ИмяРегистра>", "has_data": true}
   ],
   "accumulation_registers_checked": 100,
+  "information_registers": {
+    "with_data": ["<ИмяРегистра>"],
+    "empty": ["<ИмяРегистра>"]
+  },
+  "calculation_registers": {
+    "with_data": ["<ИмяРегистра>"],
+    "empty": ["<ИмяРегистра>"]
+  },
   "cache_hit": false,
   "cache_age_seconds": 0,
   "warnings": []
@@ -2049,6 +2081,19 @@ Tool не знает, что левый или правый набор озна�
         "contains"
       ],
       "default": "auto"
+    },
+    "include_matched_fields": {
+      "type": "boolean",
+      "default": false,
+      "description": "Вернуть matched_fields для каждого совпадения. По умолчанию поле отсутствует."
+    },
+    "include_navigation_url": {
+      "type": "boolean",
+      "default": false
+    },
+    "cursor": {
+      "type": "string",
+      "description": "Курсор пагинации."
     }
   },
   "required": [
@@ -2657,6 +2702,23 @@ Tool не знает, что левый или правый набор озна�
       "minimum": 1,
       "maximum": 1000,
       "default": 100
+    },
+    "cursor": {
+      "type": "string",
+      "description": "Курсор пагинации."
+    },
+    "include_query": {
+      "type": "boolean",
+      "default": false,
+      "description": "Вернуть текст выполненного запроса в query_used."
+    },
+    "include_column_types": {
+      "type": "boolean",
+      "default": false
+    },
+    "include_navigation_url": {
+      "type": "boolean",
+      "default": false
     }
   },
   "required": [
@@ -2997,6 +3059,11 @@ Discovery tool для отчётов: возвращает доступные О
       "type": "boolean",
       "default": false
     },
+    "include_guidance": {
+      "type": "boolean",
+      "default": false,
+      "description": "Включить domain_guidance и interaction_hint в ответ. По умолчанию false."
+    },
     "limit": {
       "type": "integer",
       "minimum": 1,
@@ -3042,9 +3109,19 @@ Discovery tool для отчётов: возвращает доступные О
       "configuration_agnostic": true
     }
   ],
+  "interaction_hint": {
+    "id": "report_or_direct_query_choice",
+    "question": "string",
+    "instruction": "string",
+    "candidate_reports": [],
+    "options": [],
+    "blocking": false
+  },
   "next_cursor": "string|null"
 }
 ```
+
+`domain_guidance` и `interaction_hint` (`id=report_or_direct_query_choice`, `blocking=false`) возвращаются **только при `include_guidance=true`**; по умолчанию отсутствуют.
 
 ### Пример `tools/call` arguments
 
@@ -3052,6 +3129,7 @@ Discovery tool для отчётов: возвращает доступные О
 {
   "query": "продажи",
   "include_variants": true,
+  "include_guidance": true,
   "limit": 20
 }
 ```
@@ -3321,6 +3399,29 @@ Discovery tool для отчётов: возвращает доступные О
     "include_totals": {
       "type": "boolean",
       "default": false
+    },
+    "columns": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Ограничить набор колонок результата."
+    },
+    "include_parameters_used": {
+      "type": "boolean",
+      "default": false
+    },
+    "include_navigation_url": {
+      "type": "boolean",
+      "default": false
+    },
+    "include_guidance": {
+      "type": "boolean",
+      "default": false
+    },
+    "cursor": {
+      "type": "string",
+      "description": "Курсор пагинации."
     }
   },
   "required": [
