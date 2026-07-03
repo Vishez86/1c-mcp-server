@@ -13,6 +13,12 @@
 - После изменений формата tool result прогонять все три режима: `node scripts\mcp_contract_test.mjs --all-response-modes --out reports\mcp_contract_report.1c-korp.latest.json`. Скрипт создаст агрегатный отчет и отдельные `*.text_only.json`, `*.structured_only.json`, `*.both.json`.
 - Если менялись BSL-файлы расширения, полный прогон по живому `1c-korp` имеет смысл делать после деплоя обновленного расширения в 1С; до деплоя endpoint будет отвечать старым кодом.
 
+### Автосверка спеки и tools/list
+
+- `scripts/spec_contract_autosync.mjs` — заградительная проверка: тянет живой `tools/list` и сравнивает inputSchema с блоками «### Input Schema» в `doc/mcp_1c_tools_spec.md` (состав свойств, `required`, объявленные `default`, типы). Падает с кодом 1 при расхождении.
+- Запуск: `node scripts/spec_contract_autosync.mjs --json reports/spec_autosync.latest.json` (env `MCP_URL`/`MCP_BASIC` как у контракт-теста).
+- Запускать после любого изменения inputSchema (`MCP_Tools.bsl`) или спеки; по живому серверу — после деплоя, иначе автосверка покажет ещё не задеплоенные различия (например необъявленные `default`).
+
 ### Соглашение об именовании отчётов
 
 - **`*.latest.json` — единственный «актуальный» артефакт** контрактного прогона. Именно на него ссылаются как на baseline.

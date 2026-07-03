@@ -187,28 +187,38 @@ class McpHttpClient {
     return { result, elapsedMs };
   }
 
-  // Низкоуровневый POST сырого тела (в т.ч. заведомо битого JSON): в отличие от rpc()
-  // не бросает на json.error, чтобы тест мог проверить содержимое error/error.data.
-  async rawPost(bodyText) {
+  // Низкоуровневый HTTP-запрос произвольным методом с опциональным телом и
+  // доп.заголовками. В отличие от rpc() не бросает на json.error и возвращает
+  // status/headers/text/json — для транспортных проверок (202/405/версия и т.п.).
+  async rawRequest(httpMethod, bodyText = null, extraHeaders = {}) {
     const started = Date.now();
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
     try {
-      const response = await fetch(this.url, {
-        method: "POST",
-        headers: this.headers,
-        body: bodyText,
+      const opts = {
+        method: httpMethod,
+        headers: { ...this.headers, ...extraHeaders },
         signal: controller.signal,
-      });
+      };
+      if (bodyText !== null) opts.body = bodyText;
+      const response = await fetch(this.url, opts);
       const text = await response.text();
       let json = null;
       if (text) {
         try { json = JSON.parse(text); } catch (_) { json = null; }
       }
-      return { status: response.status, text, json, elapsedMs: Date.now() - started };
+      const headers = {};
+      response.headers.forEach((value, key) => { headers[key.toLowerCase()] = value; });
+      return { status: response.status, headers, text, json, elapsedMs: Date.now() - started };
     } finally {
       clearTimeout(timer);
     }
+  }
+
+  // Низкоуровневый POST сырого тела (в т.ч. заведомо битого JSON): в отличие от rpc()
+  // не бросает на json.error, чтобы тест мог проверить содержимое error/error.data.
+  async rawPost(bodyText) {
+    return this.rawRequest("POST", bodyText);
   }
 }
 
@@ -373,6 +383,61 @@ class ContractRunner {
       assert(docsText.includes("Документация по языку запросов 1С 8.3.27"), "docs index must mention 8.3.27");
       assert(docsText.includes("query-syntax"), "docs index must list query-syntax");
       return { resources: resources.map((item) => item.uri) };
+    });
+
+    await this.test("transport.notification_returns_202_empty", async () => {
+      const resp = await this.client.rawRequest("POST",
+        JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }));
+      assert(resp.status === 202, `expected HTTP 202, got ${resp.status}`);
+      assert(!resp.text, `notification must have empty body, got: ${String(resp.text).slice(0, 100)}`);
+      return { status: resp.status };
+    });
+
+    await this.test("transport.get_returns_405_with_allow", async () => {
+      const resp = await this.client.rawRequest("GET");
+      assert(resp.status === 405, `expected HTTP 405, got ${resp.status}`);
+      assert((resp.headers["allow"] || "").length > 0, "405 response must include Allow header");
+      return { status: resp.status, allow: resp.headers["allow"] };
+    });
+
+    await this.test("transport.delete_returns_405", async () => {
+      const resp = await this.client.rawRequest("DELETE");
+      assert(resp.status === 405, `expected HTTP 405, got ${resp.status}`);
+      return { status: resp.status };
+    });
+
+    await this.test("transport.ping_returns_empty_result", async () => {
+      const { result } = await this.client.rpc("ping", {});
+      assert(result && typeof result === "object" && !Array.isArray(result) && Object.keys(result).length === 0,
+        `ping must return empty object result, got ${JSON.stringify(result)}`);
+      return { result };
+    });
+
+    await this.test("transport.prompts_list_is_method_not_found", async () => {
+      const resp = await this.client.rawPost(
+        JSON.stringify({ jsonrpc: "2.0", id: 1, method: "prompts/list", params: {} }));
+      assert(resp.json?.error?.code === -32601, `expected -32601, got ${resp.json?.error?.code}`);
+      return { code: resp.json?.error?.code };
+    });
+
+    await this.test("transport.unsupported_version_header_returns_400", async () => {
+      const resp = await this.client.rawRequest("POST",
+        JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ping", params: {} }),
+        { "mcp-protocol-version": "1999-01-01" });
+      assert(resp.status === 400, `expected HTTP 400, got ${resp.status}`);
+      assert(resp.json?.error?.code === -32000, `expected -32000, got ${resp.json?.error?.code}`);
+      return { status: resp.status, code: resp.json?.error?.code };
+    });
+
+    await this.test("transport.works_under_protocol_2025_11_25", async () => {
+      const body = JSON.stringify({
+        jsonrpc: "2.0", id: 1, method: "initialize",
+        params: { protocolVersion: "2025-11-25", capabilities: {}, clientInfo: { name: "mcp-contract-test", version: "1.0.0" } },
+      });
+      const resp = await this.client.rawRequest("POST", body, { "mcp-protocol-version": "2025-11-25" });
+      assert(resp.status === 200, `expected HTTP 200, got ${resp.status}`);
+      assert(resp.json?.result?.serverInfo?.name, "initialize under 2025-11-25 must return serverInfo.name");
+      return { negotiated: resp.json?.result?.protocolVersion };
     });
   }
 
@@ -2120,6 +2185,23 @@ class ContractRunner {
       const data = error.data || {};
       assert(!("raw_exception" in data), "error.data must not leak raw_exception");
       assert(!("request_body" in data), "error.data must not leak request_body");
+      assert(typeof data.correlation_id === "string" && data.correlation_id.length > 0,
+        "error.data.correlation_id must be present for support correlation");
+      return { code: error.code, correlation_id: data.correlation_id };
+    });
+
+    await this.test("negative.internal_error_hides_internal_details", async () => {
+      // resources/read с неизвестным uri детерминированно вызывает исключение маршрутизации
+      // → -32603. Проверяем, что внутренние детали не утекают в error.data (F6, TC-20).
+      const resp = await this.client.rawPost(JSON.stringify({
+        jsonrpc: "2.0", id: 1, method: "resources/read", params: { uri: "1c://__no_such_resource__" },
+      }));
+      const error = resp.json?.error;
+      assert(error?.code === -32603, `expected -32603, got ${error?.code}`);
+      assert(error.message === "Internal error", `error.message must stay neutral, got: ${error.message}`);
+      const data = error.data || {};
+      assert(!("raw_exception" in data), "error.data must not leak raw_exception");
+      assert(!("params" in data), "error.data must not leak params");
       assert(typeof data.correlation_id === "string" && data.correlation_id.length > 0,
         "error.data.correlation_id must be present for support correlation");
       return { code: error.code, correlation_id: data.correlation_id };
