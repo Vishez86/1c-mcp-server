@@ -227,6 +227,33 @@ string, number, boolean, date, datetime, uuid, ref, enum, array, null
 
 ---
 
+### 4.6. Пагинация и курсоры
+
+Инструменты с потенциально большим результатом поддерживают единый механизм пагинации:
+
+- `limit: integer` — максимум элементов на страницу; у каждого инструмента свои `minimum`/`maximum`/`default` (см. секцию §7 инструмента).
+- `cursor: string` — непрозрачный (opaque) токен продолжения. Это **не** смещение (offset): клиент не конструирует и не интерпретирует его, а передаёт назад без изменений.
+- `truncated: boolean` в ответе — `true`, если результат обрезан по `limit`.
+- `next_cursor: string|null` в ответе — при `truncated=true` содержит непустой токен; повторный вызов с этим `cursor` продолжает чтение с того же места без угадывания смещения. При `truncated=false` — `next_cursor` отсутствует/`null`, это конец выборки.
+
+Специальные случаи (описаны в секциях соответствующих инструментов):
+
+- `get_object_by_ref` — пагинация строк табличной части через `tabular_section_cursor` (при большом числе строк табличных частей).
+- `get_document_movements` — `summary_only` (только сводка без строк движений), `cursor` (по регистрам) и `row_cursor` (по строкам внутри регистра).
+
+### 4.7. Опциональные поля (`include_*`) и протокольные параметры
+
+**Флаги `include_*`.** Многие инструменты имеют булевы флаги `include_*`, управляющие составом ответа. Поля Output Shape, помеченные `(при include_X=true)`, возвращаются **только** при явно переданном `include_X=true`; при значении по умолчанию они в ответе отсутствуют. Значения по умолчанию у большинства флагов — `false` (ответ по умолчанию компактен ради экономии токенов LLM); фактический `default` каждого флага объявлен в его `inputSchema` и виден через `tools/list`. Отдельные флаги имеют `default:true` (например `get_metadata_structure.include_standard_attributes`, `get_object_by_ref.include_standard_fields`, `get_link_of_object.include_presentation`) — это также указано в их `inputSchema`.
+
+**`include_guidance`.** Опциональный флаг (`default:false`) у ряда инструментов (`run_1c_query`, `get_inventory_balances_by_item`, `list_reports`, `get_report_info`, `run_1c_report`): при `true` в ответ добавляется блок доменных/языковых подсказок. Независимо от флага сервер может добавить краткий диагностический `query_guidance` в отдельных ситуациях (например, `run_1c_query` при `row_count=0` без явного `ПЕРВЫЕ`) — это штатное поведение, а не полный guidance.
+
+**Протокольные параметры (не per-tool аргументы).** Ряд параметров передаётся на уровне JSON-RPC (в `params`), а не в `arguments` конкретного инструмента, и поэтому не входит в `inputSchema` (`additionalProperties:false`):
+
+- `_response_mode` (`text_only|structured_only|both`) — временно переопределяет режим результата для `tools/list` / `tools/call`.
+- `include_auth_context: boolean` — при `true` в ответ добавляется полный `auth_context` (по умолчанию отдаётся минимальный). Передаётся как JSON-RPC-параметр по образцу `_response_mode`; не является аргументом инструмента.
+
+---
+
 ## 5. Security layer
 
 Сервер должен иметь общий слой безопасности для всех tools.
@@ -456,7 +483,7 @@ Discovery tool. Возвращает справочники, документы,
       "type": "integer",
       "minimum": 1,
       "maximum": 1000,
-      "default": 200
+      "default": 50
     },
     "cursor": {
       "type": "string",
@@ -583,7 +610,7 @@ Discovery tool. Возвращает справочники, документы,
     },
     "include_tabular_sections": {
       "type": "boolean",
-      "default": true
+      "default": false
     },
     "include_forms": {
       "type": "boolean",
@@ -595,15 +622,15 @@ Discovery tool. Возвращает справочники, документы,
     },
     "include_query_names": {
       "type": "boolean",
-      "default": true
+      "default": false
     },
     "include_sensitive_flags": {
       "type": "boolean",
-      "default": true
+      "default": false
     },
     "include_virtual_tables": {
       "type": "boolean",
-      "default": true
+      "default": false
     }
   },
   "required": [
@@ -789,7 +816,7 @@ Discovery tool. Возвращает справочники, документы,
     },
     "include_column_types": {
       "type": "boolean",
-      "default": true
+      "default": false
     }
   },
   "required": [
@@ -1166,7 +1193,7 @@ shortcut.
       "type": "integer",
       "minimum": 1,
       "maximum": 12,
-      "default": 6
+      "default": 3
     }
   },
   "additionalProperties": false
@@ -1705,7 +1732,7 @@ Tool не знает, что левый или правый набор озна�
     },
     "include_navigation_url": {
       "type": "boolean",
-      "default": true
+      "default": false
     }
   },
   "required": [
@@ -1839,7 +1866,7 @@ Tool не знает, что левый или правый набор озна�
     },
     "include_deleted": {
       "type": "boolean",
-      "default": true
+      "default": false
     }
   },
   "required": [
@@ -2308,7 +2335,7 @@ Tool не знает, что левый или правый набор озна�
     },
     "include_samples": {
       "type": "boolean",
-      "default": true
+      "default": false
     }
   },
   "required": [
@@ -2441,7 +2468,7 @@ Tool не знает, что левый или правый набор озна�
     },
     "include_order": {
       "type": "boolean",
-      "default": true
+      "default": false
     },
     "include_empty": {
       "type": "boolean",
@@ -2819,7 +2846,7 @@ Tool не знает, что левый или правый набор озна�
       "type": "integer",
       "minimum": 1,
       "maximum": 1000,
-      "default": 200
+      "default": 50
     }
   },
   "required": [
@@ -2943,7 +2970,7 @@ Discovery tool для отчётов: возвращает доступные О
     },
     "include_variants": {
       "type": "boolean",
-      "default": true
+      "default": false
     },
     "include_not_allowed": {
       "type": "boolean",
@@ -2953,7 +2980,7 @@ Discovery tool для отчётов: возвращает доступные О
       "type": "integer",
       "minimum": 1,
       "maximum": 500,
-      "default": 100
+      "default": 20
     },
     "cursor": {
       "type": "string"
@@ -3096,15 +3123,15 @@ Discovery tool для отчётов: возвращает доступные О
     },
     "include_schema": {
       "type": "boolean",
-      "default": true
+      "default": false
     },
     "include_variants": {
       "type": "boolean",
-      "default": true
+      "default": false
     },
     "include_default_settings": {
       "type": "boolean",
-      "default": true
+      "default": false
     }
   },
   "required": [
@@ -3272,7 +3299,7 @@ Discovery tool для отчётов: возвращает доступные О
     },
     "include_totals": {
       "type": "boolean",
-      "default": true
+      "default": false
     }
   },
   "required": [
@@ -3452,7 +3479,7 @@ Discovery tool для отчётов: возвращает доступные О
       "type": "integer",
       "minimum": 1,
       "maximum": 500,
-      "default": 100
+      "default": 20
     }
   },
   "required": [
@@ -3584,19 +3611,19 @@ Discovery tool для отчётов: возвращает доступные О
   "properties": {
     "include_roles": {
       "type": "boolean",
-      "default": true
+      "default": false
     },
     "include_limits": {
       "type": "boolean",
-      "default": true
+      "default": false
     },
     "include_allowed_metadata_summary": {
       "type": "boolean",
-      "default": true
+      "default": false
     },
     "include_server_info": {
       "type": "boolean",
-      "default": true
+      "default": false
     }
   },
   "additionalProperties": false

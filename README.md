@@ -89,7 +89,7 @@
 
 **Назначение:** discovery доступных объектов метаданных: справочников, документов, регистров, перечислений, отчётов и т.п.
 
-**Параметры:** `kinds: string[]` фильтрует виды метаданных; `query: string` ищет по имени, синониму и комментарию; `include_not_allowed: boolean` доступен только MCP-admin; `include_details: boolean` добавляет комментарий; `limit: integer 1..1000 = 200`; `cursor: string` для следующей страницы.
+**Параметры:** `kinds: string[]` фильтрует виды метаданных; `query: string` ищет по имени, синониму и комментарию; `include_not_allowed: boolean` доступен только MCP-admin; `include_details: boolean` добавляет комментарий; `limit: integer 1..1000 = 50`; `cursor: string` для следующей страницы.
 
 **Пример:**
 
@@ -211,7 +211,7 @@
 
 **Назначение:** вернуть встроенные правила и подсказки по языку запросов 1С: временные таблицы, виртуальные таблицы, `ИМЕЮЩИЕ`, составные типы, субконто, параметры и производительность.
 
-**Параметры:** `topic: string` или `auto`; `query: string` для контекстных подсказок; `intent: string`; `include_examples: boolean`; `max_sections: integer 1..12 = 6`.
+**Параметры:** `topic: string` или `auto`; `query: string` для контекстных подсказок; `intent: string`; `include_examples: boolean`; `max_sections: integer 1..12 = 3`.
 
 **Пример:**
 
@@ -624,7 +624,7 @@
 
 **Назначение:** получить движения документа-регистратора по регистрам.
 
-**Параметры:** обязательные `document_type`, `uuid`; `registers: string[]`; `include_empty_registers`; `include_totals_effect`; `row_limit_per_register: integer 1..1000 = 200`; `cursor`; `row_cursor`.
+**Параметры:** обязательные `document_type`, `uuid`; `registers: string[]`; `include_empty_registers`; `include_totals_effect`; `row_limit_per_register: integer 1..1000 = 50`; `cursor`; `row_cursor`.
 
 **Пример:**
 
@@ -645,7 +645,7 @@
 
 **Назначение:** discovery доступных отчётов и вариантов.
 
-**Параметры:** `query`; `include_variants`; `include_not_allowed` только MCP-admin; `limit: integer 1..500 = 100`; `cursor`.
+**Параметры:** `query`; `include_variants`; `include_not_allowed` только MCP-admin; `limit: integer 1..500 = 20`; `cursor`.
 
 **Пример:**
 
@@ -709,7 +709,7 @@
 
 **Назначение:** получить историю объекта из журнала регистрации и/или подсистемы версионирования, если они доступны.
 
-**Параметры:** обязательный `target { type, uuid }`; `mode: auto|versions|event_log|status_changes`; `period_from`; `period_to`; `include_diff`; `limit: integer 1..500 = 100`; `cursor`.
+**Параметры:** обязательный `target { type, uuid }`; `mode: auto|versions|event_log|status_changes`; `period_from`; `period_to`; `include_diff`; `limit: integer 1..500 = 20`; `cursor`.
 
 **Пример:**
 
