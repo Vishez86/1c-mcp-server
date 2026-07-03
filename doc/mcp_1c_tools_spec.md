@@ -1727,7 +1727,7 @@ Tool не знает, что левый или правый набор озна�
 
 ---
 
-## 7.8. `get_object_by_ref`
+## 7.9. `get_object_by_ref`
 
 **Title:** Получить объект по типу и UUID ссылки  
 **Priority:** P0
@@ -1872,7 +1872,7 @@ Tool не знает, что левый или правый набор озна�
 
 ---
 
-## 7.9. `find_object_by_id`
+## 7.10. `find_object_by_id`
 
 **Title:** Найти объект по UUID без знания типа  
 **Priority:** P0
@@ -2001,7 +2001,7 @@ Tool не знает, что левый или правый набор озна�
 
 ---
 
-## 7.10. `search_objects`
+## 7.11. `search_objects`
 
 **Title:** Поиск объектов по строке, коду, номеру, ИНН, артикулу  
 **Priority:** P0
@@ -2193,7 +2193,7 @@ Tool не знает, что левый или правый набор озна�
 
 ---
 
-## 7.11. `get_link_of_object`
+## 7.12. `get_link_of_object`
 
 **Title:** Получить навигационную ссылку на объект  
 **Priority:** P1
@@ -2325,7 +2325,7 @@ Tool не знает, что левый или правый набор озна�
 
 ---
 
-## 7.12. `find_references_to_object`
+## 7.13. `find_references_to_object`
 
 **Title:** Найти ссылки на объект  
 **Priority:** P1
@@ -2505,7 +2505,7 @@ Tool не знает, что левый или правый набор озна�
 
 ---
 
-## 7.13. `get_enum_values`
+## 7.14. `get_enum_values`
 
 **Title:** Получить значения перечисления  
 **Priority:** P0
@@ -2612,7 +2612,7 @@ Tool не знает, что левый или правый набор озна�
 
 ---
 
-## 7.14. `get_register_records`
+## 7.15. `get_register_records`
 
 **Title:** Получить записи, срезы, остатки и обороты регистров  
 **Priority:** P0
@@ -2881,7 +2881,7 @@ Tool не знает, что левый или правый набор озна�
 
 ---
 
-## 7.15. `get_document_movements`
+## 7.16. `get_document_movements`
 
 **Title:** Получить движения документа по регистрам  
 **Priority:** P0
@@ -3025,7 +3025,7 @@ Tool не знает, что левый или правый набор озна�
 
 ---
 
-## 7.16. `list_reports`
+## 7.17. `list_reports`
 
 **Title:** Получить список доступных отчётов  
 **Priority:** P1
@@ -3190,7 +3190,7 @@ Discovery tool для отчётов: возвращает доступные О
 
 ---
 
-## 7.17. `get_report_info`
+## 7.18. `get_report_info`
 
 **Title:** Получить параметры и структуру отчёта  
 **Priority:** P1
@@ -3342,7 +3342,7 @@ Discovery tool для отчётов: возвращает доступные О
 
 ---
 
-## 7.18. `run_1c_report`
+## 7.19. `run_1c_report`
 
 **Title:** Выполнить отчёт 1С  
 **Priority:** P1
@@ -3537,7 +3537,7 @@ Discovery tool для отчётов: возвращает доступные О
 
 ---
 
-## 7.19. `get_object_history`
+## 7.20. `get_object_history`
 
 **Title:** Получить историю объекта, версии или события журнала  
 **Priority:** P2
@@ -3708,7 +3708,7 @@ Discovery tool для отчётов: возвращает доступные О
 
 ---
 
-## 7.20. `get_current_user_context`
+## 7.21. `get_current_user_context`
 
 **Title:** Получить текущий контекст пользователя и базы  
 **Priority:** P0
@@ -3837,10 +3837,21 @@ Discovery tool для отчётов: возвращает доступные О
     "tools": [
       "list_metadata_objects",
       "get_metadata_structure",
+      "search_metadata_fields",
+      "count_event_subscriptions_by_event",
+      "list_event_subscriptions",
       "run_1c_query",
       "validate_1c_query",
       "get_1c_query_guidance",
+      "list_1c_language_doc_topics",
+      "search_1c_language_docs",
+      "read_1c_language_doc_section",
+      "get_1c_language_doc_provenance",
+      "list_registers",
       "get_accounting_accounts_map",
+      "get_accounting_balances",
+      "get_accounting_balances_by_subconto_age",
+      "compare_accounting_balances_by_subconto",
       "get_accounting_entries",
       "get_inventory_balances_by_item",
       "get_calculation_types_map",
@@ -3894,6 +3905,771 @@ Discovery tool для отчётов: возвращает доступные О
 
 Типовые error codes: `invalid_arguments`, `metadata_not_found`, `type_not_allowed`, `field_not_allowed`, `object_not_found`, `access_denied`, `result_too_large`, `internal_error`. Для этого tool могут быть добавлены специализированные коды, описанные в разделе 9.
 
+
+---
+
+## 7.22. `get_accounting_entries`
+
+**Title:** Получить бухгалтерские проводки с субконто
+**Priority:** P0
+
+### Назначение
+
+Универсальный быстрый tool для чтения основной таблицы `РегистрБухгалтерии.<Имя>` и, при необходимости, join к таблице `.Субконто`. Поддерживает фильтры по периоду, префиксам счетов Дт/Кт, виду и значению субконто, а также агрегирование по типовым бухгалтерским разрезам. Не содержит предметной логики ОС, ТМЦ, НДС или зарплаты.
+
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "accounting_register": {
+      "type": "string",
+      "description": "Бухгалтерский регистр, например РегистрБухгалтерии.Хозрасчетный. Если не указан, выбирается доступный или Хозрасчетный."
+    },
+    "chart": {
+      "type": "string",
+      "description": "План счетов для pre-flight проверки subconto_kind по префиксам счетов, например ПланСчетов.Хозрасчетный. Если не указан, выбирается доступный или Хозрасчетный."
+    },
+    "period_from": {
+      "type": "string",
+      "description": "Начало периода ISO 8601."
+    },
+    "period_to": {
+      "type": "string",
+      "description": "Конец периода ISO 8601."
+    },
+    "debit_account_code_prefixes": {
+      "type": "array",
+      "description": "Префиксы кодов счетов Дт, например [\"20\", \"26\"]."
+    },
+    "credit_account_code_prefixes": {
+      "type": "array",
+      "description": "Префиксы кодов счетов Кт, например [\"02\"]."
+    },
+    "subconto_side": {
+      "type": "string",
+      "enum": ["debit", "credit"]
+    },
+    "subconto_kind": {
+      "type": "object",
+      "description": "Вид субконто из get_accounting_accounts_map, например Контрагенты. Обязателен для группировки по debit_subconto/credit_subconto, если group_by не содержит subconto_kind."
+    },
+    "subconto_value": {
+      "type": "object"
+    },
+    "group_by": {
+      "type": "array",
+      "description": "Опциональные группировки: period_month, registrar, debit_account, credit_account, debit_subconto, credit_subconto, subconto_kind. Для debit_subconto/credit_subconto укажите subconto_kind или добавьте subconto_kind в group_by, иначе разные виды аналитики будут смешаны."
+    },
+    "include_zero": {
+      "type": "boolean",
+      "description": "Если false, строки с нулевой суммой не возвращаются."
+    },
+    "include_query": {
+      "type": "boolean",
+      "description": "Вернуть использованный read-only запрос."
+    },
+    "include_guidance": {
+      "type": "boolean",
+      "default": false,
+      "description": "Вернуть пояснение по построенному запросу."
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000,
+      "default": 100
+    },
+    "cursor": {
+      "type": "string",
+      "description": "Offset cursor строк результата."
+    }
+  },
+  "additionalProperties": false
+}
+```
+
+### Output Shape
+
+```json
+{
+  "ok": true,
+  "accounting_register": "РегистрБухгалтерии.Хозрасчетный",
+  "mode": "entries",
+  "group_by": [],
+  "subconto_side": null,
+  "configuration_agnostic": true,
+  "columns": [{"name": "...", "type_description": "..."}],
+  "rows": [],
+  "row_count": 0,
+  "truncated": false,
+  "next_cursor": null,
+  "warnings": [],
+  "guidance": "...",
+  "query_used": "ВЫБРАТЬ ..."
+}
+```
+
+### Правила
+
+- Если `group_by` пуст, `mode="entries"` (плоские проводки); иначе `mode="entries_grouped"`.
+- Для долга, задолженности и сальдо на дату используйте `Остатки`/`ОстаткиИОбороты` через `get_register_records`/`get_accounting_balances`/`run_1c_query`, а не проводки.
+- `subconto_kind`/`subconto_value` требуют явного `subconto_side` (`debit` или `credit`).
+- `subconto_value` без `subconto_kind` неоднозначен и отклоняется: одна проводка может иметь несколько аналитик с разными видами.
+- Группировки `debit_subconto`/`credit_subconto` требуют `subconto_kind` (в аргументе или в `group_by`), иначе разные виды аналитики смешиваются.
+- Join к таблице `.Субконто` строится только когда нужны фильтры или группировки по субконто.
+- `subconto_kind` при необходимости проходит pre-flight проверку по префиксам счетов через выбранный `chart`.
+- `query_used` возвращается только при `include_query=true`; `guidance` — только при `include_guidance=true`.
+
+---
+
+## 7.23. `get_accounting_balances`
+
+**Title:** Получить бухгалтерские остатки и обороты
+**Priority:** P0
+
+### Назначение
+
+Высокоуровневый быстрый tool для сальдо, задолженности, остатков и оборотов через виртуальные таблицы бухгалтерского регистра. Делегирует чтение общему механизму записей регистров (`get_register_records`) с фиксированным `register_type=РегистрБухгалтерии`.
+
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "accounting_register": {
+      "type": "string",
+      "description": "Бухгалтерский регистр, например РегистрБухгалтерии.Хозрасчетный."
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["balance", "turnovers", "balance_and_turnovers", "turnovers_debit_credit"]
+    },
+    "period": {
+      "type": "string",
+      "description": "Дата для balance."
+    },
+    "period_from": {
+      "type": "string",
+      "description": "Начало периода для turnover modes."
+    },
+    "period_to": {
+      "type": "string",
+      "description": "Конец периода для turnover modes."
+    },
+    "filters": {
+      "type": "object"
+    },
+    "dimensions": {
+      "type": "array"
+    },
+    "resources": {
+      "type": "array"
+    },
+    "order_by": {
+      "type": "array"
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000,
+      "default": 100
+    },
+    "cursor": {
+      "type": "string",
+      "description": "Offset cursor строк результата."
+    },
+    "include_query": {
+      "type": "boolean"
+    },
+    "include_column_types": {
+      "type": "boolean"
+    },
+    "include_navigation_url": {
+      "type": "boolean"
+    },
+    "include_guidance": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "additionalProperties": false
+}
+```
+
+### Output Shape
+
+```json
+{
+  "ok": true,
+  "accounting_register": "РегистрБухгалтерии.Хозрасчетный",
+  "mode": "balance",
+  "configuration_agnostic": true,
+  "columns": [{"name": "...", "type_description": "..."}],
+  "rows": [],
+  "row_count": 0,
+  "truncated": false,
+  "next_cursor": null,
+  "query_used": "ВЫБРАТЬ ..."
+}
+```
+
+### Правила
+
+- Допустимые `mode`: `balance`, `turnovers`, `balance_and_turnovers`, `turnovers_debit_credit`. Некорректный `mode` даёт `invalid_arguments`.
+- `balance` требует `period`; turnover-режимы требуют `period_from`/`period_to`.
+- Чтение выполняется через общий механизм виртуальных таблиц бухгалтерского регистра (`Остатки`/`Обороты`/`ОстаткиИОбороты`/`ОборотыДтКт`).
+- `query_used` возвращается только при `include_query=true`; при `include_column_types=false` типы колонок упрощаются/удаляются.
+- Постоянные данные не изменяются.
+
+---
+
+## 7.24. `list_registers`
+
+**Title:** Получить компактный список регистров
+**Priority:** P0
+
+### Назначение
+
+Discovery tool для регистров: возвращает компактный список регистров с поддерживаемыми режимами и, при необходимости, краткой схемой полей, чтобы агент выбирал регистр и режим без чтения полной структуры.
+
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "register_types": {
+      "type": "array",
+      "description": "РегистрСведений, РегистрНакопления, РегистрБухгалтерии, РегистрРасчета."
+    },
+    "query": {
+      "type": "string",
+      "description": "Поиск по имени/синониму регистра."
+    },
+    "mode_support": {
+      "type": "string",
+      "enum": ["records", "slice_first", "slice_last", "balance", "turnovers", "balance_and_turnovers", "turnovers_debit_credit"]
+    },
+    "has_period": {
+      "type": "boolean"
+    },
+    "include_fields_summary": {
+      "type": "boolean"
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000,
+      "default": 50
+    },
+    "cursor": {
+      "type": "string",
+      "description": "Offset cursor регистров."
+    }
+  },
+  "additionalProperties": false
+}
+```
+
+### Output Shape
+
+```json
+{
+  "registers": [
+    {
+      "register_type": "РегистрНакопления",
+      "name": "ТоварыНаСкладах",
+      "full_name": "РегистрНакопления.ТоварыНаСкладах",
+      "synonym": "Товары на складах",
+      "has_period": true,
+      "supported_modes": ["records", "balance", "turnovers"],
+      "fields_summary": {}
+    }
+  ],
+  "register_count": 1,
+  "truncated": false,
+  "next_cursor": null,
+  "total_estimated": 1
+}
+```
+
+### Правила
+
+- Если `register_types` не задан, перебираются все четыре вида регистров.
+- Возвращаются только типы, разрешённые allowlist/правами MCP.
+- Фильтр `query` ищет подстроку в имени и синониме без учёта регистра.
+- `mode_support` фильтрует регистры по поддержке конкретного режима; `has_period` — по наличию периода.
+- `fields_summary` включается только при `include_fields_summary=true`.
+
+---
+
+## 7.25. `search_metadata_fields`
+
+**Title:** Найти поля в метаданных
+**Priority:** P0
+
+### Назначение
+
+Компактный поиск реквизитов, измерений и ресурсов по имени/синониму без чтения полной структуры объекта. Возвращает плоский список найденных полей с их владельцем, видом поля и типом.
+
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "query": {
+      "type": "string",
+      "description": "Поиск по имени/синониму поля."
+    },
+    "types": {
+      "type": "array",
+      "description": "Полные имена объектов метаданных."
+    },
+    "kinds": {
+      "type": "array",
+      "description": "Фильтр по видам метаданных."
+    },
+    "field_kinds": {
+      "type": "array",
+      "description": "standard_attributes, attributes, tabular_sections, dimensions, resources, register_attributes."
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000,
+      "default": 50
+    },
+    "cursor": {
+      "type": "string",
+      "description": "Offset cursor найденных полей."
+    }
+  },
+  "additionalProperties": false
+}
+```
+
+### Output Shape
+
+```json
+{
+  "fields": [
+    {
+      "owner_type": "Справочник.Номенклатура",
+      "owner_kind": "Справочник",
+      "field_kind": "attributes",
+      "name": "Артикул",
+      "path": "Артикул",
+      "synonym": "Артикул",
+      "type_description": "Строка"
+    }
+  ],
+  "field_count": 1,
+  "truncated": false,
+  "next_cursor": null,
+  "total_estimated": 1
+}
+```
+
+### Правила
+
+- Возвращаются только типы и поля, разрешённые allowlist/правами MCP.
+- `types` фильтрует по полному имени объекта, `kinds` — по виду метаданных, `field_kinds` — по виду поля.
+- Для полей табличных частей `path` имеет вид `<ТабЧасть>.<Поле>`; иначе `path` равен имени поля.
+- Пустой `query` не ограничивает поиск по имени/синониму (возвращаются все разрешённые поля с учётом остальных фильтров).
+
+---
+
+## 7.26. `count_event_subscriptions_by_event`
+
+**Title:** Посчитать подписки на события по событиям
+**Priority:** P0
+
+### Назначение
+
+Discovery tool для паттерна statistics before data: компактно считает подписки на события по имени события, чтобы перед аудитом не выгружать полный список подписок. Опционально возвращает топ модулей-обработчиков по каждому событию.
+
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "include_top_handlers": {
+      "type": "boolean",
+      "description": "Добавить top_handlers по модулям-обработчикам для каждого события."
+    },
+    "top_handlers_limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 20,
+      "default": 5
+    }
+  },
+  "additionalProperties": false
+}
+```
+
+### Output Shape
+
+```json
+{
+  "events": [
+    {
+      "event": "ПередЗаписью",
+      "count": 12,
+      "top_handlers": [{"module": "...", "count": 4}]
+    }
+  ],
+  "event_count": 1,
+  "subscription_count": 12,
+  "include_top_handlers": true,
+  "top_handlers_limit": 5,
+  "guidance": "..."
+}
+```
+
+### Правила
+
+- Это metadata discovery, а не чтение BSL-кода обработчика.
+- Подписки с источниками, запрещёнными allowlist/правами MCP, не учитываются.
+- `top_handlers` возвращается только при `include_top_handlers=true`; размер топа ограничен `top_handlers_limit` (1..20, по умолчанию 5).
+- События отсортированы по убыванию `count`, затем по имени события.
+
+---
+
+## 7.27. `list_event_subscriptions`
+
+**Title:** Получить подписки на события
+**Priority:** P0
+
+### Назначение
+
+Список подписок на события метаданных 1С с точечными фильтрами по событию и обработчику. Для экономии контекста сначала используйте `count_event_subscriptions_by_event`, затем уточняйте `event` и `handler_contains`.
+
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "event": {
+      "type": "string",
+      "description": "Точное имя события, например Проведение или ПередЗаписью. Exact match."
+    },
+    "handler_contains": {
+      "type": "string",
+      "description": "Подстрока в имени обработчика, без учета регистра."
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000,
+      "default": 50
+    },
+    "cursor": {
+      "type": "string",
+      "description": "Offset cursor списка подписок."
+    }
+  },
+  "additionalProperties": false
+}
+```
+
+### Output Shape
+
+```json
+{
+  "subscriptions": [
+    {
+      "name": "...",
+      "synonym": "...",
+      "comment": "...",
+      "event": "ПередЗаписью",
+      "handler": "...",
+      "handler_module": "...",
+      "handler_routine": "...",
+      "source": "...",
+      "source_name": "...",
+      "source_full_name": "..."
+    }
+  ],
+  "subscription_count": 1,
+  "total_estimated": 1,
+  "truncated": false,
+  "next_cursor": null,
+  "filters": {},
+  "guidance": "..."
+}
+```
+
+### Правила
+
+- `event` — exact match по имени события; `handler_contains` — поиск подстроки в имени обработчика без учёта регистра.
+- Возвращаются только подписки с источниками, разрешёнными allowlist/правами MCP.
+- На больших конфигурациях сначала вызывайте `count_event_subscriptions_by_event`, затем сужайте выборку через `event` и `handler_contains`.
+
+---
+
+## 7.28. `list_1c_language_doc_topics`
+
+**Title:** Список тем документации языка 1С
+**Priority:** P0
+
+### Назначение
+
+Возвращает компактную карту встроенной документации по языку запросов 1С для выбранной версии без полного текста. Сейчас предзагружена версия `8.3.27`.
+
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Версия платформы. По умолчанию 8.3.27; список доступных версий возвращается в supported_versions."
+    },
+    "domain": {
+      "type": "string",
+      "description": "Домен документации. По умолчанию query-language."
+    }
+  },
+  "additionalProperties": false
+}
+```
+
+### Output Shape
+
+```json
+{
+  "version": "8.3.27",
+  "domain": "query-language",
+  "supported_versions": ["8.3.27"],
+  "topics": [
+    {
+      "version": "8.3.27",
+      "domain": "query-language",
+      "id": "...",
+      "title": "...",
+      "section_count": 0,
+      "source_file": "...",
+      "resource_uri": "1c-docs://8.3.27/query-language/..."
+    }
+  ]
+}
+```
+
+### Правила
+
+- Tool не возвращает полный текст документации; для текста используйте `search_1c_language_docs` и `read_1c_language_doc_section`.
+- `version`/`domain` по умолчанию `8.3.27`/`query-language`; список доступных версий возвращается в `supported_versions`.
+
+---
+
+## 7.29. `search_1c_language_docs`
+
+**Title:** Поиск по документации языка 1С
+**Priority:** P0
+
+### Назначение
+
+Ищет релевантные секции в сгенерированном read-only индексе документации языка запросов 1С выбранной версии и возвращает короткие выдержки.
+
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "query": {
+      "type": "string",
+      "description": "Поисковый запрос по документации языка 1С."
+    },
+    "version": {
+      "type": "string",
+      "description": "Версия платформы. По умолчанию 8.3.27; список доступных версий возвращается в supported_versions."
+    },
+    "domain": {
+      "type": "string",
+      "description": "Домен документации. По умолчанию query-language."
+    },
+    "top_k": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "default": 5
+    },
+    "max_chars_per_result": {
+      "type": "integer",
+      "minimum": 500,
+      "maximum": 4000,
+      "default": 1800
+    }
+  },
+  "additionalProperties": false,
+  "required": ["query"]
+}
+```
+
+### Output Shape
+
+```json
+{
+  "version": "8.3.27",
+  "domain": "query-language",
+  "supported_versions": ["8.3.27"],
+  "query": "...",
+  "results": [
+    {
+      "version": "8.3.27",
+      "domain": "query-language",
+      "section_id": "...",
+      "title": "...",
+      "source_file": "...",
+      "resource_uri": "1c-docs://8.3.27/query-language/...#...",
+      "score": 0.0,
+      "excerpt": "..."
+    }
+  ],
+  "truncated": false,
+  "notes": "..."
+}
+```
+
+### Правила
+
+- Search возвращает только короткие выдержки; полный markdown/corpus не отдаётся заранее и не публикуется в `tools/list`.
+- `top_k` (1..10, по умолчанию 5) ограничивает число результатов; `max_chars_per_result` (500..4000, по умолчанию 1800) — длину каждой выдержки.
+- Для полного текста секции используйте `read_1c_language_doc_section` с полученным `section_id`/`resource_uri`.
+
+---
+
+## 7.30. `read_1c_language_doc_section`
+
+**Title:** Прочитать секцию документации языка 1С
+**Priority:** P0
+
+### Назначение
+
+Возвращает одну секцию встроенной документации языка запросов 1С по `section_id` или `resource_uri`, полученному из поиска, с лимитом размера и продолжением через cursor.
+
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "section_id": {
+      "type": "string",
+      "description": "ID секции из search_1c_language_docs."
+    },
+    "resource_uri": {
+      "type": "string",
+      "description": "URI секции вида 1c-docs://8.3.27/query-language/...#..."
+    },
+    "version": {
+      "type": "string",
+      "description": "Версия платформы для чтения по section_id. По умолчанию 8.3.27. При resource_uri версия берется из URI."
+    },
+    "domain": {
+      "type": "string",
+      "description": "Домен документации. По умолчанию query-language."
+    },
+    "max_chars": {
+      "type": "integer",
+      "minimum": 1000,
+      "maximum": 20000,
+      "default": 8000
+    },
+    "cursor": {
+      "type": "string",
+      "description": "Offset cursor для продолжения урезанной секции."
+    }
+  },
+  "additionalProperties": false
+}
+```
+
+### Output Shape
+
+```json
+{
+  "version": "8.3.27",
+  "domain": "query-language",
+  "supported_versions": ["8.3.27"],
+  "section_id": "...",
+  "title": "...",
+  "source_file": "...",
+  "resource_uri": "1c-docs://8.3.27/query-language/...#...",
+  "heading_path": ["...", "..."],
+  "content": "...",
+  "truncated": false,
+  "next_cursor": null
+}
+```
+
+### Правила
+
+- Секция читается ровно по одному из `section_id` или `resource_uri`.
+- При чтении по `section_id` версия берётся из `version`/`domain`; при `resource_uri` версия извлекается из URI.
+- `max_chars` (1000..20000, по умолчанию 8000) ограничивает размер `content`; при `truncated=true` продолжайте чтение с `next_cursor`.
+
+---
+
+## 7.31. `get_1c_language_doc_provenance`
+
+**Title:** Provenance документации языка 1С
+**Priority:** P0
+
+### Назначение
+
+Возвращает версию, источники и правила разрешения конфликтов для встроенной документации языка запросов 1С.
+
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Версия платформы. По умолчанию 8.3.27; список доступных версий возвращается в supported_versions."
+    },
+    "domain": {
+      "type": "string",
+      "description": "Домен документации. По умолчанию query-language."
+    }
+  },
+  "additionalProperties": false
+}
+```
+
+### Output Shape
+
+```json
+{
+  "version": "8.3.27",
+  "domain": "query-language",
+  "supported_versions": ["8.3.27"],
+  "source_file": "...",
+  "content": "...",
+  "rules": {
+    "default_version": "8.3.27",
+    "supported_versions": ["8.3.27"],
+    "official_docs_priority": "...",
+    "live_metadata_priority": "..."
+  }
+}
+```
+
+### Правила
+
+- Если пользователь спрашивает про версию платформы, которой нет в `supported_versions`, агент должен явно сообщить, что такой корпус не встроен в текущую поставку.
+- `version`/`domain` по умолчанию `8.3.27`/`query-language`.
 
 ---
 
