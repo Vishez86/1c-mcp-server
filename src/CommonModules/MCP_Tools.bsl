@@ -829,9 +829,9 @@
 	Props = Новый Структура;
 	Props.Вставить("kinds", _Схема("array", , "Фильтр по видам метаданных."));
 	Props.Вставить("query", _Схема("string", , "Поиск по имени/синониму/комментарию."));
-	Props.Вставить("include_not_allowed", _Схема("boolean", , "Только для MCP-admin."));
-	Props.Вставить("include_details", _Схема("boolean", , "Доп. детали."));
-	Props.Вставить("response_profile", _СхемаЕnum(СписокСтрок("compact,standard,debug")));
+	Props.Вставить("include_not_allowed", _СхемаBoolean(Ложь, "Только для MCP-admin."));
+	Props.Вставить("include_details", _СхемаBoolean(Ложь, "Доп. детали."));
+	Props.Вставить("response_profile", _СхемаЕnum(СписокСтрок("compact,standard,debug"), "compact"));
 	Props.Вставить("limit", _СхемаInt(1, 1000, 50));
 	Props.Вставить("cursor", _Схема("string", , "Cursor пагинации."));
 	Возврат _Tool("list_metadata_objects",
@@ -845,8 +845,8 @@
 	Props.Вставить("type", _Схема("string", , "Полное имя объекта метаданных, например Справочник.<Имя>."));
 	Props.Вставить("include_standard_attributes", _СхемаBoolean(Истина));
 	Props.Вставить("include_tabular_sections", _СхемаBoolean(Ложь));
-	Props.Вставить("include_forms", _Схема("boolean"));
-	Props.Вставить("include_commands", _Схема("boolean"));
+	Props.Вставить("include_forms", _СхемаBoolean(Ложь));
+	Props.Вставить("include_commands", _СхемаBoolean(Ложь));
 	Props.Вставить("include_query_names", _СхемаBoolean(Ложь));
 	Props.Вставить("include_sensitive_flags", _СхемаBoolean(Ложь));
 	Props.Вставить("include_virtual_tables", _СхемаBoolean(Ложь));
@@ -918,7 +918,7 @@
 	Props.Вставить("query", _Схема("string"));
 	Props.Вставить("parameters", _СхемаОбъект());
 	Props.Вставить("strict", _СхемаBoolean(Истина));
-	Props.Вставить("explain", _Схема("boolean"));
+	Props.Вставить("explain", _СхемаBoolean(Ложь));
 	Props.Вставить("include_guidance", _СхемаGuidance());
 	Возврат _Tool("validate_1c_query",
 		"Проверить запрос 1С до выполнения",
@@ -1005,11 +1005,11 @@
 	Props = Новый Структура;
 	Props.Вставить("chart", _Схема("string", , "Полное имя плана счетов, например ПланСчетов.<Имя>. Если не указано и доступен один план счетов, он будет выбран автоматически."));
 	Props.Вставить("account_code_prefix", _Схема("string", , "Опциональный префикс кода счёта для отбора."));
-	Props.Вставить("include_empty_subconto", _Схема("boolean", , "Если true, дополнительно включает в accounts[] счета без строк ВидыСубконто."));
+	Props.Вставить("include_empty_subconto", _СхемаBoolean(Ложь, "Если true, дополнительно включает в accounts[] счета без строк ВидыСубконто."));
 	Props.Вставить("limit", _СхемаInt(1, 1000, 500));
 	Props.Вставить("cursor", _Схема("string", , "Offset cursor строк карты счетов."));
 	Props.Вставить("include_query", _Схема("boolean", , "Вернуть использованный read-only запрос."));
-	Props.Вставить("include_raw_rows", _Схема("boolean", , "Вернуть технические rows/columns вместе с accounts."));
+	Props.Вставить("include_raw_rows", _СхемаBoolean(Ложь, "Вернуть технические rows/columns вместе с accounts."));
 	Props.Вставить("include_guidance", _СхемаGuidance("Вернуть пояснение по позициям субконто и domain_guidance."));
 	Возврат _Tool("get_accounting_accounts_map",
 		"Получить карту счетов и субконто",
@@ -1143,7 +1143,7 @@
 	Props.Вставить("limit", _СхемаInt(1, 1000, 500));
 	Props.Вставить("cursor", _Схема("string", , "Offset cursor видов расчёта."));
 	Props.Вставить("include_query", _Схема("boolean", , "Вернуть использованный read-only запрос."));
-	Props.Вставить("include_raw_rows", _Схема("boolean", , "Вернуть технические rows/columns вместе с calculation_types."));
+	Props.Вставить("include_raw_rows", _СхемаBoolean(Ложь, "Вернуть технические rows/columns вместе с calculation_types."));
 	Возврат _Tool("get_calculation_types_map",
 		"Получить карту видов расчёта",
 		"Универсально читает ПланВидовРасчета.<Имя>, чтобы LLM видел реальные виды начислений/удержаний/расчётов и их UUID без привязки к конкретной конфигурации ЗУП.",
@@ -1154,7 +1154,7 @@
 	Props = Новый Структура;
 	Props.Вставить("accounting_register", _Схема("string", , "Опционально: полное имя бухгалтерского регистра, например РегистрБухгалтерии.<Имя>. Если не указано, проверяются доступные бухгалтерские регистры."));
 	Props.Вставить("include_organizations", _Схема("boolean", , "Вернуть организации, реально встречающиеся в бухгалтерских регистрах."));
-	Props.Вставить("include_period", _Схема("boolean", , "Вернуть горизонт данных и количество проводок по бухгалтерским регистрам."));
+	Props.Вставить("include_period", _СхемаBoolean(Истина, "Вернуть горизонт данных и количество проводок по бухгалтерским регистрам."));
 	Props.Вставить("include_closed_periods", _Схема("boolean", , "Вернуть данные похожего на даты запрета регистра сведений, если он есть, разрешён и его поля найдены через metadata."));
 	Props.Вставить("include_accumulation_registers", _Схема("boolean", , "Проверить регистры накопления на наличие данных."));
 	Props.Вставить("include_information_registers", _Схема("boolean", , "Проверить регистры сведений на наличие данных и период, если есть поле Период."));
@@ -1217,7 +1217,7 @@
 	Props.Вставить("cursor", _Схема("string", , "Offset cursor по найденным объектам."));
 	Props.Вставить("include_deleted", _СхемаBoolean(Ложь));
 	Props.Вставить("include_fields", _Схема("array"));
-	Props.Вставить("match_mode", _СхемаЕnum(СписокСтрок("auto,exact,prefix,contains")));
+	Props.Вставить("match_mode", _СхемаЕnum(СписокСтрок("auto,exact,prefix,contains"), "auto"));
 	Props.Вставить("include_matched_fields", _СхемаBoolean(Ложь));
 	Props.Вставить("include_navigation_url", _СхемаBoolean(Ложь));
 	Возврат _Tool("search_objects",
@@ -1269,7 +1269,7 @@
 	Props = Новый Структура;
 	Props.Вставить("type", _Схема("string"));
 	Props.Вставить("include_order", _СхемаBoolean(Ложь));
-	Props.Вставить("include_empty", _Схема("boolean"));
+	Props.Вставить("include_empty", _СхемаBoolean(Ложь));
 	Props.Вставить("limit", _СхемаInt(1, 1000, 100));
 	Props.Вставить("cursor", _Схема("string", , "Offset cursor значений перечисления."));
 	Возврат _Tool("get_enum_values",
@@ -1307,7 +1307,7 @@
 	Props.Вставить("document_type", _Схема("string"));
 	Props.Вставить("uuid", _Схема("string"));
 	Props.Вставить("registers", _Схема("array"));
-	Props.Вставить("include_empty_registers", _Схема("boolean"));
+	Props.Вставить("include_empty_registers", _СхемаBoolean(Ложь));
 	Props.Вставить("include_totals_effect", _Схема("boolean"));
 	Props.Вставить("summary_only", _Схема("boolean"));
 	Props.Вставить("row_limit_per_register", _СхемаInt(1, 1000, 50));
@@ -1354,7 +1354,7 @@
 	Props.Вставить("report", _Схема("string"));
 	Props.Вставить("variant", _Схема("string"));
 	Props.Вставить("parameters", _СхемаОбъект());
-	Props.Вставить("output_format", _СхемаЕnum(СписокСтрок("table,json,text")));
+	Props.Вставить("output_format", _СхемаЕnum(СписокСтрок("table,json,text"), "table"));
 	Props.Вставить("limit", _СхемаInt(1, 1000, 200));
 	Props.Вставить("cursor", _Схема("string", , "Offset cursor строк отчёта."));
 	Props.Вставить("timeout_seconds", _СхемаInt(1, 180, 60));
@@ -1380,7 +1380,7 @@
 	Target.Вставить("required", _МассивСтрок("type,uuid"));
 	Props.Вставить("target", Target);
 
-	Props.Вставить("mode", _СхемаЕnum(СписокСтрок("auto,versions,event_log,status_changes")));
+	Props.Вставить("mode", _СхемаЕnum(СписокСтрок("auto,versions,event_log,status_changes"), "auto"));
 	Props.Вставить("period_from", _Схема("string"));
 	Props.Вставить("period_to", _Схема("string"));
 	Props.Вставить("include_diff", _СхемаBoolean(Ложь));
@@ -1517,10 +1517,13 @@
 	Возврат Стр;
 КонецФункции
 
-Функция _СхемаЕnum(Знач Список)
+Функция _СхемаЕnum(Знач Список, ПоУмолчанию = Неопределено)
 	Стр = Новый Структура;
 	Стр.Вставить("type", "string");
 	Стр.Вставить("enum", Список);
+	Если ПоУмолчанию <> Неопределено Тогда
+		Стр.Вставить("default", ПоУмолчанию);
+	КонецЕсли;
 	Возврат Стр;
 КонецФункции
 

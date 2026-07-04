@@ -651,6 +651,19 @@ Discovery tool. Возвращает справочники, документы,
     "include_virtual_tables": {
       "type": "boolean",
       "default": false
+    },
+    "section": {
+      "type": "string",
+      "enum": ["all", "attributes", "standard_attributes", "tabular_sections", "register_schema", "virtual_tables"]
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000,
+      "default": 100
+    },
+    "cursor": {
+      "type": "string"
     }
   },
   "required": [
@@ -831,8 +844,7 @@ Discovery tool. Возвращает справочники, документы,
       "enum": [
         "rows",
         "table"
-      ],
-      "default": "rows"
+      ]
     },
     "include_column_types": {
       "type": "boolean",
@@ -1392,6 +1404,34 @@ shortcut.
 
 Tool не содержит знаний о дебиторке, кредиторке, авансах или конкретных счетах. Бизнес-смысл задает агент или пользователь через `account_code_prefixes`, `balance_side` и выбранные виды субконто.
 
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "accounting_register": { "type": "string" },
+    "as_of": { "type": "string" },
+    "account_code_prefixes": { "type": "array", "items": { "type": "string" } },
+    "balance_side": { "type": "string", "enum": ["debit", "credit"] },
+    "subconto_kinds": { "type": "array", "items": { "type": "string" } },
+    "group_subconto_index": { "type": "integer", "minimum": 1, "maximum": 3, "default": 1 },
+    "age_subconto_index": { "type": "integer", "minimum": 1, "maximum": 3, "default": 3 },
+    "extra_subconto_indexes": { "type": "array", "items": { "type": "string" } },
+    "age_buckets": { "type": "array", "items": { "type": "string" } },
+    "min_age_days": { "type": "integer", "minimum": 0, "maximum": 100000, "default": 0 },
+    "min_amount": { "type": "number" },
+    "order_by": { "type": "string", "enum": ["amount_desc", "age_desc", "account"] },
+    "include_query": { "type": "boolean" },
+    "include_guidance": { "type": "boolean", "default": false },
+    "limit": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 100 },
+    "cursor": { "type": "string" }
+  },
+  "required": ["account_code_prefixes", "balance_side", "subconto_kinds"],
+  "additionalProperties": false
+}
+```
+
 ### Вход
 
 ```json
@@ -1479,6 +1519,31 @@ Tool не содержит знаний о дебиторке, кредитор�
 
 Tool не знает, что левый или правый набор означает дебиторку, кредиторку, авансы или другой бизнес-смысл.
 
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "accounting_register": { "type": "string" },
+    "as_of": { "type": "string" },
+    "subconto_kinds": { "type": "array", "items": { "type": "string" } },
+    "match_subconto_index": { "type": "integer", "minimum": 1, "maximum": 3, "default": 1 },
+    "left_account_code_prefixes": { "type": "array", "items": { "type": "string" } },
+    "left_balance_side": { "type": "string", "enum": ["debit", "credit"] },
+    "right_account_code_prefixes": { "type": "array", "items": { "type": "string" } },
+    "right_balance_side": { "type": "string", "enum": ["debit", "credit"] },
+    "min_amount": { "type": "number" },
+    "include_query": { "type": "boolean" },
+    "include_guidance": { "type": "boolean", "default": false },
+    "limit": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 100 },
+    "cursor": { "type": "string" }
+  },
+  "required": ["subconto_kinds", "left_account_code_prefixes", "left_balance_side", "right_account_code_prefixes", "right_balance_side"],
+  "additionalProperties": false
+}
+```
+
 ### Вход
 
 ```json
@@ -1554,6 +1619,30 @@ Tool не знает, что левый или правый набор озна�
 ### Назначение
 
 Высокоуровневый быстрый tool для типового вопроса "остатки товара в разрезе складов и организаций". Заменяет цепочку `search_objects -> get_accounting_accounts_map -> run_1c_query` одним MCP-вызовом: находит номенклатуру, читает виды субконто `Номенклатура` и `Склады` из `ПланСчетов.<Имя>.ВидыСубконто`, затем выполняет агрегированный read-only запрос к `РегистрБухгалтерии.<Имя>.Остатки`.
+
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "item_query": { "type": "string" },
+    "item_ref": { "type": "object", "properties": { "type": { "type": "string" }, "uuid": { "type": "string" } }, "required": ["type", "uuid"] },
+    "item_type": { "type": "string" },
+    "as_of": { "type": "string" },
+    "accounting_register": { "type": "string" },
+    "chart": { "type": "string" },
+    "account_code_prefixes": { "type": "array", "items": { "type": "string" } },
+    "item_subconto_name": { "type": "string" },
+    "warehouse_subconto_name": { "type": "string" },
+    "include_zero": { "type": "boolean" },
+    "include_query": { "type": "boolean" },
+    "include_guidance": { "type": "boolean", "default": false },
+    "limit": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 100 }
+  },
+  "additionalProperties": false
+}
+```
 
 ### Вход
 
@@ -1785,6 +1874,9 @@ Tool не знает, что левый или правый набор озна�
     "include_navigation_url": {
       "type": "boolean",
       "default": false
+    },
+    "tabular_section_cursor": {
+      "type": "string"
     }
   },
   "required": [
@@ -1919,6 +2011,9 @@ Tool не знает, что левый или правый набор озна�
     "include_deleted": {
       "type": "boolean",
       "default": false
+    },
+    "cursor": {
+      "type": "string"
     }
   },
   "required": [
@@ -2229,8 +2324,7 @@ Tool не знает, что левый или правый набор озна�
         "e1cib",
         "web_client",
         "thin_client"
-      ],
-      "default": "auto"
+      ]
     },
     "base_url": {
       "type": "string",
@@ -2402,6 +2496,9 @@ Tool не знает, что левый или правый набор озна�
     "include_samples": {
       "type": "boolean",
       "default": false
+    },
+    "cursor": {
+      "type": "string"
     }
   },
   "required": [
@@ -2539,6 +2636,15 @@ Tool не знает, что левый или правый набор озна�
     "include_empty": {
       "type": "boolean",
       "default": false
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000,
+      "default": 100
+    },
+    "cursor": {
+      "type": "string"
     }
   },
   "required": [
@@ -2922,14 +3028,22 @@ Tool не знает, что левый или правый набор озна�
       "default": false
     },
     "include_totals_effect": {
-      "type": "boolean",
-      "default": false
+      "type": "boolean"
     },
     "row_limit_per_register": {
       "type": "integer",
       "minimum": 1,
       "maximum": 1000,
       "default": 50
+    },
+    "summary_only": {
+      "type": "boolean"
+    },
+    "cursor": {
+      "type": "string"
+    },
+    "row_cursor": {
+      "type": "string"
     }
   },
   "required": [
@@ -3231,6 +3345,19 @@ Discovery tool для отчётов: возвращает доступные О
     "include_default_settings": {
       "type": "boolean",
       "default": false
+    },
+    "include_guidance": {
+      "type": "boolean",
+      "default": false
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000,
+      "default": 100
+    },
+    "cursor": {
+      "type": "string"
     }
   },
   "required": [
@@ -3602,6 +3729,9 @@ Discovery tool для отчётов: возвращает доступные О
       "minimum": 1,
       "maximum": 500,
       "default": 20
+    },
+    "cursor": {
+      "type": "string"
     }
   },
   "required": [
