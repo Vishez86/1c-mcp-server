@@ -2,12 +2,14 @@
 
 Универсальный MCP-сервер для безопасного read-only доступа к данным и метаданным 1С:Предприятия 8. Постоянные данные не изменяются; временные таблицы языка запросов 1С разрешены как рабочая область выполнения аналитического запроса.
 
-Сервер реализует протокол **Model Context Protocol (MCP) 2025-11-25** поверх HTTP-сервиса 1С и предоставляет LLM-агентам 34 read-only инструмента согласно спецификации `mcp_1c_tools_spec.md`.
+Сервер реализует протокол **Model Context Protocol (MCP) 2025-11-25** поверх HTTP-сервиса 1С и предоставляет LLM-агентам 35 read-only инструментов согласно спецификации `mcp_1c_tools_spec.md`.
+
+> **Минимальная версия платформы: 1С:Предприятие 8.3.10+.** Tool `get_query_examples` использует `ХешированиеДанных` и `СхемаЗапроса`, доступные с 8.3.10.
 
 ## Возможности
 
 - Полностью read-only: создание/изменение/удаление объектов невозможно.
-- 34 tools: discovery → inspect → search → retrieve → explain → navigate → report → query guidance → generated language docs → data passport.
+- 35 tools: discovery → inspect → search → retrieve → explain → navigate → report → query guidance → generated language docs → data passport → query examples.
 - Allowlist/denylist типов метаданных и полей.
 - Маскирование заданных полей перед передачей ответа в LLM.
 - Лимиты строк, времени и размера результата.
@@ -56,6 +58,9 @@
 | 32 | `run_1c_report` | Выполнение отчёта |
 | 33 | `get_object_history` | История объекта / журнал регистрации |
 | 34 | `get_current_user_context` | Контекст пользователя и базы |
+| 35 | `get_query_examples` | Проверенные шаблоны запросов для объекта (few-shot) |
+
+> `get_query_examples` — единственный tool с классификацией **operational metadata write**: постоянные бизнес-данные 1С не изменяются, но сервер накапливает обезличенные шаблоны успешных `run_1c_query` в журнале регистрации (событие `MCP.QueryExample`) для переиспользования между сессиями агентов. Feature строго opt-in (`query_examples.enabled`, по умолчанию выключен).
 
 ## Подробное описание tools
 
