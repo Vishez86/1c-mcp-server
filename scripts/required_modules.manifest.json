@@ -1,11 +1,12 @@
 {
   "$schema_note": "CR-C: манифест обязательного комплекта модулей MCP-сервера 1С. Источник истины — содержимое каталога src/. Публикация ДОЛЖНА быть атомарной: весь набор одним согласованным комплектом, не подмножеством.",
   "head_reference": "b2e25aab327a9b9810416c324fa1ca10ee5b51c7",
-  "atomic_publish_rule": "MCP_Knowledge публикуется ТОЛЬКО вместе с MCP_Query и MCP_Tools_Impl. Рефакторинг eac2bdb перенёс ДобавитьДоменныеПодсказки в MCP_Knowledge и удалил старые локальные копии, поэтому частичная публикация фатальна: run_1c_query падает с internal_error (ДобавитьДоменныеПодсказки).",
+  "atomic_publish_rule": "MCP_Knowledge публикуется ТОЛЬКО вместе с MCP_Query и MCP_Tools_Impl. Рефакторинг eac2bdb перенёс ДобавитьДоменныеПодсказки в MCP_Knowledge и удалил старые локальные копии, поэтому частичная публикация фатальна: run_1c_query падает с internal_error (ДобавитьДоменныеПодсказки). MCP_Examples публикуется ТОЛЬКО вместе с MCP_Tools_Impl (хук записи в Run1CQuery) и MCP_Tools (регистрация tool get_query_examples): частичная публикация приведёт к вызову несуществующего метода.",
   "common_modules": [
     "MCP_Audit",
     "MCP_Config",
     "MCP_Errors",
+    "MCP_Examples",
     "MCP_History",
     "MCP_JSONRPC",
     "MCP_Knowledge",
@@ -23,7 +24,7 @@
     "MCP_HTTPService"
   ],
   "counts": {
-    "common_modules": 15,
+    "common_modules": 16,
     "http_services": 1
   },
   "critical_coupling": [

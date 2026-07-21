@@ -40,6 +40,7 @@ const EXPECTED_TOOLS = [
   "run_1c_report",
   "get_object_history",
   "get_current_user_context",
+  "get_query_examples",
 ];
 
 function parseArgs(argv) {
@@ -276,6 +277,7 @@ class ContractRunner {
     await this.reportTests();
     await this.negativeTests();
     await this.crossChecks();
+    await this.queryExamplesTests();
 
     return this.summary();
   }
@@ -2255,6 +2257,155 @@ class ContractRunner {
       }
       assert(failures.length === 0, `metadata structure failures: ${JSON.stringify(failures)}`);
       return { checked };
+    });
+  }
+
+  async queryExamplesTests() {
+    // Маркеры уникальны для прогона; suffix identifier-safe (только цифры).
+    const ts = new Date().toISOString().replace(/[^0-9]/g, "").slice(0, 14);
+    const aliasName = `МАРКЕРАЛИАС${ts}`;
+    const paramName = `МАРКЕРПАРАМ${ts}`;
+    const markerLiteral = `КОНТРАКТ_МАРКЕР_${ts}`;
+    const paramValue = `ZZZ_${ts}`;
+    const seedQuery =
+      `ВЫБРАТЬ ПЕРВЫЕ 3 Счета.Код КАК ${aliasName} ` +
+      `ИЗ ПланСчетов.Хозрасчетный КАК Счета ` +
+      `ГДЕ Счета.Наименование <> "${markerLiteral}" И Счета.Код <> &${paramName}`;
+    const seedArgs = { query: seedQuery, parameters: { [paramName]: paramValue }, limit: 3 };
+    // Маркер-литерал/алиас/имя параметра из skeleton исчезают по построению,
+    // поэтому маркерная группа ищется по устойчивым фрагментам канонического skeleton.
+    const SKELETON_FRAGMENTS = ["ПланСчетов.Хозрасчетный", "ПЕРВЫЕ 3", "&Строка1"];
+    const findMarkerGroup = (result) =>
+      (result.examples || []).find((ex) =>
+        SKELETON_FRAGMENTS.every((frag) => String(ex.skeleton || "").includes(frag)));
+
+    // Кейс 7: предусловие — ветвление по enabled.
+    let enabled = false;
+    await this.test("query_examples.precondition_enabled_flag", async () => {
+      const probe = await okTool(this.client, "get_query_examples", {});
+      assert(typeof probe.enabled === "boolean", "get_query_examples must return boolean enabled");
+      enabled = probe.enabled === true;
+      if (!enabled) {
+        assert(probe.source_available === false, "disabled feature must report source_available:false");
+        assert((probe.warnings || []).some((w) => String(w).includes("query_examples_disabled")),
+          "disabled feature must warn query_examples_disabled");
+      }
+      return { enabled };
+    });
+
+    // Кейс 1: сид + выборка.
+    await this.test("query_examples.seed_and_fetch", async () => {
+      if (!enabled) return { skipped: "query_examples disabled" };
+      const seed = await okTool(this.client, "run_1c_query", seedArgs);
+      assert(Array.isArray(seed.rows) && seed.rows.length >= 1, "seed query must return rows");
+      const result = await okTool(this.client, "get_query_examples",
+        { object: "ПланСчетов.Хозрасчетный", days_back: 7, limit: 20 });
+      const group = findMarkerGroup(result);
+      assert(group, "marker skeleton group must be present after seed");
+      assert(typeof group.skeleton === "string" && group.skeleton.length > 0, "skeleton must be a non-empty string");
+      assert(Array.isArray(group.tables) && group.tables.includes("ПланСчетов.Хозрасчетный"),
+        "tables must include seeded object");
+      assert(typeof group.uses === "number" && group.uses >= 1, "uses must be >= 1");
+      assert(typeof group.last_used === "string" && group.last_used.length > 0, "last_used must be present");
+      return { uses: group.uses };
+    });
+
+    // Кейс 2: обезличивание — маркер не утекает нигде в JSON-ответе.
+    await this.test("query_examples.anonymization_no_leak", async () => {
+      if (!enabled) return { skipped: "query_examples disabled" };
+      const result = await okTool(this.client, "get_query_examples",
+        { object: "ПланСчетов.Хозрасчетный", days_back: 7, limit: 20 });
+      const json = JSON.stringify(result);
+      for (const marker of [aliasName, paramName, markerLiteral, paramValue]) {
+        assert(!json.includes(marker), `marker "${marker}" must not leak into response`);
+      }
+      const group = findMarkerGroup(result);
+      assert(group, "marker group must still be found via skeleton fragments");
+      assert(String(group.skeleton).includes("&Строка1"), "string literal must be replaced by &Строка placeholder");
+      return {};
+    });
+
+    // Кейс 3: дедупликация — повтор идентичного сида растит uses, не число examples.
+    await this.test("query_examples.dedup_increments_uses", async () => {
+      if (!enabled) return { skipped: "query_examples disabled" };
+      const before = findMarkerGroup(await okTool(this.client, "get_query_examples",
+        { object: "ПланСчетов.Хозрасчетный", days_back: 7, limit: 20 }));
+      assert(before, "marker group must exist before re-seed");
+      await okTool(this.client, "run_1c_query", seedArgs);
+      const after = findMarkerGroup(await okTool(this.client, "get_query_examples",
+        { object: "ПланСчетов.Хозрасчетный", days_back: 7, limit: 20 }));
+      assert(after, "marker group must exist after re-seed");
+      assert(after.uses > before.uses, `uses must grow (before=${before.uses}, after=${after.uses})`);
+      return { before: before.uses, after: after.uses };
+    });
+
+    // Кейс 4: схема ответа.
+    await this.test("query_examples.response_schema", async () => {
+      const result = await okTool(this.client, "get_query_examples", {});
+      assert(typeof result.enabled === "boolean", "enabled:boolean present");
+      assert(typeof result.source_available === "boolean", "source_available:boolean present");
+      assert(result.period && typeof result.period === "object" && "from" in result.period && "to" in result.period,
+        "period{from,to} present");
+      assert(typeof result.scanned_events === "number", "scanned_events:number present");
+      assert(Array.isArray(result.examples), "examples:array present");
+      assert(!("next_cursor" in result), "next_cursor must be absent (cursor not supported)");
+      return {};
+    });
+
+    // Кейс 5: невалидные аргументы — диагностичная ошибка.
+    await this.test("query_examples.invalid_arguments", async () => {
+      for (const bad of [{ limit: 0 }, { limit: 100 }, { days_back: 0 }]) {
+        const res = await rawTool(this.client, "get_query_examples", bad);
+        assert(res.ok === false, `${JSON.stringify(bad)} must be rejected`);
+        assert(res.error && typeof res.error.code === "string", `${JSON.stringify(bad)} must return diagnostic error`);
+      }
+      return {};
+    });
+
+    // Кейс 6: shape ответа run_1c_query не изменился.
+    await this.test("query_examples.run_1c_query_shape_unchanged", async () => {
+      const q = await okTool(this.client, "run_1c_query", { query: "ВЫБРАТЬ ПЕРВЫЕ 1 1 КАК Один", limit: 1 });
+      for (const field of ["columns", "rows", "row_count"]) {
+        assert(field in q, `run_1c_query result must still contain ${field}`);
+      }
+      assert(!("skeleton" in q) && !("skeleton_hash" in q), "run_1c_query result must not leak example fields");
+      return {};
+    });
+
+    // §10 крит.16: неизвестный object → metadata_not_found, ЖР не сканируется (не зависит от enabled).
+    await this.test("query_examples.unknown_object_metadata_not_found", async () => {
+      const res = await rawTool(this.client, "get_query_examples", { object: `Справочник.НетТакогоОбъекта${ts}` });
+      assert(res.ok === false, "unknown object must be rejected before scanning the event log");
+      assert(res.error?.code === "metadata_not_found", `expected metadata_not_found, got ${res.error?.code}`);
+      return {};
+    });
+
+    // §10 крит.9: only_with_rows=false показывает шаблоны с has_rows=false.
+    await this.test("query_examples.only_with_rows_filter", async () => {
+      if (!enabled) return { skipped: "query_examples disabled" };
+      const zeroAlias = `МАРКЕРНОЛЬ${ts}`;
+      const zeroMarker = `НЕТ_КОДА_${ts}`;
+      const zeroQuery =
+        `ВЫБРАТЬ ПЕРВЫЕ 1 Счета.Код КАК ${zeroAlias} ` +
+        `ИЗ ПланСчетов.Хозрасчетный КАК Счета ГДЕ Счета.Код = "${zeroMarker}"`;
+      const zeroSeed = await okTool(this.client, "run_1c_query", { query: zeroQuery, limit: 1 });
+      assert(zeroSeed.row_count === 0, "zero-row seed must return no rows (has_rows=false)");
+      // ПЕРВЫЕ 1 отличает пустой шаблон от маркерного (ПЕРВЫЕ 3); группа детерминирована по фрагментам.
+      const ZERO_FRAGS = ["ПланСчетов.Хозрасчетный", "ПЕРВЫЕ 1"];
+      const findZero = (result) =>
+        (result.examples || []).find((ex) => ZERO_FRAGS.every((f) => String(ex.skeleton || "").includes(f)));
+      const withoutFilter = await okTool(this.client, "get_query_examples",
+        { object: "ПланСчетов.Хозрасчетный", days_back: 7, limit: 20, only_with_rows: false });
+      const zero = findZero(withoutFilter);
+      if (!zero) {
+        // Мог не попасть в топ-20 (глобальное состояние контура) — не заваливаем прогон (§11 устойчивость).
+        return { skipped: "zero-row template beyond top-20 in only_with_rows=false view" };
+      }
+      assert(zero.config_version_match !== undefined, "example must carry config_version_match");
+      const withFilter = await okTool(this.client, "get_query_examples",
+        { object: "ПланСчетов.Хозрасчетный", days_back: 7, limit: 20 });
+      assert(!findZero(withFilter), "has_rows=false template must be hidden when only_with_rows=true (default)");
+      return { verified: true };
     });
   }
 

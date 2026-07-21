@@ -43,5 +43,13 @@
     "max_result_json_bytes": 5242880,
     "max_searched_types_per_call": 100,
     "max_string_length_in_response": 2000
+  },
+
+  "query_examples": {
+    "enabled": false,
+    "scan_cap": 5000,
+    "default_days_back": 30,
+    "max_skeleton_chars": 16384,
+    "debug_skip": false
   }
 }
