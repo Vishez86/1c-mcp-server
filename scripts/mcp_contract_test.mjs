@@ -2364,7 +2364,7 @@ class ContractRunner {
 
     // Кейс 6: shape ответа run_1c_query не изменился.
     await this.test("query_examples.run_1c_query_shape_unchanged", async () => {
-      const q = await okTool(this.client, "run_1c_query", { query: "ВЫБРАТЬ ПЕРВЫЕ 1 1 КАК Один", limit: 1 });
+      const q = await okTool(this.client, "run_1c_query", { query: "ВЫБРАТЬ ПЕРВЫЕ 1 Счета.Код КАК Код ИЗ ПланСчетов.Хозрасчетный КАК Счета", limit: 1 });
       for (const field of ["columns", "rows", "row_count"]) {
         assert(field in q, `run_1c_query result must still contain ${field}`);
       }
