@@ -996,6 +996,29 @@ shortcut.
   `hint`, `available_fields`, `see_also`. Если запрос был остановлен
   валидацией, возвращать `validation_errors[]` с `code`, `message`, `location`,
   `hint`, `see_also`.
+- Pre-flight проверка источников и полей обычных таблиц выполняется **до**
+  `Запрос.Выполнить()` и не отключается флагом `validate_before_run=false`:
+  - несуществующая табличная часть в источнике `<Вид>.<Имя>.<ИмяТЧ>` →
+    `error.code = validation_failed_before_run`, вложенный
+    `error_code = tabular_part_not_found`, `stage = validation`, поля
+    `object`, `tabular_part`, `available_tabular_parts`, `did_you_mean`;
+  - несуществующее поле, адресованное псевдонимом (проверяется только первый
+    сегмент пути) → вложенный `error_code = field_not_found`, поля `alias`,
+    `field`, `field_path`, `available_fields`, `available_fields_source`
+    (`metadata_object` | `tabular_part` | `constant`), `did_you_mean`;
+  - у таблицы константы допустимо единственное содержательное поле `Значение`;
+  - сравнение имён регистронезависимое (язык запросов 1С регистронезависим);
+  - любая конструкция, разобранная неоднозначно (временные таблицы, подзапросы,
+    служебные таблицы платформы, виды без надёжной интроспекции), пропускается
+    в движок без ошибки: ложный отказ валидного запроса недопустим.
+- Совпадение псевдонима с именем табличной части другой таблицы того же запроса
+  возвращается как `warning` в `validation_warnings[]` — и при успехе, и при
+  ошибке выполнения, — но запрос не блокируется.
+- Код ошибки выводится из стадии: `stage = validation` →
+  `validation_failed_before_run`, `stage = query_execute` →
+  `query_execute_error`. Комбинация `stage = query_execute` с кодом, содержащим
+  `validation`, является дефектом. Уточняющие коды `field_not_found` и
+  `access_denied` на стадии выполнения сохраняются.
 - При `row_count=0` для бухгалтерских виртуальных таблиц с позиционными
   `Субконто*` добавлять warning о возможном несовпадении позиции аналитики со
   счётом; этот warning не должен включать полный `query_guidance` сам по себе.
@@ -1047,6 +1070,8 @@ shortcut.
 ### Ошибки
 
 Типовые error codes: `invalid_arguments`, `metadata_not_found`, `type_not_allowed`, `field_not_allowed`, `object_not_found`, `access_denied`, `result_too_large`, `internal_error`. Для этого tool могут быть добавлены специализированные коды, описанные в разделе 9.
+
+Специализированные коды: `query_validation_failed` (провал статической валидации), `validation_failed_before_run` (pre-flight отказ до вызова движка: поле виртуальной таблицы, поле обычной таблицы, табличная часть), `field_not_found`, `query_execute_error` (падение в движке 1С), `query_timeout`.
 
 
 ---
