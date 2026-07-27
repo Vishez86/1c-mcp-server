@@ -1499,6 +1499,119 @@ class ContractRunner {
       return { register: accumulationRegister.fullName, vt: target.name, availableFieldsCount: availableFields.length };
     });
 
+    await this.test("negative.run_1c_query_tabular_part_rejected_pre_flight", async () => {
+      // ТЗ pre-flight полей/ТЧ, F-01: несуществующая табличная часть в источнике
+      // <Вид>.<Имя>.<ИмяТЧ> отсекается ДО движка.
+      const fixture = this.context.catalogWithTabular;
+      if (!fixture?.tabularSection?.name) return { skipped: true, reason: "no tabular section fixture" };
+      const result = await rawTool(this.client, "run_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Т.Ссылка ИЗ ${fixture.full_name}.ТабличнаяЧастьКоторойТочноНет КАК Т`,
+        limit: 1,
+      });
+      const code = result.error_code || result.error?.error_code;
+      const topCode = result.error?.code;
+      const object = result.object || result.error?.object;
+      const parts = result.available_tabular_parts || result.error?.available_tabular_parts || [];
+      const platformMessage = result.platform_message || result.error?.platform_message;
+      assert(result.ok === false, "non-existent tabular part must fail");
+      assert(code === "tabular_part_not_found", `expected tabular_part_not_found, got: ${code}`);
+      assert(topCode === "validation_failed_before_run", `error.code must be validation_failed_before_run, got: ${topCode}`);
+      assert(object === fixture.full_name, `unexpected object: ${object}`);
+      assert(parts.includes(fixture.tabularSection.name), "available_tabular_parts must list the real tabular section");
+      assert(!platformMessage, "engine must not be called: platform_message must be absent");
+      assert(result.error?.details?.stage === "validation", `stage must be validation, got: ${result.error?.details?.stage}`);
+      return { object, availableTabularParts: parts.slice(0, 8), code };
+    });
+
+    await this.test("negative.run_1c_query_object_field_rejected_pre_flight", async () => {
+      // F-02: несуществующее поле обычной таблицы отсекается ДО движка,
+      // available_fields заполнен реальным составом.
+      const fixture = this.context.genericDocument || this.context.genericCatalog;
+      if (!fixture) return { skipped: true, reason: "no document/catalog fixture" };
+      const result = await rawTool(this.client, "run_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Д.ПолеКоторогоТочноНет ИЗ ${fixture.full_name} КАК Д`,
+        limit: 1,
+      });
+      const code = result.error_code || result.error?.error_code;
+      const topCode = result.error?.code;
+      const availableFields = result.available_fields || result.error?.available_fields || [];
+      const source = result.available_fields_source || result.error?.available_fields_source;
+      const field = result.field || result.error?.field;
+      const platformMessage = result.platform_message || result.error?.platform_message;
+      assert(result.ok === false, "non-existent object field must fail");
+      assert(code === "field_not_found", `expected field_not_found, got: ${code}`);
+      assert(topCode === "validation_failed_before_run", `error.code must be validation_failed_before_run, got: ${topCode}`);
+      assert(field === "ПолеКоторогоТочноНет", `unexpected field: ${field}`);
+      assert(source === "metadata_object", `available_fields_source must be metadata_object, got: ${source}`);
+      assert(availableFields.includes("Ссылка"), "available_fields must include the standard Ссылка attribute");
+      assert(!platformMessage, "engine must not be called: platform_message must be absent");
+      return { object: fixture.full_name, availableFieldsCount: availableFields.length, code };
+    });
+
+    await this.test("regression.run_1c_query_tabular_part_standard_fields_not_rejected", async () => {
+      // NF-02: Ссылка и НомерСтроки есть у таблицы любой табличной части, но в
+      // интроспекции ТЧ.Реквизиты их нет. Оракул обязан их знать, иначе ложный отказ.
+      const fixture = this.context.catalogWithTabular;
+      if (!fixture?.tabularSection?.name) return { skipped: true, reason: "no tabular section fixture" };
+      const result = await rawTool(this.client, "run_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Т.Ссылка, Т.НомерСтроки ИЗ ${fixture.full_name}.${fixture.tabularSection.name} КАК Т`,
+        limit: 1,
+      });
+      const code = result.error_code || result.error?.error_code;
+      assert(code !== "field_not_found" && code !== "validation_failed_before_run",
+        `tabular part Ссылка/НомерСтроки must not be pre-flight rejected, got: ${code}`);
+      assert(result.ok === true, `valid tabular-part query must succeed: ${JSON.stringify(result.error || {}).slice(0, 400)}`);
+      return { table: `${fixture.full_name}.${fixture.tabularSection.name}`, rows: result.rows?.length || 0 };
+    });
+
+    await this.test("regression.run_1c_query_accounting_register_fields_not_pre_flight_rejected", async () => {
+      // NF-02: у основной таблицы регистра бухгалтерии поля производные по стороне
+      // (СуммаДт/СуммаКт, СчетДт/СчетКт, Субконто*), поэтому оракула нет и проверка
+      // полей не выполняется. Ложный отказ здесь недопустим.
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) return { skipped: true, reason: "no accounting register" };
+      const result = await rawTool(this.client, "run_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Рег.Регистратор, Рег.Период, Рег.СуммаДт ИЗ ${accountingRegister.fullName} КАК Рег`,
+        limit: 1,
+      });
+      const code = result.error_code || result.error?.error_code;
+      assert(code !== "validation_failed_before_run",
+        `accounting register main-table fields must not be pre-flight rejected, got: ${code}`);
+      return { register: accountingRegister.fullName, ok: result.ok === true, code: code || null };
+    });
+
+    await this.test("tool.run_1c_query_alias_collides_with_tabular_part_warns", async () => {
+      // F-04: псевдоним, совпадающий с именем ТЧ другой таблицы запроса, даёт warning,
+      // но НЕ блокирует запрос. Проверяем через validate_1c_query (тот же модуль).
+      const fixture = this.context.catalogWithTabular;
+      if (!fixture?.tabularSection?.name) return { skipped: true, reason: "no tabular section fixture" };
+      const ts = fixture.tabularSection.name;
+      const result = await okTool(this.client, "validate_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 ${ts}.Ссылка ИЗ ${fixture.full_name}.${ts} КАК ${ts} ВНУТРЕННЕЕ СОЕДИНЕНИЕ ${fixture.full_name} КАК Осн ПО ${ts}.Ссылка = Осн.Ссылка`,
+        strict: true,
+        explain: true,
+      });
+      assert(result.valid === true, `alias collision must warn, not block: ${JSON.stringify(result.errors || [])}`);
+      assert((result.warnings || []).some((w) => w.includes("совпадает с именем табличной части")),
+        `alias collision warning is missing: ${JSON.stringify(result.warnings || [])}`);
+      return { table: fixture.full_name, tabularSection: ts, warnings: result.warnings };
+    });
+
+    await this.test("regression.run_1c_query_distinct_aliases_no_collision_warning", async () => {
+      // F-04, T3-8/T3-6: при корректных различных псевдонимах предупреждения нет.
+      const fixture = this.context.catalogWithTabular;
+      if (!fixture?.tabularSection?.name) return { skipped: true, reason: "no tabular section fixture" };
+      const result = await okTool(this.client, "validate_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 ТЧ.Ссылка ИЗ ${fixture.full_name}.${fixture.tabularSection.name} КАК ТЧ`,
+        strict: true,
+        explain: true,
+      });
+      assert(result.valid === true, "single tabular-part source must stay valid");
+      assert(!(result.warnings || []).some((w) => w.includes("совпадает с именем табличной части")),
+        `no collision warning expected: ${JSON.stringify(result.warnings || [])}`);
+      return { table: `${fixture.full_name}.${fixture.tabularSection.name}`, warnings: result.warnings };
+    });
+
     await this.test("tool.run_1c_query_accounting_balance_subconto", async () => {
       const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
       if (!accountingRegister) {
