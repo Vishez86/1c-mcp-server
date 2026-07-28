@@ -41,6 +41,8 @@ const EXPECTED_TOOLS = [
   "get_object_history",
   "get_current_user_context",
   "get_query_examples",
+  "list_legal_sources",
+  "get_legal_source_guide",
 ];
 
 function parseArgs(argv) {
@@ -1247,6 +1249,42 @@ class ContractRunner {
         accountingRegisters: result.accounting_registers.length,
         accumulationChecked: result.accumulation_registers_checked,
       };
+    });
+
+    await this.test("tool.list_legal_sources", async () => {
+      const result = await okTool(this.client, "list_legal_sources", {});
+      assert(Array.isArray(result.sources), "sources must be an array");
+      assert(result.sources.length >= 1, "registry must contain at least one source");
+      assert(typeof result.total === "number", "total must be a number");
+      const pravo = result.sources.find((s) => s.id === "pravo_gov_ru");
+      assert(pravo, "embedded source pravo_gov_ru must be present");
+      assert(Array.isArray(pravo.coverage_areas) && pravo.coverage_areas.length > 0, "coverage_areas must be non-empty");
+      assert(pravo.api_available === true, "pravo_gov_ru must advertise api_available");
+      const actual = result.sources.find((s) => s.id === "pravo_gov_ru_actual");
+      assert(actual, "embedded source pravo_gov_ru_actual must be present");
+      assert(result.policy?.internet_search_forbidden === true, "policy.internet_search_forbidden must be true");
+      const filtered = await okTool(this.client, "list_legal_sources", { area: "налог" });
+      assert(filtered.sources.some((s) => s.id === "pravo_gov_ru"), "area filter 'налог' must keep pravo_gov_ru");
+      return { total: result.total, filteredTotal: filtered.total };
+    });
+
+    await this.test("tool.get_legal_source_guide", async () => {
+      const result = await okTool(this.client, "get_legal_source_guide", { source_id: "pravo_gov_ru" });
+      assert(result.source_id === "pravo_gov_ru", `unexpected source_id: ${result.source_id}`);
+      assert(typeof result.guide === "string" && result.guide.length > 500, "guide must be a substantial text");
+      assert(result.guide.includes("publication.pravo.gov.ru"), "guide must mention the portal");
+      assert(result.links?.document_card_template?.includes("{eoNumber}"), "links must include document card template");
+      assert(result.links?.document_pdf_template?.includes("{eoNumber}"), "links must include pdf template");
+      assert(result.policy?.internet_search_forbidden === true, "policy.internet_search_forbidden must be true");
+      return { guideLength: result.guide.length, storage: result.storage };
+    });
+
+    await this.test("negative.get_legal_source_guide_unknown_source", async () => {
+      const result = await rawTool(this.client, "get_legal_source_guide", { source_id: "no_such_source" });
+      assert(result.ok === false, "unknown source_id must fail");
+      assert(result.error?.code === "invalid_arguments", `expected invalid_arguments, got: ${result.error?.code}`);
+      assert(String(result.error?.message || "").includes("list_legal_sources"), "error must point to list_legal_sources");
+      return { code: result.error?.code };
     });
 
     await this.test("tool.run_1c_query_temporary_table_package", async () => {
