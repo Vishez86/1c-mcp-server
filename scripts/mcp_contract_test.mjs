@@ -766,7 +766,13 @@ class ContractRunner {
       }
 
       const result = await okTool(this.client, "validate_1c_query", {
-        query: `ВЫБРАТЬ ПЕРВЫЕ 10 ТЧ.Ссылка КАК Документ, СУММА(ТЧ.Сумма) КАК Сумма ИЗ ${documentWithTabular.full_name}.${documentWithTabular.tabularSection.name} КАК ТЧ ВНУТРЕННЕЕ СОЕДИНЕНИЕ ${accountingRegister.fullName} КАК Рег ПО Рег.Регистратор = ТЧ.Ссылка СГРУППИРОВАТЬ ПО ТЧ.Ссылка`,
+        // Основная таблица регистра нужна по существу: кейс проверяет именно риск
+        // умножения строк при соединении табличной части с записями регистра, а
+        // ДвиженияССубконто отдаёт готовые пары Дт+Кт и умножала бы строки иначе.
+        // Исключение объявлено штатным маркером, как требует §1.
+        query: `ВЫБРАТЬ ПЕРВЫЕ 10 ТЧ.Ссылка КАК Документ, СУММА(ТЧ.Сумма) КАК Сумма ИЗ ${documentWithTabular.full_name}.${documentWithTabular.tabularSection.name} КАК ТЧ ВНУТРЕННЕЕ СОЕДИНЕНИЕ\n`
+          + "// СТАНДАРТ-ИСКЛЮЧЕНИЕ: base_register_table_without_vt_check — кейс проверяет умножение строк на записях регистра, ДвиженияССубконто отдаёт пары Дт+Кт и меняет саму проверяемую семантику\n"
+          + `${accountingRegister.fullName} КАК Рег ПО Рег.Регистратор = ТЧ.Ссылка СГРУППИРОВАТЬ ПО ТЧ.Ссылка`,
         strict: true,
         explain: true,
       });
@@ -788,7 +794,11 @@ class ContractRunner {
         return { skipped: true, reason: "no accounting register in metadata" };
       }
       const result = await okTool(this.client, "validate_1c_query", {
-        query: `ВЫБРАТЬ ПЕРВЫЕ 10 Рег.Регистратор КАК Регистратор, Субконто.Значение КАК Субконто ИЗ ${accountingRegister.fullName} КАК Рег ЛЕВОЕ СОЕДИНЕНИЕ ${accountingRegister.fullName}.Субконто КАК Субконто ПО Рег.Период = Субконто.Период И Рег.Регистратор = Субконто.Регистратор И Рег.НомерСтроки = Субконто.НомерСтроки`,
+        // Поле внешнего соединения обёрнуто в ЕСТЬNULL: §4.4 стандартов требует этого для
+        // КАЖДОГО поля присоединяемой таблицы, попадающего в выборку, а не только в условие.
+        // Соединение с компаньоном .Субконто — документированный паттерн §1.1, поэтому
+        // основная таблица движений здесь допустима без объявленного исключения.
+        query: `ВЫБРАТЬ ПЕРВЫЕ 10 Рег.Регистратор КАК Регистратор, ЕСТЬNULL(Субконто.Значение, НЕОПРЕДЕЛЕНО) КАК Субконто ИЗ ${accountingRegister.fullName} КАК Рег ЛЕВОЕ СОЕДИНЕНИЕ ${accountingRegister.fullName}.Субконто КАК Субконто ПО Рег.Период = Субконто.Период И Рег.Регистратор = Субконто.Регистратор И Рег.НомерСтроки = Субконто.НомерСтроки`,
         strict: true,
         explain: true,
       });
@@ -1235,6 +1245,13 @@ class ContractRunner {
       assert(Array.isArray(result.organizations), "organizations must be an array");
       assert(result.data_period && typeof result.data_period === "object", "data_period must be present");
       assert(Array.isArray(result.accounting_registers), "accounting_registers must be an array");
+      // Внутренний запрос паспорта не должен отклоняться собственными правилами
+      // предвалидатора: period_error означает, что сервер зарезал сам себя, и период
+      // данных молча приходит пустым (регресс от base_register_table_without_vt_check).
+      for (const register of result.accounting_registers) {
+        assert(register.period_error === undefined,
+          `passport period query rejected for ${register.register}: ${register.period_error}`);
+      }
       assert(Array.isArray(result.closed_periods), "closed_periods must be an array");
       assert(result.accumulation_registers && typeof result.accumulation_registers === "object", "accumulation_registers must be an object");
       assert(result.accumulation_registers.cache_hit === false || result.accumulation_registers.cache_hit === true, "accumulation_registers.cache_hit must be boolean");
