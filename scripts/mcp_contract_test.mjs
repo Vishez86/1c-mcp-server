@@ -1233,6 +1233,13 @@ class ContractRunner {
       assert(Array.isArray(result.organizations), "organizations must be an array");
       assert(result.data_period && typeof result.data_period === "object", "data_period must be present");
       assert(Array.isArray(result.accounting_registers), "accounting_registers must be an array");
+      // Внутренний запрос паспорта не должен отклоняться собственными правилами
+      // предвалидатора: period_error означает, что сервер зарезал сам себя, и период
+      // данных молча приходит пустым (регресс от base_register_table_without_vt_check).
+      for (const register of result.accounting_registers) {
+        assert(register.period_error === undefined,
+          `passport period query rejected for ${register.register}: ${register.period_error}`);
+      }
       assert(Array.isArray(result.closed_periods), "closed_periods must be an array");
       assert(result.accumulation_registers && typeof result.accumulation_registers === "object", "accumulation_registers must be an object");
       assert(result.accumulation_registers.cache_hit === false || result.accumulation_registers.cache_hit === true, "accumulation_registers.cache_hit must be boolean");
