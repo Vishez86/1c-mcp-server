@@ -15,6 +15,15 @@ description: >
 Rules and patterns for writing correct 1C:Enterprise query language (язык запросов 1С).
 Queries are executed via the `execute_query` tool/endpoint.
 
+## Mandatory: virtual-table parameter playbook
+
+Before writing a query to any virtual table, read
+[`virtual-table-parameters-playbook.md`](virtual-table-parameters-playbook.md).
+Its rule is strict: filters on virtual-table dimensions belong in the virtual
+table parameters, not in `ГДЕ`. On an error, first diagnose the parameter
+count, order, empty positions, and types, then confirm the corrected signature
+by a minimal live query. Do not silently move the filter to `ГДЕ`.
+
 ## CRITICAL: Verify Metadata Before Querying
 
 **NEVER guess or invent metadata object names, attribute names, or tabular section names.** 1C configurations vary greatly — object and field names are unique to each database.
