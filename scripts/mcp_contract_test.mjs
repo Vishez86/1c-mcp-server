@@ -2243,6 +2243,96 @@ class ContractRunner {
       return { validationErrors: validation.errors, runErrorCode: run.error?.code };
     });
 
+    // issue #62: имя типа после ССЫЛКА и внутри ТИП(...) — не разыменование поля.
+    await this.test("positive.validate_vt_param_type_check_forms", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      const catalog = this.context.genericCatalog;
+      if (!accountingRegister || !catalog) return { skipped: true, reason: "no accounting register or catalog fixture" };
+      const forms = {
+        refs: `Субконто1 ССЫЛКА ${catalog.full_name}`,
+        type: `ТИПЗНАЧЕНИЯ(Субконто1) = ТИП(${catalog.full_name})`,
+      };
+      const checked = {};
+      for (const [name, condition] of Object.entries(forms)) {
+        // Условие по значению — в последней позиции (§2), не в позиции условия по счёту.
+        const query = `ВЫБРАТЬ ПЕРВЫЕ 1 Данные.Счет КАК Счет `
+          + `ИЗ ${accountingRegister.fullName}.Остатки(&Дата, , , ${condition}) КАК Данные`;
+        const validation = await okTool(this.client, "validate_1c_query", {
+          query,
+          parameters: { Дата: { kind: "datetime", value: CONTRACT_PERIOD.end } },
+          strict: true,
+          explain: true,
+        });
+        assert(!(validation.errors || []).some((error) => error.code === "vt_param_field_error"),
+          `${name}: имя типа принято за разыменование: ${JSON.stringify(validation.errors)}`);
+        checked[name] = validation.valid;
+      }
+      return checked;
+    });
+
+    // issue #60: запятая в составном ИНДЕКСИРОВАТЬ ПО — не разделитель источников.
+    await this.test("positive.validate_composite_index_by", async () => {
+      const fixture = this.context.genericCatalog;
+      if (!fixture) return { skipped: true, reason: "no generic catalog fixture" };
+      // Только стандартные реквизиты: фикстура гарантирует supports_ref, но не Код/Наименование.
+      const query = `ВЫБРАТЬ Источник.Ссылка КАК Ссылка, Источник.ПометкаУдаления КАК ПометкаУдаления `
+        + `ПОМЕСТИТЬ ВТСоставнойИндекс ИЗ ${fixture.full_name} КАК Источник `
+        + `ИНДЕКСИРОВАТЬ ПО Ссылка, ПометкаУдаления; `
+        + `ВЫБРАТЬ ПЕРВЫЕ 1 ВТСоставнойИндекс.Ссылка ИЗ ВТСоставнойИндекс КАК ВТСоставнойИндекс`;
+      const result = await okTool(this.client, "validate_1c_query", { query, strict: true, explain: true });
+      assert(!(result.errors || []).some((error) => error.code === "unknown_query_source"),
+        `второе поле составного индекса принято за источник: ${JSON.stringify(result.errors)}`);
+      assert(result.valid === true, `composite index query must be valid: ${JSON.stringify(result.errors)}`);
+      return { valid: result.valid };
+    });
+
+    // issue #60, защита: настоящий неизвестный источник после ИЗ по-прежнему отклоняется.
+    await this.test("negative.validate_unknown_source_still_rejected", async () => {
+      const result = await okTool(this.client, "validate_1c_query", {
+        query: "ВЫБРАТЬ ПЕРВЫЕ 1 Т.Код КАК Код ИЗ НеобъявленнаяТаблицаКонтрактногоТеста КАК Т",
+        strict: true,
+        explain: true,
+      });
+      assert(result.valid === false, "unknown source must stay invalid");
+      assert((result.errors || []).some((error) => error.code === "unknown_query_source"),
+        `unknown_query_source is missing: ${JSON.stringify(result.errors)}`);
+      return { errors: result.errors };
+    });
+
+    // issue #61: DROP — англ. эквивалент УНИЧТОЖИТЬ, а не признак DDL.
+    await this.test("positive.validate_drop_temp_table", async () => {
+      const fixture = this.context.genericCatalog;
+      if (!fixture) return { skipped: true, reason: "no generic catalog fixture" };
+      const body = (destroy) => `ВЫБРАТЬ Источник.Ссылка КАК Ссылка ПОМЕСТИТЬ ВТПервая ИЗ ${fixture.full_name} КАК Источник; `
+        + "ВЫБРАТЬ ВТПервая.Ссылка КАК Ссылка ПОМЕСТИТЬ ВТВторая ИЗ ВТПервая КАК ВТПервая; "
+        + `${destroy} ВТПервая; `
+        + "ВЫБРАТЬ ПЕРВЫЕ 1 ВТВторая.Ссылка ИЗ ВТВторая КАК ВТВторая";
+      const cyrillic = await okTool(this.client, "validate_1c_query", { query: body("УНИЧТОЖИТЬ"), strict: true, explain: true });
+      assert(cyrillic.valid === true, `УНИЧТОЖИТЬ form must be valid: ${JSON.stringify(cyrillic.errors)}`);
+      const english = await okTool(this.client, "validate_1c_query", { query: body("DROP"), strict: true, explain: true });
+      assert(!(english.errors || []).some((error) => error.code === "forbidden_keyword"),
+        `DROP must not be a forbidden keyword: ${JSON.stringify(english.errors)}`);
+      assert(english.valid === true, `DROP form must be valid: ${JSON.stringify(english.errors)}`);
+      return { cyrillic: cyrillic.valid, english: english.valid };
+    });
+
+    // issue #61, защита: уничтожение чего-либо кроме объявленной ВТ отклоняется.
+    await this.test("negative.validate_drop_non_temp_table", async () => {
+      const fixture = this.context.genericCatalog;
+      if (!fixture) return { skipped: true, reason: "no generic catalog fixture" };
+      const result = await okTool(this.client, "validate_1c_query", {
+        query: `ВЫБРАТЬ Источник.Ссылка КАК Ссылка ПОМЕСТИТЬ ВТПервая ИЗ ${fixture.full_name} КАК Источник; `
+          + `DROP TABLE ${fixture.full_name}; `
+          + "ВЫБРАТЬ ПЕРВЫЕ 1 ВТПервая.Ссылка ИЗ ВТПервая КАК ВТПервая",
+        strict: true,
+        explain: true,
+      });
+      assert(result.valid === false, "DROP of a non-temporary table must stay invalid");
+      assert((result.errors || []).some((error) => error.code === "drop_target_not_temporary_table"),
+        `drop_target_not_temporary_table is missing: ${JSON.stringify(result.errors)}`);
+      return { errors: result.errors };
+    });
+
     await this.test("negative.validate_plain_batch_without_temp_tables", async () => {
       const first = this.context.genericCatalog;
       const second = this.context.genericDocument || this.context.catalogWithTabular || first;
