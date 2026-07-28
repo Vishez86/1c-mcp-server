@@ -2503,21 +2503,29 @@ class ContractRunner {
         `ИЗ ПланСчетов.Хозрасчетный КАК Счета ГДЕ Счета.Код = "${zeroMarker}"`;
       const zeroSeed = await okTool(this.client, "run_1c_query", { query: zeroQuery, limit: 1 });
       assert(zeroSeed.row_count === 0, "zero-row seed must return no rows (has_rows=false)");
-      // ПЕРВЫЕ 1 отличает пустой шаблон от маркерного (ПЕРВЫЕ 3); группа детерминирована по фрагментам.
+      // ПЕРВЫЕ 1 отличает пустой шаблон от маркерного (ПЕРВЫЕ 3). Но обезличенный skeleton
+      // zero-запроса не уникален для прогона (маркер-литерал -> &Строка1), поэтому фрагменты
+      // могут совпасть с ПОСТОРОННИМ ПЕРВЫЕ-1-запросом другой сессии, вернувшим строки. Чтобы
+      // тест не был хрупок к глобальному состоянию контура: выбираем ИМЕННО пустую группу по
+      // row_count_max===0 (у сторонней rows-группы он >0; если тот же skeleton где-то вернул
+      // строки — группа схлопнется с row_count_max>0 и мы её не выберем => корректный skip),
+      // а скрытость проверяем по ТОЧНОМУ совпадению skeleton, а не по общим фрагментам.
       const ZERO_FRAGS = ["ПланСчетов.Хозрасчетный", "ПЕРВЫЕ 1"];
       const findZero = (result) =>
-        (result.examples || []).find((ex) => ZERO_FRAGS.every((f) => String(ex.skeleton || "").includes(f)));
+        (result.examples || []).find((ex) =>
+          ex.row_count_max === 0 && ZERO_FRAGS.every((f) => String(ex.skeleton || "").includes(f)));
       const withoutFilter = await okTool(this.client, "get_query_examples",
         { object: "ПланСчетов.Хозрасчетный", days_back: 7, limit: 20, only_with_rows: false });
       const zero = findZero(withoutFilter);
       if (!zero) {
-        // Мог не попасть в топ-20 (глобальное состояние контура) — не заваливаем прогон (§11 устойчивость).
-        return { skipped: "zero-row template beyond top-20 in only_with_rows=false view" };
+        // Не попал в топ-20 либо тот же skeleton где-то вернул строки — не заваливаем прогон (§11 устойчивость).
+        return { skipped: "zero-row template not isolable in only_with_rows=false view (contour state)" };
       }
       assert(zero.config_version_match !== undefined, "example must carry config_version_match");
       const withFilter = await okTool(this.client, "get_query_examples",
         { object: "ПланСчетов.Хозрасчетный", days_back: 7, limit: 20 });
-      assert(!findZero(withFilter), "has_rows=false template must be hidden when only_with_rows=true (default)");
+      const stillVisible = (withFilter.examples || []).some((ex) => ex.skeleton === zero.skeleton);
+      assert(!stillVisible, "has_rows=false template (row_count_max=0) must be hidden when only_with_rows=true (default)");
       return { verified: true };
     });
   }

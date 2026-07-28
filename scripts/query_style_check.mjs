@@ -1,0 +1,723 @@
+#!/usr/bin/env node
+// Статическая проверка текста запроса 1С на соответствие tz_standarty_razrabotki.md.
+// Проверяет только то, что видно в тексте запроса, без обращения к 1С.
+//
+// Использование:
+//   node scripts/query_style_check.mjs <файл.txt> [<файл2.txt> ...]
+//   cat query.txt | node scripts/query_style_check.mjs -
+//
+// Код возврата: 0 — нарушений уровня error нет; 1 — есть error; 2 — ошибка запуска.
+//
+// Программно:
+//   import { checkQuery } from "./query_style_check.mjs";
+//   const findings = checkQuery(text);
+
+import { readFileSync } from "node:fs";
+
+// Строковые литералы и комментарии исключаются из большинства проверок:
+// внутри них кириллица/латиница/Ё — данные, а не идентификаторы.
+function stripLiteralsAndComments(text) {
+  let out = "";
+  let i = 0;
+  while (i < text.length) {
+    const ch = text[i];
+    if (ch === '"') {
+      // строковый литерал 1С; удвоенная кавычка внутри — экранирование
+      out += " ";
+      i += 1;
+      while (i < text.length) {
+        if (text[i] === '"') {
+          if (text[i + 1] === '"') { out += "  "; i += 2; continue; }
+          out += " "; i += 1; break;
+        }
+        out += text[i] === "\n" ? "\n" : " ";
+        i += 1;
+      }
+      continue;
+    }
+    if (ch === "/" && text[i + 1] === "/") {
+      while (i < text.length && text[i] !== "\n") { out += " "; i += 1; }
+      continue;
+    }
+    out += ch;
+    i += 1;
+  }
+  return out;
+}
+
+function lineOf(text, index) {
+  return text.slice(0, index).split("\n").length;
+}
+
+// Документированное исключение, объявленное в тексте запроса:
+//   // СТАНДАРТ-ИСКЛЮЧЕНИЕ: <идентификатор_правила> — <обоснование>
+// Действует на строку маркера и следующую за ней. Обоснование обязательно:
+// маркер без него остаётся нарушением (иначе исключение превращается в штамп).
+const EXCEPTION_RE = /\/\/\s*СТАНДАРТ-ИСКЛЮЧЕНИЕ\s*:\s*([A-Za-z0-9_]+)\s*(?:[—–-]\s*(.*))?$/;
+
+// Формулировки, не являющиеся обоснованием (§ «Документированное исключение»).
+const NON_JUSTIFICATIONS = [
+  /^так удобнее/i,
+  /^не подошл/i,
+  /^нужна детализаци[яю]\s*$/i,
+  /^виртуальная таблица не подошла/i,
+];
+
+function collectExceptions(text) {
+  const suppressed = new Map(); // ruleId -> Set(lineNumbers)
+  const bogus = [];             // маркеры без внятного обоснования
+  const lines = text.split("\n");
+
+  lines.forEach((line, idx) => {
+    const m = EXCEPTION_RE.exec(line.trim());
+    if (!m) return;
+    const ruleId = m[1];
+    const lineNo = idx + 1;
+
+    // Обоснование может продолжаться на следующих строках-комментариях
+    // (формат из §1: маркер, затем перенос текста). Собираем целиком.
+    let reason = (m[2] || "").trim();
+    let last = idx;
+    for (let j = idx + 1; j < lines.length; j += 1) {
+      const next = lines[j].trim();
+      if (!next.startsWith("//")) break;
+      if (EXCEPTION_RE.test(next)) break; // начался следующий маркер
+      reason = (reason + " " + next.replace(/^\/\/\s*/, "")).trim();
+      last = j;
+    }
+
+    const meaningful =
+      reason.length >= 15 && !NON_JUSTIFICATIONS.some((re) => re.test(reason));
+
+    if (!meaningful) {
+      bogus.push({ ruleId, lineNo, reason });
+      return; // подавления нет
+    }
+    if (!suppressed.has(ruleId)) suppressed.set(ruleId, new Set());
+    // Охват: блок комментария целиком + первая строка кода после него.
+    for (let n = lineNo; n <= last + 2; n += 1) suppressed.get(ruleId).add(n);
+  });
+
+  return { suppressed, bogus };
+}
+
+function pushFinding(findings, { id, severity, message, section, text, index, fragment }) {
+  findings.push({
+    id,
+    severity,
+    message,
+    section,
+    line: index === undefined ? null : lineOf(text, index),
+    fragment: fragment ? fragment.trim().slice(0, 120) : null,
+  });
+}
+
+// --- Правила ---------------------------------------------------------------
+
+// §4.3 — буква Ё запрещена в тексте запроса (вне строковых литералов).
+function checkYo(raw, code, findings) {
+  const re = /[А-Яа-яЁёA-Za-z0-9_]*[Ёё][А-Яа-яЁёA-Za-z0-9_]*/g;
+  let m;
+  while ((m = re.exec(code)) !== null) {
+    pushFinding(findings, {
+      id: "style_yo_letter_forbidden",
+      severity: "error",
+      section: "§4.3",
+      message: "Буква «Ё» в тексте запроса запрещена — использовать «Е». " +
+        "Платформенные имена полей пишутся через «Е» (СчетДт, не СчётДт); " +
+        "написание с «Ё» проходит validate_1c_query, но даёт «Поле не найдено» при исполнении.",
+      text: raw,
+      index: m.index,
+      fragment: m[0],
+    });
+  }
+}
+
+// §4.3 — латиница внутри кириллического идентификатора.
+//
+// Различаются два случая, и правило ловит только первый:
+//   ОПЕЧАТКА  — латинская серия внутри кириллического слова, которую не видно
+//               глазом: «Cчет» (латинская C), «СчетDт», «ОCTATKИ». Даёт
+//               «Поле не найдено»/«таблица не найдена» без видимой причины.
+//   ОСОЗНАННО — целый латинский токен: ЕСТЬNULL, ДокументUUID, КонтрагентID.
+//               Такие имена читаются однозначно и ловушки не создают.
+//
+// Признаков нарушения два, и нужен любой из них:
+//   1) серия состоит ТОЛЬКО из букв-двойников — длина роли не играет.
+//      «ОCTATKИ» набрано латиницей на пять букв подряд и от «ОСТАТКИ»
+//      неотличимо; критерий по одной длине это пропускал.
+//   2) серия короче трёх символов — даже если двойников в ней нет.
+//      Одну-две латинские буквы легко задеть случайно при переключённой
+//      раскладке, а осмысленное английское слово почти всегда длиннее.
+const ALLOWED_LATIN_TOKENS = ["NULL", "UUID", "ID"];
+const SUSPICIOUS_RUN_MAX = 2;
+// Латинские буквы, визуально неотличимые от кириллических А,В,С,Е,Н,К,М,О,Р,Т,Х,У.
+const LATIN_HOMOGLYPHS = new Set([..."ABCEHKMOPTXY", ..."acepxyo"]);
+const isAllHomoglyphs = (run) => [...run].every((c) => LATIN_HOMOGLYPHS.has(c));
+
+// Латинские серии внутри слова, которые выглядят как опечатка.
+function suspiciousLatinRuns(word) {
+  const runs = word.match(/[A-Za-z]+/g) || [];
+  return runs.filter((run) => {
+    if (ALLOWED_LATIN_TOKENS.includes(run.toUpperCase())) return false;
+    return isAllHomoglyphs(run) || run.length <= SUSPICIOUS_RUN_MAX;
+  });
+}
+
+function checkMixedScript(raw, code, findings) {
+  const re = /[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё0-9_]*/g;
+  let m;
+  while ((m = re.exec(code)) !== null) {
+    const word = m[0];
+    // Чисто латинское слово — ключевое слово языка (SELECT/FROM/NULL), не идентификатор.
+    if (!/[А-Яа-яЁё]/.test(word)) continue;
+
+    const bad = suspiciousLatinRuns(word);
+    if (bad.length === 0) continue;
+
+    pushFinding(findings, {
+      id: "temporary_table_identifier_mixed_script",
+      severity: "error",
+      section: "§4.3",
+      message: `Латинская вставка «${bad[0]}» внутри кириллического идентификатора ` +
+        `«${word}». Кириллические А,В,Е,К,М,Н,О,Р,С,Т,Х,У визуально неотличимы от латинских, ` +
+        "поэтому такая вставка почти всегда опечатка и даёт «Поле не найдено» без видимой " +
+        `причины. Допустимы токены ${ALLOWED_LATIN_TOKENS.join(", ")} и любые слова от ` +
+        `${SUSPICIOUS_RUN_MAX + 1} символов, В КОТОРЫХ ЕСТЬ хотя бы одна буква без ` +
+        "кириллического двойника (ЕСТЬNULL, ДокументUUID): они читаются однозначно.",
+      text: raw,
+      index: m.index,
+      fragment: word,
+    });
+  }
+}
+
+// §1 «Запрет на использование основной таблицы регистра без перебора виртуальных».
+// Основная таблица = РегистрX.Имя без суффикса виртуальной таблицы и без "(" параметров.
+const VT_SUFFIXES = new Set([
+  "Остатки", "Обороты", "ОстаткиИОбороты", "ОборотыДтКт", "ДвиженияССубконто",
+  "Субконто", "СрезПоследних", "СрезПервых", "База", "ФактическийПериодДействия",
+  "График", "Изменения",
+]);
+
+function checkBaseRegisterTable(raw, code, findings) {
+  const re = /(РегистрБухгалтерии|РегистрНакопления|РегистрСведений|РегистрРасчета)\.([А-Яа-яЁёA-Za-z0-9_]+)(\.([А-Яа-яЁёA-Za-z0-9_]+))?/g;
+  let m;
+  while ((m = re.exec(code)) !== null) {
+    const suffix = m[4];
+    if (suffix && VT_SUFFIXES.has(suffix)) continue;
+    // .База<ИмяБазового> — составное имя виртуальной таблицы регистра расчёта
+    if (suffix && /^База[А-Яа-яЁё]/.test(suffix)) continue;
+    if (suffix) continue; // трёхчленная ссылка на неизвестную ВТ — не наш случай
+    pushFinding(findings, {
+      id: "base_register_table_without_vt_check",
+      severity: "warning",
+      section: "§1 (запрет основной таблицы)",
+      message: "Используется основная (физическая) таблица регистра. Допустимо только " +
+        "после перебора всех виртуальных таблиц этого регистра с фиксацией причины в журнале. " +
+        "Напоминание: Обороты не содержит Регистратор, но ДвиженияССубконто содержит и его, и субконто.",
+      text: raw,
+      index: m.index,
+      fragment: m[0],
+    });
+  }
+}
+
+// Операторы пакета. Псевдонимы действуют только внутри своего оператора:
+// одно и то же имя в разных операторах пакета может означать разные таблицы
+// (в одном — основной источник, в другом — внешне присоединённая ВТ).
+// «;» внутри выражений языка запросов не встречается, поэтому деление надёжно.
+function splitStatements(code) {
+  const parts = [];
+  let start = 0;
+  for (let i = 0; i < code.length; i += 1) {
+    if (code[i] === ";") {
+      parts.push({ text: code.slice(start, i), offset: start });
+      start = i + 1;
+    }
+  }
+  parts.push({ text: code.slice(start), offset: start });
+  return parts;
+}
+
+// Псевдонимы таблиц, присоединённых внешним соединением: их поля могут быть
+// NULL по факту несовпадения пары (§4.4).
+function outerJoinAliases(code) {
+  const aliases = new Set();
+  const re = /(ЛЕВОЕ|ПРАВОЕ|ПОЛНОЕ)\s+(?:ВНЕШНЕЕ\s+)?СОЕДИНЕНИЕ\s+[А-Яа-яЁёA-Za-z0-9_.]+\s+КАК\s+([А-Яа-яЁёA-Za-z0-9_]+)/gi;
+  let m;
+  while ((m = re.exec(code)) !== null) aliases.add(m[2].toUpperCase());
+  return aliases;
+}
+
+// §5.2/§5.3 — ЕСТЬ НЕ NULL для ссылочного поля без парной проверки пустой ссылки.
+function checkEmptyRef(raw, code, findings) {
+  const hasEmptyRefCheck = /ЗНАЧЕНИЕ\s*\(\s*[А-Яа-яЁёA-Za-z0-9_.]+\.ПустаяСсылка\s*\)/i.test(code);
+  if (hasEmptyRefCheck) return;
+
+  for (const stmt of splitStatements(code)) {
+    const outer = outerJoinAliases(stmt.text);
+    const re = /([А-Яа-яЁёA-Za-z0-9_]+)(?:\.([А-Яа-яЁёA-Za-z0-9_]+))?(?:\.[А-Яа-яЁёA-Za-z0-9_]+)*\s+ЕСТЬ\s+НЕ\s+NULL/gi;
+    let m;
+    while ((m = re.exec(stmt.text)) !== null) {
+      // §4.4: поле внешне присоединённой таблицы — проверка «совпала ли пара»,
+      // а не пустоты ссылки. Правило §5.2 к нему не применяется.
+      if (m[2] && outer.has(m[1].toUpperCase())) continue;
+      pushFinding(findings, {
+        id: "empty_reference_not_filtered",
+        severity: "warning",
+        section: "§5.2/§5.3",
+        message: "«ЕСТЬ НЕ NULL» без парной проверки пустой ссылки. Пустая ссылка не равна NULL: " +
+          "для ссылочного поля добавить «<> ЗНАЧЕНИЕ(<Тип>.ПустаяСсылка)» либо разыменовать атрибут. " +
+          "Если поле нессылочное — предупреждение неприменимо.",
+        text: raw,
+        index: stmt.offset + m.index,
+        fragment: m[0],
+      });
+    }
+  }
+}
+
+// §4.4 — поля внешне присоединённой таблицы обязаны быть обёрнуты в ЕСТЬNULL.
+function checkOuterJoinNulls(raw, fullCode, findings) {
+  for (const stmt of splitStatements(fullCode)) {
+    checkOuterJoinNullsInStatement(raw, stmt.text, stmt.offset, findings);
+  }
+}
+
+function checkOuterJoinNullsInStatement(raw, code, baseOffset, findings) {
+  const outer = outerJoinAliases(code);
+  if (outer.size === 0) return;
+
+  // Диапазоны внутри ЕСТЬNULL(...) — там поле уже обработано.
+  const guarded = [];
+  const fn = /ЕСТЬNULL\s*\(/gi;
+  let f;
+  while ((f = fn.exec(code)) !== null) {
+    let depth = 1;
+    let i = f.index + f[0].length;
+    while (i < code.length && depth > 0) {
+      if (code[i] === "(") depth += 1;
+      else if (code[i] === ")") depth -= 1;
+      i += 1;
+    }
+    guarded.push([f.index, i]);
+  }
+  const isGuarded = (pos) => guarded.some(([s, e]) => pos >= s && pos < e);
+
+  // Условия соединения (ПО ...) не требуют обёртки: там сравнение и строит пару.
+  // \b в JS не работает с кириллицей — границы слова проверяются явно.
+  // Лукахед заодно отсекает ПОМЕСТИТЬ/ПОДОБНО, начинающиеся с «ПО».
+  const onRanges = [];
+  const onRe = /(^|[^А-Яа-яЁёA-Za-z0-9_])ПО(?=[^А-Яа-яЁёA-Za-z0-9_]|$)/gi;
+  const stopRe = /(^|[^А-Яа-яЁёA-Za-z0-9_])(ГДЕ|СГРУППИРОВАТЬ|УПОРЯДОЧИТЬ|ИМЕЮЩИЕ|ВЫБРАТЬ|ПОМЕСТИТЬ|ИНДЕКСИРОВАТЬ|ЛЕВОЕ|ПРАВОЕ|ПОЛНОЕ|ВНУТРЕННЕЕ|ОБЪЕДИНИТЬ)(?=[^А-Яа-яЁёA-Za-z0-9_]|$)/i;
+  let o;
+  while ((o = onRe.exec(code)) !== null) {
+    const start = o.index + o[1].length;
+    const after = start + 2;
+    const stop = stopRe.exec(code.slice(after));
+    onRanges.push([start, stop ? after + stop.index : code.length]);
+  }
+  const inOn = (pos) => onRanges.some(([s, e]) => pos >= s && pos < e);
+
+  const reported = new Set();
+  const ref = /([А-Яа-яЁёA-Za-z0-9_]+)\.([А-Яа-яЁёA-Za-z0-9_]+)/g;
+  let m;
+  while ((m = ref.exec(code)) !== null) {
+    if (!outer.has(m[1].toUpperCase())) continue;
+    if (isGuarded(m.index) || inOn(m.index)) continue;
+    // Индикатор совпадения пары — исключение §4.4.
+    if (/^\s+ЕСТЬ\s+(НЕ\s+)?NULL/i.test(code.slice(m.index + m[0].length))) continue;
+
+    const key = m[0].toUpperCase();
+    if (reported.has(key)) continue;
+    reported.add(key);
+
+    pushFinding(findings, {
+      id: "outer_join_field_without_isnull",
+      severity: "warning",
+      section: "§4.4",
+      message: `Поле «${m[0]}» взято из таблицы, присоединённой внешним соединением, ` +
+        "без ЕСТЬNULL. При несовпадении пары оно равно NULL: арифметика даёт NULL, " +
+        "сравнение молча выбрасывает строку из ГДЕ/ИМЕЮЩИЕ, агрегат по колонке из NULL даёт NULL. " +
+        "Обернуть в ЕСТЬNULL со значением ТОГО ЖЕ типа (число → 0, строка → \"\", " +
+        "дата → ДАТАВРЕМЯ(1,1,1), ссылка → ЗНАЧЕНИЕ(<Тип>.ПустаяСсылка), булево → ЛОЖЬ).",
+      text: raw,
+      index: baseOffset + m.index,
+      fragment: m[0],
+    });
+  }
+}
+
+// §2 — отбор по полям виртуальной таблицы во внешнем ГДЕ вместо её параметров.
+// Блокирующее нарушение: параметры ВТ применяются до агрегации, внешний ГДЕ — после.
+function checkFilterOutsideVtParams(raw, fullCode, findings) {
+  const VT = "(?:Остатки|Обороты|ОстаткиИОбороты|ОборотыДтКт|СрезПоследних|СрезПервых|ДвиженияССубконто)";
+
+  for (const stmt of splitStatements(fullCode)) {
+    // Псевдонимы источников-ВТ этого оператора.
+    const vtAliases = new Set();
+    const src = new RegExp(
+      `\\.${VT}\\s*\\([\\s\\S]*?\\)\\s*КАК\\s+([А-Яа-яЁёA-Za-z0-9_]+)`, "gi");
+    let s;
+    while ((s = src.exec(stmt.text)) !== null) vtAliases.add(s[1].toUpperCase());
+    if (vtAliases.size === 0) continue;
+
+    // Границы секции ГДЕ этого оператора.
+    const whereRe = /(^|[^А-Яа-яЁёA-Za-z0-9_])ГДЕ(?=[^А-Яа-яЁёA-Za-z0-9_]|$)/i;
+    const w = whereRe.exec(stmt.text);
+    if (!w) continue;
+    const start = w.index + w[1].length;
+    const stopRe = /(^|[^А-Яа-яЁёA-Za-z0-9_])(СГРУППИРОВАТЬ|УПОРЯДОЧИТЬ|ИМЕЮЩИЕ|ИНДЕКСИРОВАТЬ|ОБЪЕДИНИТЬ|ИТОГИ)(?=[^А-Яа-яЁёA-Za-z0-9_]|$)/i;
+    const stop = stopRe.exec(stmt.text.slice(start + 3));
+    const where = stmt.text.slice(start, stop ? start + 3 + stop.index : stmt.text.length);
+
+    const reported = new Set();
+    const ref = /([А-Яа-яЁёA-Za-z0-9_]+)\.([А-Яа-яЁёA-Za-z0-9_]+)/g;
+    let m;
+    while ((m = ref.exec(where)) !== null) {
+      if (!vtAliases.has(m[1].toUpperCase())) continue;
+      if (reported.has(m[0].toUpperCase())) continue;
+      reported.add(m[0].toUpperCase());
+      pushFinding(findings, {
+        id: "vt_filter_in_external_where",
+        severity: "error",
+        section: "§2",
+        message: `Отбор по полю «${m[0]}» виртуальной таблицы вынесен во внешний ГДЕ. ` +
+          "Параметры ВТ применяются ДО агрегации, внешний ГДЕ — ПОСЛЕ: это влияет на корректность " +
+          "агрегации, а не только на скорость. Перенести в параметры ВТ (отбор по счёту — в " +
+          "УсловиеСчета, виды субконто — в Субконто, отборы по значению — в последнюю позицию " +
+          "Условие). Проверку типа писать как ТИПЗНАЧЕНИЯ(Поле) = ТИПЗНАЧЕНИЯ(ЗНАЧЕНИЕ(<Тип>.ПустаяСсылка)).",
+        text: raw,
+        index: stmt.offset + start + m.index,
+        fragment: m[0],
+      });
+    }
+  }
+}
+
+// §1 — сигнатуры виртуальных таблиц. Позиции фиксированы платформой и не
+// зависят от конфигурации, поэтому проверяются статически, без метаданных.
+// ВАЖНО: одно и то же имя ВТ имеет РАЗНУЮ сигнатуру у разных видов регистра
+// (Остатки: 4 позиции у бухгалтерии, 2 у накопления).
+const VT_SIGNATURES = {
+  РЕГИСТРБУХГАЛТЕРИИ: {
+    ОСТАТКИ: { names: ["Период", "УсловиеСчета", "Субконто", "Условие"], accountPos: [1], condPos: 3 },
+    ОБОРОТЫ: { names: ["НачалоПериода", "КонецПериода", "Периодичность", "УсловиеСчета", "Субконто", "Условие", "УсловиеКорСчета", "КорСубконто"], accountPos: [3], condPos: 5 },
+    ОСТАТКИИОБОРОТЫ: { names: ["НачалоПериода", "КонецПериода", "Периодичность", "МетодДополнения", "УсловиеСчета", "Субконто", "Условие"], accountPos: [4], condPos: 6 },
+    ОБОРОТЫДТКТ: { names: ["НачалоПериода", "КонецПериода", "Периодичность", "УсловиеСчетаДт", "СубконтоДт", "УсловиеСчетаКт", "СубконтоКт", "Условие"], accountPos: [3, 5], condPos: 7 },
+  },
+  РЕГИСТРНАКОПЛЕНИЯ: {
+    ОСТАТКИ: { names: ["Период", "Условие"], accountPos: [], condPos: 1 },
+    ОБОРОТЫ: { names: ["НачалоПериода", "КонецПериода", "Периодичность", "Условие"], accountPos: [], condPos: 3 },
+    ОСТАТКИИОБОРОТЫ: { names: ["НачалоПериода", "КонецПериода", "Периодичность", "МетодДополнения", "Условие"], accountPos: [], condPos: 4 },
+  },
+  РЕГИСТРСВЕДЕНИЙ: {
+    СРЕЗПОСЛЕДНИХ: { names: ["Период", "Условие"], accountPos: [], condPos: 1 },
+    СРЕЗПЕРВЫХ: { names: ["Период", "Условие"], accountPos: [], condPos: 1 },
+  },
+  // РегистрРасчета намеренно отсутствует: наличие и сигнатура его виртуальных
+  // таблиц не гарантированы платформой (§1.4) — проверять статически нельзя.
+};
+
+// Разбор аргументов вызова на нулевом уровне вложенности.
+function splitTopLevelArgs(text) {
+  const args = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (ch === "(") depth += 1;
+    else if (ch === ")") depth -= 1;
+    else if (ch === "," && depth === 0) {
+      args.push({ text: text.slice(start, i), offset: start });
+      start = i + 1;
+    }
+  }
+  args.push({ text: text.slice(start), offset: start });
+  return args;
+}
+
+function checkVtSignature(raw, code, findings) {
+  const re = /(РегистрБухгалтерии|РегистрНакопления|РегистрСведений)\.([А-Яа-яЁёA-Za-z0-9_]+)\.([А-Яа-яЁёA-Za-z0-9_]+)\s*\(/gi;
+  let m;
+  while ((m = re.exec(code)) !== null) {
+    const byKind = VT_SIGNATURES[m[1].toUpperCase()];
+    if (!byKind) continue;
+    const sig = byKind[m[3].toUpperCase()];
+    if (!sig) continue;
+
+    const open = m.index + m[0].length;
+    let depth = 1;
+    let i = open;
+    while (i < code.length && depth > 0) {
+      if (code[i] === "(") depth += 1;
+      else if (code[i] === ")") depth -= 1;
+      i += 1;
+    }
+    const inner = code.slice(open, i - 1);
+    const args = splitTopLevelArgs(inner);
+
+    // Висящая запятая допустима (§2 п.6): пустой последний аргумент не считаем.
+    let count = args.length;
+    if (count > 0 && args[count - 1].text.trim() === "") count -= 1;
+    // Полностью пустой вызов ВТ() — параметры не заданы, отдельная тема (не эта проверка).
+    if (count === 0) continue;
+
+    if (count > sig.names.length) {
+      pushFinding(findings, {
+        id: "vt_signature_too_many_positions",
+        severity: "error",
+        section: "§1",
+        message: `${m[1]}.<Имя>.${m[3]} принимает ${sig.names.length} позиц. ` +
+          `(${sig.names.join(", ")}), передано ${count}. Лишние аргументы дают ` +
+          "«Неверные параметры». Внимание: одно и то же имя ВТ имеет разную сигнатуру " +
+          "у разных видов регистра.",
+        text: raw,
+        index: m.index,
+        fragment: `${m[1]}.${m[2]}.${m[3]}`,
+      });
+      continue;
+    }
+
+    // Условие по значению субконто, ошибочно помещённое в позицию условия по счёту.
+    // Исторически самая дорогая ошибка: даёт «Поле не найдено Субконто1» и
+    // провоцирует ложный вывод о платформенном ограничении.
+    for (const pos of sig.accountPos) {
+      if (pos >= count) continue;
+      const arg = args[pos].text;
+      const bad = /Субконто(Дт|Кт)?\d/i.exec(arg);
+      if (!bad) continue;
+      pushFinding(findings, {
+        id: "vt_subconto_condition_in_account_position",
+        severity: "error",
+        section: "§1/§2 п.4",
+        message: `«${bad[0]}» находится в позиции ${pos + 1} (${sig.names[pos]}), ` +
+          `которая видит только поля счёта. Отсюда ошибка «Поле не найдено ${bad[0]}». ` +
+          `Условия по ЗНАЧЕНИЮ субконто помещаются в позицию ${sig.condPos + 1} ` +
+          `(${sig.names[sig.condPos]}).`,
+        text: raw,
+        index: open + args[pos].offset,
+        fragment: arg.trim().slice(0, 60),
+      });
+    }
+  }
+}
+
+// §4.1 — виртуальная таблица не участвует в СОЕДИНЕНИЕ напрямую: сначала
+// ПОМЕСТИТЬ + ИНДЕКСИРОВАТЬ ПО, только потом соединение.
+function checkDirectJoinWithVt(raw, code, findings) {
+  const re = /(ЛЕВОЕ|ПРАВОЕ|ПОЛНОЕ|ВНУТРЕННЕЕ)?\s*(?:ВНЕШНЕЕ\s+)?СОЕДИНЕНИЕ\s+([А-Яа-яЁёA-Za-z0-9_]+\.[А-Яа-яЁёA-Za-z0-9_]+\.(?:Остатки|Обороты|ОстаткиИОбороты|ОборотыДтКт|СрезПоследних|СрезПервых|ДвиженияССубконто))\s*\(/gi;
+  let m;
+  while ((m = re.exec(code)) !== null) {
+    pushFinding(findings, {
+      id: "direct_join_with_virtual_table",
+      severity: "error",
+      section: "§4.1",
+      message: `Виртуальная таблица «${m[2]}» участвует в СОЕДИНЕНИЕ напрямую. ` +
+        "СУБД не может оптимизировать такое соединение. Обязательная последовательность: " +
+        "наложить отборы в параметрах ВТ (§2) → ПОМЕСТИТЬ во временную таблицу → " +
+        "ИНДЕКСИРОВАТЬ ПО полям будущего соединения (§3) → только затем СОЕДИНЕНИЕ.",
+      text: raw,
+      index: m.index,
+      fragment: m[2],
+    });
+  }
+}
+
+// §2 п.3 — инлайн-литерал видов субконто в параметрах ВТ (падает при исполнении).
+function checkInlineSubcontoLiteral(raw, code, findings) {
+  const re = /\(\s*ЗНАЧЕНИЕ\s*\(\s*ПланВидовХарактеристик\.[^)]*\)\s*,\s*ЗНАЧЕНИЕ\s*\(\s*ПланВидовХарактеристик\./gi;
+  let m;
+  while ((m = re.exec(code)) !== null) {
+    pushFinding(findings, {
+      id: "subconto_inline_literal_instead_of_array_param",
+      severity: "error",
+      section: "§2 п.3",
+      message: "Массив видов субконто задан инлайн-литералом. Такая форма проходит validate_1c_query, " +
+        "но падает при исполнении («Неверные параметры»). Передавать именованным параметром " +
+        "&ВидыСубконто со значением {kind: array, value: [{kind: ref, ...}]}.",
+      text: raw,
+      index: m.index,
+      fragment: m[0],
+    });
+  }
+}
+
+// §6 (#62) — проверка типа в параметрах ВТ прямой формой, которую отвергает предвалидатор.
+function checkTypeCheckInVtParams(raw, code, findings) {
+  // грубая эвристика: ищем ССЫЛКА <Тип> или ТИП(<Тип>) внутри скобок вызова ВТ
+  const vtCall = /\.(Остатки|Обороты|ОстаткиИОбороты|ОборотыДтКт|СрезПоследних|СрезПервых)\s*\(/gi;
+  let m;
+  while ((m = vtCall.exec(code)) !== null) {
+    const start = m.index + m[0].length;
+    let depth = 1;
+    let i = start;
+    while (i < code.length && depth > 0) {
+      if (code[i] === "(") depth += 1;
+      else if (code[i] === ")") depth -= 1;
+      i += 1;
+    }
+    const args = code.slice(start, i - 1);
+    const bad = /(ССЫЛКА\s+(Справочник|Документ|ПланСчетов|ПланВидовХарактеристик)\.)|(ТИП\s*\(\s*(Справочник|Документ|ПланСчетов)\.)/i.exec(args);
+    if (bad) {
+      pushFinding(findings, {
+        id: "vt_param_type_check_rejected_form",
+        severity: "error",
+        section: "§6 (#62)",
+        message: "Проверка типа в параметрах ВТ записана формой, которую отвергает предвалидатор " +
+          "(vt_param_field_error). Использовать ТИПЗНАЧЕНИЯ(Поле) = ТИПЗНАЧЕНИЯ(ЗНАЧЕНИЕ(Справочник.X.ПустаяСсылка)).",
+        text: raw,
+        index: start + bad.index,
+        fragment: bad[0],
+      });
+    }
+  }
+}
+
+// §3 п.3 (#60) — составной ИНДЕКСИРОВАТЬ ПО без предшествующего ГДЕ/СГРУППИРОВАТЬ ПО.
+function checkCompositeIndexWithoutGroupBy(raw, code, findings) {
+  const re = /ИНДЕКСИРОВАТЬ\s+ПО\s+([А-Яа-яЁёA-Za-z0-9_.]+\s*,\s*[А-Яа-яЁёA-Za-z0-9_.]+)/gi;
+  let m;
+  while ((m = re.exec(code)) !== null) {
+    const before = code.slice(0, m.index);
+    const lastPlace = before.toUpperCase().lastIndexOf("ПОМЕСТИТЬ");
+    if (lastPlace === -1) continue;
+    const segment = before.slice(lastPlace);
+    // Ключевое слово как отдельный токен: перевод строки после ГДЕ так же валиден,
+    // как пробел. \b в JS не работает с кириллицей — проверяем соседние символы явно.
+    const hasGroupBy = /(^|[^А-Яа-яЁёA-Za-z0-9_])СГРУППИРОВАТЬ\s+ПО([^А-Яа-яЁёA-Za-z0-9_]|$)/i.test(segment);
+    const hasWhere = /(^|[^А-Яа-яЁёA-Za-z0-9_])ГДЕ([^А-Яа-яЁёA-Za-z0-9_]|$)/i.test(segment);
+    if (hasGroupBy || hasWhere) continue;
+    pushFinding(findings, {
+      id: "composite_index_without_preceding_group_by",
+      severity: "warning",
+      section: "§3 п.3 (#60)",
+      message: "Составной ИНДЕКСИРОВАТЬ ПО сразу после источника без ГДЕ/СГРУППИРОВАТЬ ПО — " +
+        "предвалидатор распознаёт его как список источников (unknown_query_source). " +
+        "Обход: вставить СГРУППИРОВАТЬ ПО даже при тривиальной группировке. " +
+        "Снять обход после закрытия issue #60.",
+      text: raw,
+      index: m.index,
+      fragment: m[0],
+    });
+  }
+}
+
+const RULES = [
+  checkYo,
+  checkMixedScript,
+  checkBaseRegisterTable,
+  checkEmptyRef,
+  checkOuterJoinNulls,
+  checkFilterOutsideVtParams,
+  checkVtSignature,
+  checkDirectJoinWithVt,
+  checkInlineSubcontoLiteral,
+  checkTypeCheckInVtParams,
+  checkCompositeIndexWithoutGroupBy,
+];
+
+// Реестр реализованных проверок — машинная истина о покрытии.
+// Таблица покрытия в `tz_otladka_zaprosov_v1.0.0.md` §12 сверяется с этим
+// списком: расхождение означает, что документ отстал от кода.
+// Выводится по `node scripts/query_style_check.mjs --rules`.
+export const IMPLEMENTED_RULES = [
+  { id: "style_yo_letter_forbidden", section: "§4.3", severity: "error", title: "Буква Ё в тексте запроса" },
+  { id: "temporary_table_identifier_mixed_script", section: "§4.3", severity: "error", title: "Латиница/гомоглифы в идентификаторе" },
+  { id: "base_register_table_without_vt_check", section: "§1", severity: "warning", title: "Основная таблица регистра без перебора ВТ" },
+  { id: "exception_marker_without_justification", section: "§1", severity: "error", title: "Маркер исключения без обоснования" },
+  { id: "empty_reference_not_filtered", section: "§5.2/§5.3", severity: "warning", title: "ЕСТЬ НЕ NULL без проверки пустой ссылки" },
+  { id: "outer_join_field_without_isnull", section: "§4.4", severity: "warning", title: "Поле внешнего соединения без ЕСТЬNULL" },
+  { id: "vt_filter_in_external_where", section: "§2", severity: "error", title: "Отбор по полю ВТ во внешнем ГДЕ" },
+  { id: "vt_signature_too_many_positions", section: "§1", severity: "error", title: "Позиций больше, чем принимает ВТ" },
+  { id: "vt_subconto_condition_in_account_position", section: "§1/§2 п.4", severity: "error", title: "Условие по субконто в позиции условия по счёту" },
+  { id: "direct_join_with_virtual_table", section: "§4.1", severity: "error", title: "Прямое СОЕДИНЕНИЕ с виртуальной таблицей" },
+  { id: "subconto_inline_literal_instead_of_array_param", section: "§2 п.3", severity: "error", title: "Инлайн-массив видов субконто" },
+  { id: "vt_param_type_check_rejected_form", section: "§6 (#62)", severity: "error", title: "Отвергаемая форма проверки типа в параметрах ВТ" },
+  { id: "composite_index_without_preceding_group_by", section: "§3 п.3 (#60)", severity: "warning", title: "Составной индекс без СГРУППИРОВАТЬ ПО" },
+];
+
+export function checkQuery(text) {
+  const code = stripLiteralsAndComments(text);
+  const raw = [];
+  for (const rule of RULES) rule(text, code, raw);
+
+  const { suppressed, bogus } = collectExceptions(text);
+
+  const findings = raw.filter((f) => {
+    const lines = suppressed.get(f.id);
+    return !(lines && f.line !== null && lines.has(f.line));
+  });
+
+  for (const b of bogus) {
+    findings.push({
+      id: "exception_marker_without_justification",
+      severity: "error",
+      section: "§1 (документированное исключение)",
+      line: b.lineNo,
+      fragment: `СТАНДАРТ-ИСКЛЮЧЕНИЕ: ${b.ruleId}`,
+      message: b.reason
+        ? `Обоснование «${b.reason}» не называет конкретное недостающее поле или свойство. ` +
+          "Исключение не засчитано, нарушение остаётся."
+        : "Маркер исключения без обоснования. Указать, какое именно поле или свойство " +
+          "недоступно ни в одной виртуальной таблице регистра.",
+    });
+  }
+
+  return findings.sort((a, b) => (a.line || 0) - (b.line || 0));
+}
+
+// --- CLI -------------------------------------------------------------------
+
+function readStdin() {
+  try {
+    return readFileSync(0, "utf8");
+  } catch {
+    return "";
+  }
+}
+
+function main() {
+  const args = process.argv.slice(2);
+  if (args.length === 0) {
+    console.error("Usage: node scripts/query_style_check.mjs <file.txt> [...] | -");
+    console.error("       node scripts/query_style_check.mjs --rules   (реализованные проверки)");
+    process.exit(2);
+  }
+
+  if (args[0] === "--rules") {
+    console.log(`Реализованных проверок: ${IMPLEMENTED_RULES.length}\n`);
+    const pad = Math.max(...IMPLEMENTED_RULES.map((r) => r.id.length));
+    for (const r of IMPLEMENTED_RULES) {
+      console.log(`${r.id.padEnd(pad)}  ${r.severity.padEnd(7)} ${r.section.padEnd(14)} ${r.title}`);
+    }
+    console.log("\nПравила стандартов без проверки — см. таблицу покрытия в");
+    console.log("tz_otladka_zaprosov_v1.0.0.md §12. Отсутствие срабатываний означает");
+    console.log("только отсутствие нарушений СРЕДИ РЕАЛИЗОВАННЫХ проверок.");
+    process.exit(0);
+  }
+
+  let hasError = false;
+  for (const arg of args) {
+    const text = arg === "-" ? readStdin() : readFileSync(arg, "utf8");
+    const label = arg === "-" ? "<stdin>" : arg;
+    const findings = checkQuery(text);
+    if (findings.length === 0) {
+      console.log(`OK   ${label}`);
+      continue;
+    }
+    console.log(`\n=== ${label} — нарушений: ${findings.length} ===`);
+    for (const f of findings) {
+      const mark = f.severity === "error" ? "ERROR " : "WARN  ";
+      if (f.severity === "error") hasError = true;
+      console.log(`${mark} строка ${f.line ?? "?"} [${f.id}] ${f.section}`);
+      if (f.fragment) console.log(`       фрагмент: ${f.fragment}`);
+      console.log(`       ${f.message}`);
+    }
+  }
+  process.exit(hasError ? 1 : 0);
+}
+
+const invokedDirectly = process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, "/").split("/").pop());
+if (invokedDirectly) main();
