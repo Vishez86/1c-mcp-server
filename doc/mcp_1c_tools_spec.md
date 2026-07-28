@@ -4238,13 +4238,16 @@ Discovery tool для отчётов: возвращает доступные О
       "description": "Offset cursor строк результата."
     },
     "include_query": {
-      "type": "boolean"
+      "type": "boolean",
+      "default": false
     },
     "include_column_types": {
-      "type": "boolean"
+      "type": "boolean",
+      "default": false
     },
     "include_navigation_url": {
-      "type": "boolean"
+      "type": "boolean",
+      "default": false
     },
     "include_guidance": {
       "type": "boolean",
