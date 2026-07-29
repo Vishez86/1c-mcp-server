@@ -1613,7 +1613,7 @@ class ContractRunner {
       assert(object === fixture.full_name, `unexpected object: ${object}`);
       assert(parts.includes(fixture.tabularSection.name), "available_tabular_parts must list the real tabular section");
       assert(!platformMessage, "engine must not be called: platform_message must be absent");
-      // stage по контракту виден клиенту: он лежит на верхнем уровне ответа и в error,
+// stage по контракту виден клиенту: он лежит на верхнем уровне ответа и в error,
       // а не внутри error.details (MCP_Tools.bsl копирует его именно туда, чтобы признак
       // «движок не вызывался» не приходилось выкапывать из details).
       const stage = result.stage ?? result.error?.stage;
