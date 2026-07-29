@@ -1,16 +1,16 @@
 {
   "target": "https://laba-1c.astondevs.ru/BUH_KORP/hs/mcp/rpc",
   "responseMode": "both",
-  "startedAt": "2026-07-28T10:56:22.506Z",
-  "finishedAt": "2026-07-28T10:59:33.960Z",
-  "total": 108,
-  "passed": 99,
-  "failed": 9,
+  "startedAt": "2026-07-29T05:58:53.725Z",
+  "finishedAt": "2026-07-29T06:01:38.253Z",
+  "total": 111,
+  "passed": 104,
+  "failed": 7,
   "tests": [
     {
       "name": "protocol.initialize",
       "status": "PASS",
-      "elapsedMs": 262,
+      "elapsedMs": 170,
       "details": {
         "server": {
           "name": "universal-1c-mcp",
@@ -21,15 +21,15 @@
     {
       "name": "protocol.tools_list_has_expected_tools",
       "status": "PASS",
-      "elapsedMs": 775,
+      "elapsedMs": 632,
       "details": {
-        "count": 35
+        "count": 37
       }
     },
     {
       "name": "protocol.resources_list_and_read",
       "status": "PASS",
-      "elapsedMs": 1978,
+      "elapsedMs": 547,
       "details": {
         "resources": [
           "1c://metadata",
@@ -61,7 +61,7 @@
     {
       "name": "transport.notification_returns_202_empty",
       "status": "PASS",
-      "elapsedMs": 148,
+      "elapsedMs": 126,
       "details": {
         "status": 202
       }
@@ -69,7 +69,7 @@
     {
       "name": "transport.get_returns_405_with_allow",
       "status": "PASS",
-      "elapsedMs": 143,
+      "elapsedMs": 121,
       "details": {
         "status": 405,
         "allow": "POST, GET, DELETE, OPTIONS"
@@ -78,7 +78,7 @@
     {
       "name": "transport.delete_returns_405",
       "status": "PASS",
-      "elapsedMs": 142,
+      "elapsedMs": 131,
       "details": {
         "status": 405
       }
@@ -86,7 +86,7 @@
     {
       "name": "transport.ping_returns_empty_result",
       "status": "PASS",
-      "elapsedMs": 134,
+      "elapsedMs": 123,
       "details": {
         "result": {}
       }
@@ -94,7 +94,7 @@
     {
       "name": "transport.prompts_list_is_method_not_found",
       "status": "PASS",
-      "elapsedMs": 135,
+      "elapsedMs": 131,
       "details": {
         "code": -32601
       }
@@ -102,16 +102,16 @@
     {
       "name": "transport.unsupported_version_header_returns_400",
       "status": "FAIL",
-      "elapsedMs": 145,
+      "elapsedMs": 141,
       "error": {
         "message": "expected HTTP 400, got 500",
-        "stack": "Error: expected HTTP 400, got 500\n    at assert (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2830:25)\n    at file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:429:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.test (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:238:23)\n    at async ContractRunner.protocolTests (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:425:5)\n    at async ContractRunner.run (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:270:5)\n    at async runContract (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2946:19)\n    at async main (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2921:22)"
+        "stack": "Error: expected HTTP 400, got 500\n    at assert (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2887:25)\n    at file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:431:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.test (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:240:23)\n    at async ContractRunner.protocolTests (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:427:5)\n    at async ContractRunner.run (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:272:5)\n    at async runContract (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:3003:19)\n    at async main (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2978:22)"
       }
     },
     {
       "name": "transport.works_under_protocol_2025_11_25",
       "status": "PASS",
-      "elapsedMs": 181,
+      "elapsedMs": 133,
       "details": {
         "negotiated": "2025-11-25"
       }
@@ -119,7 +119,7 @@
     {
       "name": "fixtures.discover_generic_metadata",
       "status": "PASS",
-      "elapsedMs": 21549,
+      "elapsedMs": 19328,
       "details": {
         "catalog": "Справочник.АвансовыйОтчетПрисоединенныеФайлы",
         "document": "Документ.АвансовыйОтчет",
@@ -131,17 +131,17 @@
     {
       "name": "tool.get_current_user_context",
       "status": "PASS",
-      "elapsedMs": 17832,
+      "elapsedMs": 14961,
       "details": {
         "user": "web",
         "objects": 5668,
-        "tools": 35
+        "tools": 37
       }
     },
     {
       "name": "tool.list_metadata_objects_pagination",
       "status": "PASS",
-      "elapsedMs": 5143,
+      "elapsedMs": 4759,
       "details": {
         "first": "Справочник.АвансовыйОтчетПрисоединенныеФайлы",
         "second": "Справочник.АвансовыйПлатежИностранцаПоНДФЛПрисоединенныеФайлы"
@@ -150,7 +150,7 @@
     {
       "name": "tool.search_metadata_fields_pagination",
       "status": "PASS",
-      "elapsedMs": 2636,
+      "elapsedMs": 2412,
       "details": {
         "fields": [
           "Документ.АвансовыйОтчет.Дата",
@@ -162,7 +162,7 @@
     {
       "name": "tool.count_event_subscriptions_by_event",
       "status": "PASS",
-      "elapsedMs": 1947,
+      "elapsedMs": 1615,
       "details": {
         "events": 18,
         "subscriptions": 455
@@ -171,7 +171,7 @@
     {
       "name": "tool.list_event_subscriptions_filters",
       "status": "PASS",
-      "elapsedMs": 2118,
+      "elapsedMs": 1714,
       "details": {
         "event": "ПриЗаписи",
         "handler_contains": "РаботаВМоделиСервисаБСП",
@@ -181,7 +181,7 @@
     {
       "name": "tool.list_registers_pagination",
       "status": "PASS",
-      "elapsedMs": 6668,
+      "elapsedMs": 5945,
       "details": {
         "registers": [
           "РегистрСведений.АбонентыЭДО",
@@ -193,7 +193,7 @@
     {
       "name": "tool.list_metadata_objects_does_not_mask_technical_metadata",
       "status": "PASS",
-      "elapsedMs": 2892,
+      "elapsedMs": 2503,
       "details": {
         "checked": 50
       }
@@ -201,7 +201,7 @@
     {
       "name": "tool.list_metadata_objects_does_not_invent_missing_register",
       "status": "PASS",
-      "elapsedMs": 500,
+      "elapsedMs": 494,
       "details": {
         "found": 0
       }
@@ -209,7 +209,7 @@
     {
       "name": "tool.discovery_returns_guidance_is_contextual",
       "status": "PASS",
-      "elapsedMs": 7075,
+      "elapsedMs": 5724,
       "details": {
         "salesGuidance": [
           {
@@ -261,7 +261,7 @@
     {
       "name": "tool.get_metadata_structure_generic_reference_object",
       "status": "PASS",
-      "elapsedMs": 1944,
+      "elapsedMs": 1295,
       "details": {
         "attributes": 28,
         "tabularSections": [
@@ -278,7 +278,7 @@
     {
       "name": "tool.get_metadata_structure_information_register_schema",
       "status": "PASS",
-      "elapsedMs": 209,
+      "elapsedMs": 175,
       "details": {
         "periodicity": null,
         "dimensions": 1,
@@ -288,7 +288,7 @@
     {
       "name": "tool.get_metadata_structure_accounting_register_virtual_tables",
       "status": "PASS",
-      "elapsedMs": 1164,
+      "elapsedMs": 958,
       "details": {
         "register": "РегистрБухгалтерии.Хозрасчетный",
         "virtualTables": [
@@ -689,7 +689,7 @@
     {
       "name": "tool.get_metadata_structure_accumulation_resources_by_mode",
       "status": "PASS",
-      "elapsedMs": 1156,
+      "elapsedMs": 1055,
       "details": {
         "register": "РегистрНакопления.АвансовыеПлатежиИностранцевПоНДФЛ",
         "resourcesByMode": {
@@ -714,7 +714,7 @@
     {
       "name": "tool.validate_1c_query_existing_tabular_section",
       "status": "PASS",
-      "elapsedMs": 321,
+      "elapsedMs": 256,
       "details": {
         "detected": [
           "Документ.АвансовыйОтчет"
@@ -724,7 +724,7 @@
     {
       "name": "tool.validate_1c_query_guidance_is_opt_in",
       "status": "PASS",
-      "elapsedMs": 590,
+      "elapsedMs": 428,
       "details": {
         "explainedGuidance": 2
       }
@@ -732,25 +732,28 @@
     {
       "name": "tool.validate_1c_query_warns_document_tabular_register_fanout",
       "status": "FAIL",
-      "elapsedMs": 4242,
+      "elapsedMs": 3518,
       "error": {
-        "message": "fanout-risk query should remain valid, errors=[{\"code\":\"base_register_table_without_vt_check\",\"message\":\"Используется основная (физическая) таблица регистра вида РегистрБухгалтерии. Она отдаёт сырые записи без агрегации и без аналитики субконто. Допустима только после перебора ВСЕХ виртуальных таблиц этого регистра. Частая ошибка — остановиться на том, что Обороты не содержит Регистратор: ДвиженияССубконто содержит и его, и субконто обеих сторон. Если ни одна виртуальная таблица не подходит, объявить исключение комментарием перед источником: // СТАНДАРТ-ИСКЛЮЧЕНИЕ: base_register_table_without_vt_check — <какое поле недоступно в ВТ>.\",\"location\":\"РегистрБухгалтерии\"}]",
-        "stack": "Error: fanout-risk query should remain valid, errors=[{\"code\":\"base_register_table_without_vt_check\",\"message\":\"Используется основная (физическая) таблица регистра вида РегистрБухгалтерии. Она отдаёт сырые записи без агрегации и без аналитики субконто. Допустима только после перебора ВСЕХ виртуальных таблиц этого регистра. Частая ошибка — остановиться на том, что Обороты не содержит Регистратор: ДвиженияССубконто содержит и его, и субконто обеих сторон. Если ни одна виртуальная таблица не подходит, объявить исключение комментарием перед источником: // СТАНДАРТ-ИСКЛЮЧЕНИЕ: base_register_table_without_vt_check — <какое поле недоступно в ВТ>.\",\"location\":\"РегистрБухгалтерии\"}]\n    at assert (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2830:25)\n    at file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:771:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.test (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:238:23)\n    at async ContractRunner.queryAndSchemaTests (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:746:5)\n    at async ContractRunner.run (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:273:5)\n    at async runContract (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2946:19)\n    at async main (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2921:22)"
+        "message": "fanout guidance is missing",
+        "stack": "Error: fanout guidance is missing\n    at assert (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2887:25)\n    at file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:781:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.test (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:240:23)\n    at async ContractRunner.queryAndSchemaTests (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:748:5)\n    at async ContractRunner.run (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:275:5)\n    at async runContract (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:3003:19)\n    at async main (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2978:22)"
       }
     },
     {
       "name": "tool.validate_1c_query_warns_accounting_subconto_fanout",
-      "status": "FAIL",
-      "elapsedMs": 409,
-      "error": {
-        "message": "subconto join warning query must remain valid, errors=[{\"code\":\"base_register_table_without_vt_check\",\"message\":\"Используется основная (физическая) таблица регистра вида РегистрБухгалтерии. Она отдаёт сырые записи без агрегации и без аналитики субконто. Допустима только после перебора ВСЕХ виртуальных таблиц этого регистра. Частая ошибка — остановиться на том, что Обороты не содержит Регистратор: ДвиженияССубконто содержит и его, и субконто обеих сторон. Если ни одна виртуальная таблица не подходит, объявить исключение комментарием перед источником: // СТАНДАРТ-ИСКЛЮЧЕНИЕ: base_register_table_without_vt_check — <какое поле недоступно в ВТ>.\",\"location\":\"РегистрБухгалтерии\"},{\"code\":\"outer_join_field_without_isnull\",\"message\":\"Поле «Субконто.Значение» взято из таблицы, присоединённой внешним соединением, без ЕСТЬNULL. При несовпадении пары оно равно NULL: условие ГДЕ со значением NULL считается НЕВЫПОЛНЕННЫМ и строка исчезает молча, арифметика с NULL даёт NULL, агрегат по колонке из NULL даёт NULL. Обернуть в ЕСТЬNULL со значением ТОГО ЖЕ типа: число — 0, строка — пустая строка, дата — ДАТАВРЕМЯ(1,1,1), булево — ЛОЖЬ, ссылка — ЗНАЧЕНИЕ(<Тип>.ПустаяСсылка). Значение другого типа создаёт колонку составного типа. Исключение — поле-индикатор совпадения (<Псевдоним>.<Поле> ЕСТЬ NULL), его оборачивать нельзя.\",\"location\":\"Субконто.Значение\"}]",
-        "stack": "Error: subconto join warning query must remain valid, errors=[{\"code\":\"base_register_table_without_vt_check\",\"message\":\"Используется основная (физическая) таблица регистра вида РегистрБухгалтерии. Она отдаёт сырые записи без агрегации и без аналитики субконто. Допустима только после перебора ВСЕХ виртуальных таблиц этого регистра. Частая ошибка — остановиться на том, что Обороты не содержит Регистратор: ДвиженияССубконто содержит и его, и субконто обеих сторон. Если ни одна виртуальная таблица не подходит, объявить исключение комментарием перед источником: // СТАНДАРТ-ИСКЛЮЧЕНИЕ: base_register_table_without_vt_check — <какое поле недоступно в ВТ>.\",\"location\":\"РегистрБухгалтерии\"},{\"code\":\"outer_join_field_without_isnull\",\"message\":\"Поле «Субконто.Значение» взято из таблицы, присоединённой внешним соединением, без ЕСТЬNULL. При несовпадении пары оно равно NULL: условие ГДЕ со значением NULL считается НЕВЫПОЛНЕННЫМ и строка исчезает молча, арифметика с NULL даёт NULL, агрегат по колонке из NULL даёт NULL. Обернуть в ЕСТЬNULL со значением ТОГО ЖЕ типа: число — 0, строка — пустая строка, дата — ДАТАВРЕМЯ(1,1,1), булево — ЛОЖЬ, ссылка — ЗНАЧЕНИЕ(<Тип>.ПустаяСсылка). Значение другого типа создаёт колонку составного типа. Исключение — поле-индикатор совпадения (<Псевдоним>.<Поле> ЕСТЬ NULL), его оборачивать нельзя.\",\"location\":\"Субконто.Значение\"}]\n    at assert (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2830:25)\n    at file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:793:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.test (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:238:23)\n    at async ContractRunner.queryAndSchemaTests (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:783:5)\n    at async ContractRunner.run (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:273:5)\n    at async runContract (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2946:19)\n    at async main (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2921:22)"
+      "status": "PASS",
+      "elapsedMs": 312,
+      "details": {
+        "register": "РегистрБухгалтерии.Хозрасчетный",
+        "warnings": [
+          "Риск умножения строк: РегистрБухгалтерии.Хозрасчетный.Субконто используется без отбора по Вид. В .Субконто у одной проводки обычно несколько строк аналитик; JOIN по Регистратор/НомерСтроки без Вид размножает строку по Контрагентам, Договорам, Документам расчетов и другим видам. Добавьте Субконто.Вид = &ВидСубконто или группируйте также по Субконто.Вид.",
+          "Риск смешения дебета и кредита: РегистрБухгалтерии.Хозрасчетный.Субконто используется без отбора по ВидДвижения. При соединении с проводками добавьте Субконто.ВидДвижения = ЗНАЧЕНИЕ(ВидДвиженияБухгалтерии.Дебет/Кредит)."
+        ]
       }
     },
     {
       "name": "tool.validate_1c_query_returns_guidance_is_contextual",
       "status": "PASS",
-      "elapsedMs": 995,
+      "elapsedMs": 1262,
       "details": {
         "salesValid": true,
         "assetsValid": true,
@@ -814,7 +817,7 @@
     {
       "name": "tool.domain_guidance_parity_payroll_and_balance_TC029",
       "status": "PASS",
-      "elapsedMs": 5396,
+      "elapsedMs": 5059,
       "details": {
         "payrollDiscovery": [
           "payroll-salary-source-selection"
@@ -837,7 +840,7 @@
     {
       "name": "tool.validate_1c_query_rejects_main_register_subconto_dtkt",
       "status": "PASS",
-      "elapsedMs": 348,
+      "elapsedMs": 281,
       "details": {
         "errors": [
           {
@@ -856,7 +859,7 @@
     {
       "name": "tool.validate_1c_query_having_keyword",
       "status": "PASS",
-      "elapsedMs": 345,
+      "elapsedMs": 338,
       "details": {
         "detected": [
           "Справочник.АвансовыйОтчетПрисоединенныеФайлы"
@@ -866,7 +869,7 @@
     {
       "name": "tool.get_1c_query_guidance_contextual",
       "status": "PASS",
-      "elapsedMs": 1544,
+      "elapsedMs": 1202,
       "details": {
         "guidance": [
           "temporary_tables_read_only",
@@ -893,7 +896,7 @@
     {
       "name": "tool.1c_language_docs_generated_index",
       "status": "PASS",
-      "elapsedMs": 1154,
+      "elapsedMs": 985,
       "details": {
         "topics": 9,
         "sliceResults": [
@@ -915,7 +918,7 @@
     {
       "name": "tool.get_accounting_accounts_map",
       "status": "PASS",
-      "elapsedMs": 7253,
+      "elapsedMs": 5547,
       "details": {
         "chart": "ПланСчетов.Хозрасчетный",
         "rows": 5,
@@ -924,26 +927,27 @@
     },
     {
       "name": "tool.get_accounting_entries_grouped",
-      "status": "FAIL",
-      "elapsedMs": 893,
-      "error": {
-        "message": "get_accounting_entries did not return ok=true: {\"code\":\"query_validation_failed\",\"message\":\"Запрос не прошёл проверку.\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"9ffcc8b5-120c-4d2e-9b50-eb5fd80335ab\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(96)}: [query_validation_failed] Запрос не прошёл проверку. | {\\n\\\"validation_errors\\\": [\\n{\\n\\\"code\\\": \\\"base_register_table_without_vt_check\\\",\\n\\\"message\\\": \\\"Используется основная (физическая) таблица регистра вида РегистрБухгалтерии. Она отдаёт сырые записи без агрегации и без аналитики субконто. Допустима только после перебора ВСЕХ виртуальных таблиц этого регистра. Частая ошибка — остановиться на том, что Обороты не содержит Регистратор: ДвиженияССубконто содержит и его, и субконто обеих сторон. Если ни одна виртуальная таблица не подходит, объявить исключение комментарием перед источником: // СТАНДАРТ-ИСКЛЮЧЕНИЕ: base_register_table_without_vt_check — <какое поле недоступно в ВТ>.\\\",\\n\\\"location\\\": \\\"РегистрБухгалтерии\\\"\\n}\\n],\\n\\\"validation_warnings\\\": [\\n\\\"Запрос не содержит явного ограничения ПЕРВЫЕ N. Будет применён server-side limit.\\\"\\n],\\n\\\"detected_objects\\\": [\\n\\\"РегистрБухгалтерии.Хозрасчетный\\\"\\n],\\n\\\"detected_parameters\\\": [\\n\\\"ПериодНачало\\\",\\n\\\"Перио",
-        "stack": "Error: get_accounting_entries did not return ok=true: {\"code\":\"query_validation_failed\",\"message\":\"Запрос не прошёл проверку.\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"9ffcc8b5-120c-4d2e-9b50-eb5fd80335ab\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(96)}: [query_validation_failed] Запрос не прошёл проверку. | {\\n\\\"validation_errors\\\": [\\n{\\n\\\"code\\\": \\\"base_register_table_without_vt_check\\\",\\n\\\"message\\\": \\\"Используется основная (физическая) таблица регистра вида РегистрБухгалтерии. Она отдаёт сырые записи без агрегации и без аналитики субконто. Допустима только после перебора ВСЕХ виртуальных таблиц этого регистра. Частая ошибка — остановиться на том, что Обороты не содержит Регистратор: ДвиженияССубконто содержит и его, и субконто обеих сторон. Если ни одна виртуальная таблица не подходит, объявить исключение комментарием перед источником: // СТАНДАРТ-ИСКЛЮЧЕНИЕ: base_register_table_without_vt_check — <какое поле недоступно в ВТ>.\\\",\\n\\\"location\\\": \\\"РегистрБухгалтерии\\\"\\n}\\n],\\n\\\"validation_warnings\\\": [\\n\\\"Запрос не содержит явного ограничения ПЕРВЫЕ N. Будет применён server-side limit.\\\"\\n],\\n\\\"detected_objects\\\": [\\n\\\"РегистрБухгалтерии.Хозрасчетный\\\"\\n],\\n\\\"detected_parameters\\\": [\\n\\\"ПериодНачало\\\",\\n\\\"Перио\n    at assert (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2830:25)\n    at okTool (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2718:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:1055:22\n    at async ContractRunner.test (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:238:23)\n    at async ContractRunner.queryAndSchemaTests (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:1050:5)\n    at async ContractRunner.run (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:273:5)\n    at async runContract (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2946:19)\n    at async main (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2921:22)"
+      "status": "PASS",
+      "elapsedMs": 698,
+      "details": {
+        "register": "РегистрБухгалтерии.Хозрасчетный",
+        "rows": 5,
+        "queryUsed": "ВЫБРАТЬ НАЧАЛОПЕРИОДА(Рег.Период, МЕСЯЦ) КАК ПериодМесяц, Рег.СчетКт КАК СчетКт, СУММА(Рег.Сумма) КАК Сумма, КОЛИЧЕСТВО(Рег.Регистратор) КАК КоличествоСтрок\n// СТАНДАРТ-ИСКЛЮЧЕНИЕ: base_register_table_without_vt_check — нужны Регистратор и субконто ПО ВИДУ через таблицу-компаньон .Субконто; ДвиженияССубконто отдаёт субконто только по позиции, вид аналитики там не виден\nИЗ РегистрБухгалтерии.Хозрасчетный КАК Рег\nГДЕ Рег.Период >= &ПериодНачало И Рег.Период <= &ПериодКонец И (Рег.СчетКт.Код ПОДОБНО &CreditPrefix0)\nСГРУППИРОВАТЬ ПО НАЧАЛОПЕРИОДА(Рег.Период, МЕСЯЦ), Рег.СчетКт\nИМЕЮЩИЕ СУММА(Рег.Сумма) <> 0\nУПОРЯДОЧИТЬ ПО ПериодМесяц, СчетКт"
       }
     },
     {
       "name": "tool.get_accounting_entries_subconto_join",
       "status": "FAIL",
-      "elapsedMs": 2581,
+      "elapsedMs": 2510,
       "error": {
-        "message": "get_accounting_entries did not return ok=true: {\"code\":\"query_validation_failed\",\"message\":\"Запрос не прошёл проверку.\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"a48d2908-9d82-4828-afd2-db2d8bcfdc6f\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(96)}: [query_validation_failed] Запрос не прошёл проверку. | {\\n\\\"validation_errors\\\": [\\n{\\n\\\"code\\\": \\\"base_register_table_without_vt_check\\\",\\n\\\"message\\\": \\\"Используется основная (физическая) таблица регистра вида РегистрБухгалтерии. Она отдаёт сырые записи без агрегации и без аналитики субконто. Допустима только после перебора ВСЕХ виртуальных таблиц этого регистра. Частая ошибка — остановиться на том, что Обороты не содержит Регистратор: ДвиженияССубконто содержит и его, и субконто обеих сторон. Если ни одна виртуальная таблица не подходит, объявить исключение комментарием перед источником: // СТАНДАРТ-ИСКЛЮЧЕНИЕ: base_register_table_without_vt_check — <какое поле недоступно в ВТ>.\\\",\\n\\\"location\\\": \\\"РегистрБухгалтерии\\\"\\n},\\n{\\n\\\"code\\\": \\\"outer_join_field_without_isnull\\\",\\n\\\"message\\\": \\\"Поле «СубконтоКт.Значение» взято из таблицы, присоединённой внешним соединением, без ЕСТЬNULL. При несовпадении пары оно равно NULL: условие ГДЕ со значением NULL считается НЕВ",
-        "stack": "Error: get_accounting_entries did not return ok=true: {\"code\":\"query_validation_failed\",\"message\":\"Запрос не прошёл проверку.\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"a48d2908-9d82-4828-afd2-db2d8bcfdc6f\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(96)}: [query_validation_failed] Запрос не прошёл проверку. | {\\n\\\"validation_errors\\\": [\\n{\\n\\\"code\\\": \\\"base_register_table_without_vt_check\\\",\\n\\\"message\\\": \\\"Используется основная (физическая) таблица регистра вида РегистрБухгалтерии. Она отдаёт сырые записи без агрегации и без аналитики субконто. Допустима только после перебора ВСЕХ виртуальных таблиц этого регистра. Частая ошибка — остановиться на том, что Обороты не содержит Регистратор: ДвиженияССубконто содержит и его, и субконто обеих сторон. Если ни одна виртуальная таблица не подходит, объявить исключение комментарием перед источником: // СТАНДАРТ-ИСКЛЮЧЕНИЕ: base_register_table_without_vt_check — <какое поле недоступно в ВТ>.\\\",\\n\\\"location\\\": \\\"РегистрБухгалтерии\\\"\\n},\\n{\\n\\\"code\\\": \\\"outer_join_field_without_isnull\\\",\\n\\\"message\\\": \\\"Поле «СубконтоКт.Значение» взято из таблицы, присоединённой внешним соединением, без ЕСТЬNULL. При несовпадении пары оно равно NULL: условие ГДЕ со значением NULL считается НЕВ\n    at assert (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2830:25)\n    at okTool (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2718:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:1097:22\n    at async ContractRunner.test (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:238:23)\n    at async ContractRunner.queryAndSchemaTests (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:1076:5)\n    at async ContractRunner.run (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:273:5)\n    at async runContract (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2946:19)\n    at async main (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2921:22)"
+        "message": "get_accounting_entries did not return ok=true: {\"code\":\"query_validation_failed\",\"message\":\"Запрос не прошёл проверку.\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"d61f0cd9-9b03-4a73-8aac-572c4acb3062\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(96)}: [query_validation_failed] Запрос не прошёл проверку. | {\\n\\\"validation_errors\\\": [\\n{\\n\\\"code\\\": \\\"outer_join_field_without_isnull\\\",\\n\\\"message\\\": \\\"Поле «СубконтоКт.Значение» взято из таблицы, присоединённой внешним соединением, без ЕСТЬNULL. При несовпадении пары оно равно NULL: условие ГДЕ со значением NULL считается НЕВЫПОЛНЕННЫМ и строка исчезает молча, арифметика с NULL даёт NULL, агрегат по колонке из NULL даёт NULL. Обернуть в ЕСТЬNULL со значением ТОГО ЖЕ типа: число — 0, строка — пустая строка, дата — ДАТАВРЕМЯ(1,1,1), булево — ЛОЖЬ, ссылка — ЗНАЧЕНИЕ(<Тип>.ПустаяСсылка). Значение другого типа создаёт колонку составного типа. Исключение — поле-индикатор совпадения (<Псевдоним>.<Поле> ЕСТЬ NULL), его оборачивать нельзя.\\\",\\n\\\"location\\\": \\\"СубконтоКт.Значение\\\"\\n}\\n],\\n\\\"validation_warnings\\\": [\\n\\\"Запрос не содержит явного ограничения ПЕРВЫЕ N. Будет применён server-side limit.\\\"\\n],\\n\\\"detected_objects\\\": [\\n\\\"РегистрБухгалтерии.Хозрасчетный\\\"\\n],\\n\\\"de",
+        "stack": "Error: get_accounting_entries did not return ok=true: {\"code\":\"query_validation_failed\",\"message\":\"Запрос не прошёл проверку.\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"d61f0cd9-9b03-4a73-8aac-572c4acb3062\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(96)}: [query_validation_failed] Запрос не прошёл проверку. | {\\n\\\"validation_errors\\\": [\\n{\\n\\\"code\\\": \\\"outer_join_field_without_isnull\\\",\\n\\\"message\\\": \\\"Поле «СубконтоКт.Значение» взято из таблицы, присоединённой внешним соединением, без ЕСТЬNULL. При несовпадении пары оно равно NULL: условие ГДЕ со значением NULL считается НЕВЫПОЛНЕННЫМ и строка исчезает молча, арифметика с NULL даёт NULL, агрегат по колонке из NULL даёт NULL. Обернуть в ЕСТЬNULL со значением ТОГО ЖЕ типа: число — 0, строка — пустая строка, дата — ДАТАВРЕМЯ(1,1,1), булево — ЛОЖЬ, ссылка — ЗНАЧЕНИЕ(<Тип>.ПустаяСсылка). Значение другого типа создаёт колонку составного типа. Исключение — поле-индикатор совпадения (<Псевдоним>.<Поле> ЕСТЬ NULL), его оборачивать нельзя.\\\",\\n\\\"location\\\": \\\"СубконтоКт.Значение\\\"\\n}\\n],\\n\\\"validation_warnings\\\": [\\n\\\"Запрос не содержит явного ограничения ПЕРВЫЕ N. Будет применён server-side limit.\\\"\\n],\\n\\\"detected_objects\\\": [\\n\\\"РегистрБухгалтерии.Хозрасчетный\\\"\\n],\\n\\\"de\n    at assert (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2887:25)\n    at okTool (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2775:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:1109:22\n    at async ContractRunner.test (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:240:23)\n    at async ContractRunner.queryAndSchemaTests (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:1088:5)\n    at async ContractRunner.run (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:275:5)\n    at async runContract (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:3003:19)\n    at async main (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2978:22)"
       }
     },
     {
       "name": "tool.get_accounting_entries_preflight_rejects_mismatched_subconto_kind",
       "status": "PASS",
-      "elapsedMs": 6916,
+      "elapsedMs": 5073,
       "details": {
         "account": "01",
         "requestedSubconto": "Нематериальные активы",
@@ -979,25 +983,25 @@
     {
       "name": "tool.get_accounting_entries_rejects_ambiguous_subconto_grouping",
       "status": "PASS",
-      "elapsedMs": 170,
+      "elapsedMs": 139,
       "details": {
         "error": {
           "code": "invalid_arguments",
           "message": "Группировка по debit_subconto/credit_subconto без subconto_kind неоднозначна: в поле попадают разные виды аналитики, например Контрагенты, Договоры и Документы расчетов. Сначала вызовите get_accounting_accounts_map, выберите нужный вид субконто и передайте его в subconto_kind либо добавьте group_by=subconto_kind.",
           "details": {
             "diagnostic_mode": true,
-            "correlation_id": "fe0893c0-5787-4dba-9101-beaadf32dced",
+            "correlation_id": "79dc5e51-3b87-47a4-95f4-dd7a381e7c60",
             "raw_exception": "{MCP ОбщийМодуль.MCP_Errors.Модуль(96)}: [invalid_arguments] Группировка по debit_subconto/credit_subconto без subconto_kind неоднозначна: в поле попадают разные виды аналитики, например Контрагенты, Договоры и Документы расчетов. Сначала вызовите get_accounting_accounts_map, выберите нужный вид субконто и передайте его в subconto_kind либо добавьте group_by=subconto_kind.",
             "parsed_details": {}
           },
-          "correlation_id": "fe0893c0-5787-4dba-9101-beaadf32dced"
+          "correlation_id": "79dc5e51-3b87-47a4-95f4-dd7a381e7c60"
         }
       }
     },
     {
       "name": "tool.get_calculation_types_map",
       "status": "PASS",
-      "elapsedMs": 1368,
+      "elapsedMs": 1286,
       "details": {
         "plan": "ПланВидовРасчета.Начисления",
         "calculationTypes": 5,
@@ -1006,17 +1010,44 @@
     },
     {
       "name": "tool.get_database_passport",
-      "status": "FAIL",
-      "elapsedMs": 11987,
-      "error": {
-        "message": "passport period query rejected for РегистрБухгалтерии.Хозрасчетный: {MCP ОбщийМодуль.MCP_Errors.Модуль(96)}: [query_validation_failed] Запрос не прошёл проверку. | {\n\"validation_errors\": [\n{\n\"code\": \"base_register_table_without_vt_check\",\n\"message\": \"Используется основная (физическая) таблица регистра вида РегистрБухгалтерии. Она отдаёт сырые записи без агрегации и без аналитики субконто. Допустима только после перебора ВСЕХ виртуальных таблиц этого регистра. Частая ошибка — остановиться на том, что Обороты не содержит Регистратор: ДвиженияССубконто содержит и его, и субконто обеих сторон. Если ни одна виртуальная таблица не подходит, объявить исключение комментарием перед источником: // СТАНДАРТ-ИСКЛЮЧЕНИЕ: base_register_table_without_vt_check — <какое поле недоступно в ВТ>.\",\n\"location\": \"РегистрБухгалтерии\"\n}\n],\n\"validation_warnings\": [\n\"Запрос не содержит явного ограничения ПЕРВЫЕ N. Будет применён server-side limit.\"\n],\n\"detected_objects\": [\n\"РегистрБухгалтерии.Хозрасчетный\"\n],\n\"detected_parameters\": [],\n\"estimated_risk\": \"blocked\",\n\"query_guidance\": [\n{\n\"id\": \"metadata_first\",\n\"title\": \"Сначала проверьте метаданные\",\n\"instruction\": \"Не угадывайте имена объектов, реквизитов, табличных частей, регистров и ресурсов. Начинайте с узкого discovery: list_metadata_objects с query/kinds/limit или специализированная карта вроде get_accounting_accounts_map/get_calculation_types_map. get_metadata_structure вызывайте только для уже выбранного объекта и только с нужными include_* флагами.\",\n\"resource_uri\": \"1c://knowledge/query\",\n\"severity\": \"high\",\n\"configuration_agnostic\": true\n},\n{\n\"id\": \"grouping_having\",\n\"title\": \"Агрегаты фильтруются через ИМЕЮЩИЕ\",\n\"instruction\": \"Все неагрегированные поля из ВЫБРАТЬ должны быть в СГРУППИРОВАТЬ ПО. Для условий по СУММА/КОЛИЧЕСТВО/СРЕДНЕЕ используйте ИМЕЮЩИЕ; ИМЕЯ не является ключевым словом 1С.\",\n\"resource_uri\": \"1c://knowledge/query/syntax\",\n\"severity\": \"high\",\n\"configuration_agnostic\": true\n},\n{\n\"id\": \"subconto_generic\",\n\"title\": \"Субконто уже доступны через бухгалтерские регистры\",\n\"instruction\": \"Перед любым запросом с фильтрацией или группировкой по субконто вызовите get_accounting_accounts_map с нужным account_code_prefix. Используйте position из ответа, чтобы определить Субконто1/2/3; никогда не угадывайте позицию, пользователь мог изменить порядок аналитик в 1С:Предприятии. При передаче массива видов субконто в параметр Субконто виртуальной таблицы поля Субконто1/2/3 переиндексируются по порядку массива, что позволяет писать универсальные запросы независимо от позиции аналитики на счёте. Для JOIN между независимыми подзапросами выводите УникальныйИдентификатор(Субконто...) и соединяйте по UUID.\",\n\"resource_uri\": \"1c://knowledge/query/subkonto\",\n\"severity\": \"high\",\n\"configuration_agnostic\": true\n},\n{\n\"id\": \"accounting_register_patterns\",\n\"title\": \"Бухгалтерские запросы начинайте с карты счетов\",\n\"instruction\": \"Для запросов к РегистрБухгалтерии сначала получите только нужный срез карты счетов через get_accounting_accounts_map с account_code_prefix. Затем используйте виртуальные таблицы Остатки/Обороты/ОстаткиИОбороты/ОборотыДтКт с параметрами периода и отборами внутри виртуальной таблицы. Не заменяйте остаток на дату суммой оборотов за год: входящее сальдо до начала периода потеряется. Не вызывайте полный get_metadata_structure регистра, если достаточно карты счетов и известных виртуальных таблиц. Для сложной логики сначала ПОМЕСТИТЬ ключи счетов/субконто во временную таблицу и ИНДЕКСИРОВАТЬ ПО ключам.\",\n\"resource_uri\": \"1c://knowledge/query/subkonto\",\n\"severity\": \"high\",\n\"configuration_agnostic\": true\n},\n{\n\"id\": \"accounting-balance-vs-turnover\",\n\"title\": \"Сальдо на дату не равно оборотам за период\",\n\"instruction\": \"Если пользователь просит долг, задолженность, остаток или сальдо на конкретную дату/на конец периода, используйте виртуальную таблицу Остатки(&Дата, ...) регистра бухгалтерии или ОстаткиИОбороты, если одновременно нужны начальное/конечное сальдо и обороты. Обороты(&Нач, &Кон, ...) показывают только движение внутри интервала и не включают входящее сальдо до &Нач. Для 'на конец 2024 года' безопасная дата остатка обычно ДАТАВРЕМЯ(2025, 1, 1), потому что она включает все движения 31.12.2024; не подписывайте такой результат как 01.01.2024.\",\n\"resource_uri\": \"1c://knowledge/query/subkonto\",\n\"severity\": \"high\",\n\"configuration_agnostic\": true\n},\n{\n\"id\": \"accounting-register-turnovers-fields\",\n\"title\": \"Бухгалтерские обороты и счета\",\n\"instruction\": \"В ЗНАЧЕНИЕ(ПланСчетов.<Имя>.*) допустимо только имя предопределённого элемента плана счетов, например РасчетыСПокупателями. Код счёта, например 62 или 62.01, не является именем предопределённого элемента; субсчета с точкой в коде в типовых конфигурациях не предопределены. Конкретный счёт передавайте UUID-параметром через get_accounting_accounts_map. Виртуальная таблица Обороты регистра бухгалтерии содержит поля СуммаОборотДт/СуммаОборотКт и аналогичные поля других ресурсов. Параметр фильтрации по виду субконто называется Субконто, не ВидСубконто; он принимает ссылку или массив ПланВидовХарактеристик. ОборотыДтКт используйте для анализа корреспонденции двух счетов, а не как замену Обороты.\",\n\"resource_uri\": \"1c://knowledge/query/subkonto\",\n\"severity\": \"high\",\n\"configuration_agnostic\": true\n},\n{\n\"id\": \"mcp_query_safety\",\n\"title\": \"Граница read-only\",\n\"instruction\": \"Сервер не изменяет постоянные данные: запрещены запись, проведение, удаление и DDL/DML. Исключение - временные таблицы языка запросов 1С внутри выполнения запроса пользователя.\",\n\"resource_uri\": \"1c://knowledge/query\",\n\"severity\": \"high\",\n\"configuration_agnostic\": true\n}\n],\n\"domain_guidance\": [\n{\n\"id\": \"subconto_join_by_uuid\",\n\"title\": \"Соединяйте субконто по UUID\",\n\"instruction\": \"Поля Субконто в бухгалтерских регистрах имеют обобщённый ссылочный тип. Они уже доступны через бухгалтерские виртуальные таблицы; отдельного открытия вида субконто в MCP не требуется. Чтобы понять, какая позиция Субконто1/2/3 соответствует нужной аналитике для конкретного счёта, сначала исследуйте план счетов и его табличную часть ВидыСубконто. При соединении независимых подзапросов по субконто выводите стабильный ключ УникальныйИдентификатор(Субконто...) КАК ...UUID и соединяйте по этому UUID; саму ссылку оставляйте отдельным полем для представления.\",\n\"resource_uri\": \"1c://knowledge/query/subkonto\",\n\"severity\": \"high\",\n\"configuration_agnostic\": true\n}\n]\n}",
-        "stack": "Error: passport period query rejected for РегистрБухгалтерии.Хозрасчетный: {MCP ОбщийМодуль.MCP_Errors.Модуль(96)}: [query_validation_failed] Запрос не прошёл проверку. | {\n\"validation_errors\": [\n{\n\"code\": \"base_register_table_without_vt_check\",\n\"message\": \"Используется основная (физическая) таблица регистра вида РегистрБухгалтерии. Она отдаёт сырые записи без агрегации и без аналитики субконто. Допустима только после перебора ВСЕХ виртуальных таблиц этого регистра. Частая ошибка — остановиться на том, что Обороты не содержит Регистратор: ДвиженияССубконто содержит и его, и субконто обеих сторон. Если ни одна виртуальная таблица не подходит, объявить исключение комментарием перед источником: // СТАНДАРТ-ИСКЛЮЧЕНИЕ: base_register_table_without_vt_check — <какое поле недоступно в ВТ>.\",\n\"location\": \"РегистрБухгалтерии\"\n}\n],\n\"validation_warnings\": [\n\"Запрос не содержит явного ограничения ПЕРВЫЕ N. Будет применён server-side limit.\"\n],\n\"detected_objects\": [\n\"РегистрБухгалтерии.Хозрасчетный\"\n],\n\"detected_parameters\": [],\n\"estimated_risk\": \"blocked\",\n\"query_guidance\": [\n{\n\"id\": \"metadata_first\",\n\"title\": \"Сначала проверьте метаданные\",\n\"instruction\": \"Не угадывайте имена объектов, реквизитов, табличных частей, регистров и ресурсов. Начинайте с узкого discovery: list_metadata_objects с query/kinds/limit или специализированная карта вроде get_accounting_accounts_map/get_calculation_types_map. get_metadata_structure вызывайте только для уже выбранного объекта и только с нужными include_* флагами.\",\n\"resource_uri\": \"1c://knowledge/query\",\n\"severity\": \"high\",\n\"configuration_agnostic\": true\n},\n{\n\"id\": \"grouping_having\",\n\"title\": \"Агрегаты фильтруются через ИМЕЮЩИЕ\",\n\"instruction\": \"Все неагрегированные поля из ВЫБРАТЬ должны быть в СГРУППИРОВАТЬ ПО. Для условий по СУММА/КОЛИЧЕСТВО/СРЕДНЕЕ используйте ИМЕЮЩИЕ; ИМЕЯ не является ключевым словом 1С.\",\n\"resource_uri\": \"1c://knowledge/query/syntax\",\n\"severity\": \"high\",\n\"configuration_agnostic\": true\n},\n{\n\"id\": \"subconto_generic\",\n\"title\": \"Субконто уже доступны через бухгалтерские регистры\",\n\"instruction\": \"Перед любым запросом с фильтрацией или группировкой по субконто вызовите get_accounting_accounts_map с нужным account_code_prefix. Используйте position из ответа, чтобы определить Субконто1/2/3; никогда не угадывайте позицию, пользователь мог изменить порядок аналитик в 1С:Предприятии. При передаче массива видов субконто в параметр Субконто виртуальной таблицы поля Субконто1/2/3 переиндексируются по порядку массива, что позволяет писать универсальные запросы независимо от позиции аналитики на счёте. Для JOIN между независимыми подзапросами выводите УникальныйИдентификатор(Субконто...) и соединяйте по UUID.\",\n\"resource_uri\": \"1c://knowledge/query/subkonto\",\n\"severity\": \"high\",\n\"configuration_agnostic\": true\n},\n{\n\"id\": \"accounting_register_patterns\",\n\"title\": \"Бухгалтерские запросы начинайте с карты счетов\",\n\"instruction\": \"Для запросов к РегистрБухгалтерии сначала получите только нужный срез карты счетов через get_accounting_accounts_map с account_code_prefix. Затем используйте виртуальные таблицы Остатки/Обороты/ОстаткиИОбороты/ОборотыДтКт с параметрами периода и отборами внутри виртуальной таблицы. Не заменяйте остаток на дату суммой оборотов за год: входящее сальдо до начала периода потеряется. Не вызывайте полный get_metadata_structure регистра, если достаточно карты счетов и известных виртуальных таблиц. Для сложной логики сначала ПОМЕСТИТЬ ключи счетов/субконто во временную таблицу и ИНДЕКСИРОВАТЬ ПО ключам.\",\n\"resource_uri\": \"1c://knowledge/query/subkonto\",\n\"severity\": \"high\",\n\"configuration_agnostic\": true\n},\n{\n\"id\": \"accounting-balance-vs-turnover\",\n\"title\": \"Сальдо на дату не равно оборотам за период\",\n\"instruction\": \"Если пользователь просит долг, задолженность, остаток или сальдо на конкретную дату/на конец периода, используйте виртуальную таблицу Остатки(&Дата, ...) регистра бухгалтерии или ОстаткиИОбороты, если одновременно нужны начальное/конечное сальдо и обороты. Обороты(&Нач, &Кон, ...) показывают только движение внутри интервала и не включают входящее сальдо до &Нач. Для 'на конец 2024 года' безопасная дата остатка обычно ДАТАВРЕМЯ(2025, 1, 1), потому что она включает все движения 31.12.2024; не подписывайте такой результат как 01.01.2024.\",\n\"resource_uri\": \"1c://knowledge/query/subkonto\",\n\"severity\": \"high\",\n\"configuration_agnostic\": true\n},\n{\n\"id\": \"accounting-register-turnovers-fields\",\n\"title\": \"Бухгалтерские обороты и счета\",\n\"instruction\": \"В ЗНАЧЕНИЕ(ПланСчетов.<Имя>.*) допустимо только имя предопределённого элемента плана счетов, например РасчетыСПокупателями. Код счёта, например 62 или 62.01, не является именем предопределённого элемента; субсчета с точкой в коде в типовых конфигурациях не предопределены. Конкретный счёт передавайте UUID-параметром через get_accounting_accounts_map. Виртуальная таблица Обороты регистра бухгалтерии содержит поля СуммаОборотДт/СуммаОборотКт и аналогичные поля других ресурсов. Параметр фильтрации по виду субконто называется Субконто, не ВидСубконто; он принимает ссылку или массив ПланВидовХарактеристик. ОборотыДтКт используйте для анализа корреспонденции двух счетов, а не как замену Обороты.\",\n\"resource_uri\": \"1c://knowledge/query/subkonto\",\n\"severity\": \"high\",\n\"configuration_agnostic\": true\n},\n{\n\"id\": \"mcp_query_safety\",\n\"title\": \"Граница read-only\",\n\"instruction\": \"Сервер не изменяет постоянные данные: запрещены запись, проведение, удаление и DDL/DML. Исключение - временные таблицы языка запросов 1С внутри выполнения запроса пользователя.\",\n\"resource_uri\": \"1c://knowledge/query\",\n\"severity\": \"high\",\n\"configuration_agnostic\": true\n}\n],\n\"domain_guidance\": [\n{\n\"id\": \"subconto_join_by_uuid\",\n\"title\": \"Соединяйте субконто по UUID\",\n\"instruction\": \"Поля Субконто в бухгалтерских регистрах имеют обобщённый ссылочный тип. Они уже доступны через бухгалтерские виртуальные таблицы; отдельного открытия вида субконто в MCP не требуется. Чтобы понять, какая позиция Субконто1/2/3 соответствует нужной аналитике для конкретного счёта, сначала исследуйте план счетов и его табличную часть ВидыСубконто. При соединении независимых подзапросов по субконто выводите стабильный ключ УникальныйИдентификатор(Субконто...) КАК ...UUID и соединяйте по этому UUID; саму ссылку оставляйте отдельным полем для представления.\",\n\"resource_uri\": \"1c://knowledge/query/subkonto\",\n\"severity\": \"high\",\n\"configuration_agnostic\": true\n}\n]\n}\n    at assert (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2830:25)\n    at file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:1240:9\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.test (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:238:23)\n    at async ContractRunner.queryAndSchemaTests (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:1214:5)\n    at async ContractRunner.run (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:273:5)\n    at async runContract (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2946:19)\n    at async main (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2921:22)"
+      "status": "PASS",
+      "elapsedMs": 12477,
+      "details": {
+        "organizations": 0,
+        "accountingRegisters": 1,
+        "accumulationChecked": 5
+      }
+    },
+    {
+      "name": "tool.list_legal_sources",
+      "status": "PASS",
+      "elapsedMs": 467,
+      "details": {
+        "total": 2,
+        "filteredTotal": 2
+      }
+    },
+    {
+      "name": "tool.get_legal_source_guide",
+      "status": "PASS",
+      "elapsedMs": 227,
+      "details": {
+        "guideLength": 5648,
+        "storage": "embedded"
+      }
+    },
+    {
+      "name": "negative.get_legal_source_guide_unknown_source",
+      "status": "PASS",
+      "elapsedMs": 147,
+      "details": {
+        "code": "invalid_arguments"
       }
     },
     {
       "name": "tool.run_1c_query_temporary_table_package",
       "status": "PASS",
-      "elapsedMs": 734,
+      "elapsedMs": 463,
       "details": {
         "skipped": true,
         "reason": "generic catalog fixture has no rows",
@@ -1026,7 +1057,7 @@
     {
       "name": "tool.run_1c_query_guidance_is_opt_in",
       "status": "PASS",
-      "elapsedMs": 813,
+      "elapsedMs": 757,
       "details": {
         "compactRows": 0,
         "guidedQueryGuidance": 4
@@ -1035,7 +1066,7 @@
     {
       "name": "tool.run_1c_query_counterparty_contact_info",
       "status": "PASS",
-      "elapsedMs": 240,
+      "elapsedMs": 263,
       "details": {
         "rows": 1,
         "firstRef": {
@@ -1048,7 +1079,7 @@
     {
       "name": "tool.run_1c_query_reference_encoding",
       "status": "PASS",
-      "elapsedMs": 346,
+      "elapsedMs": 399,
       "details": {
         "skipped": true,
         "reason": "generic catalog fixture has no rows",
@@ -1058,7 +1089,7 @@
     {
       "name": "tool.run_1c_query_accounting_debit_credit_subconto",
       "status": "PASS",
-      "elapsedMs": 572,
+      "elapsedMs": 446,
       "details": {
         "register": "РегистрБухгалтерии.Хозрасчетный",
         "columns": [
@@ -1074,7 +1105,7 @@
     {
       "name": "negative.run_1c_query_vt_field_rejected_pre_flight",
       "status": "PASS",
-      "elapsedMs": 1053,
+      "elapsedMs": 696,
       "details": {
         "register": "РегистрБухгалтерии.Хозрасчетный",
         "errorCode": "validation_failed_before_run",
@@ -1085,17 +1116,18 @@
     },
     {
       "name": "tool.vt_field_generator_authoritative_superset",
-      "status": "FAIL",
-      "elapsedMs": 604,
-      "error": {
-        "message": "ОборотыДтКт superset must include СуммаОборотДт",
-        "stack": "Error: ОборотыДтКт superset must include СуммаОборотДт\n    at assert (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2830:25)\n    at file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:1419:9\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.test (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:238:23)\n    at async ContractRunner.queryAndSchemaTests (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:1399:5)\n    at async ContractRunner.run (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:273:5)\n    at async runContract (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2946:19)\n    at async main (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2921:22)"
+      "status": "PASS",
+      "elapsedMs": 515,
+      "details": {
+        "balance": 79,
+        "dtkt": 34,
+        "balTurn": 188
       }
     },
     {
       "name": "regression.run_1c_query_developed_balance_fields_not_rejected",
       "status": "PASS",
-      "elapsedMs": 349,
+      "elapsedMs": 330,
       "details": {
         "register": "РегистрБухгалтерии.Хозрасчетный",
         "rows": 3
@@ -1104,7 +1136,7 @@
     {
       "name": "parity.pre_flight_and_metadata_fields_match",
       "status": "PASS",
-      "elapsedMs": 1513,
+      "elapsedMs": 1293,
       "details": {
         "count": 34
       }
@@ -1112,7 +1144,7 @@
     {
       "name": "negative.run_1c_query_accumulation_vt_field_rejected_pre_flight",
       "status": "PASS",
-      "elapsedMs": 985,
+      "elapsedMs": 954,
       "details": {
         "register": "РегистрНакопления.АвансовыеПлатежиИностранцевПоНДФЛ",
         "vt": "Обороты",
@@ -1122,16 +1154,16 @@
     {
       "name": "negative.run_1c_query_tabular_part_rejected_pre_flight",
       "status": "FAIL",
-      "elapsedMs": 451,
+      "elapsedMs": 500,
       "error": {
         "message": "stage must be validation, got: undefined",
-        "stack": "Error: stage must be validation, got: undefined\n    at assert (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2830:25)\n    at file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:1529:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.test (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:238:23)\n    at async ContractRunner.queryAndSchemaTests (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:1509:5)\n    at async ContractRunner.run (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:273:5)\n    at async runContract (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2946:19)\n    at async main (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2921:22)"
+        "stack": "Error: stage must be validation, got: undefined\n    at assert (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2887:25)\n    at file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:1586:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.test (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:240:23)\n    at async ContractRunner.queryAndSchemaTests (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:1566:5)\n    at async ContractRunner.run (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:275:5)\n    at async runContract (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:3003:19)\n    at async main (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2978:22)"
       }
     },
     {
       "name": "negative.run_1c_query_object_field_rejected_pre_flight",
       "status": "PASS",
-      "elapsedMs": 891,
+      "elapsedMs": 722,
       "details": {
         "object": "Документ.АвансовыйОтчет",
         "availableFieldsCount": 36,
@@ -1140,17 +1172,17 @@
     },
     {
       "name": "regression.run_1c_query_tabular_part_standard_fields_not_rejected",
-      "status": "FAIL",
-      "elapsedMs": 449,
-      "error": {
-        "message": "tabular part Ссылка/НомерСтроки must not be pre-flight rejected, got: field_not_found",
-        "stack": "Error: tabular part Ссылка/НомерСтроки must not be pre-flight rejected, got: field_not_found\n    at assert (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2830:25)\n    at file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:1568:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async ContractRunner.test (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:238:23)\n    at async ContractRunner.queryAndSchemaTests (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:1558:5)\n    at async ContractRunner.run (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:273:5)\n    at async runContract (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2946:19)\n    at async main (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2921:22)"
+      "status": "PASS",
+      "elapsedMs": 325,
+      "details": {
+        "table": "Документ.АвансовыйОтчет.ВыданныеАвансы",
+        "rows": 1
       }
     },
     {
       "name": "regression.run_1c_query_accounting_register_fields_not_pre_flight_rejected",
       "status": "PASS",
-      "elapsedMs": 581,
+      "elapsedMs": 356,
       "details": {
         "register": "РегистрБухгалтерии.Хозрасчетный",
         "ok": false,
@@ -1160,7 +1192,7 @@
     {
       "name": "tool.run_1c_query_alias_collides_with_tabular_part_warns",
       "status": "PASS",
-      "elapsedMs": 457,
+      "elapsedMs": 318,
       "details": {
         "table": "Документ.АвансовыйОтчет",
         "tabularSection": "ВыданныеАвансы",
@@ -1172,7 +1204,7 @@
     {
       "name": "regression.run_1c_query_distinct_aliases_no_collision_warning",
       "status": "PASS",
-      "elapsedMs": 344,
+      "elapsedMs": 195,
       "details": {
         "table": "Документ.АвансовыйОтчет.ВыданныеАвансы",
         "warnings": []
@@ -1181,7 +1213,7 @@
     {
       "name": "tool.run_1c_query_accounting_balance_subconto",
       "status": "PASS",
-      "elapsedMs": 490,
+      "elapsedMs": 399,
       "details": {
         "register": "РегистрБухгалтерии.Хозрасчетный",
         "columns": [
@@ -1195,19 +1227,17 @@
     },
     {
       "name": "tool.run_1c_query_zero_row_subconto_position_warning",
-      "status": "PASS",
-      "elapsedMs": 380,
-      "details": {
-        "register": "РегистрБухгалтерии.Хозрасчетный",
-        "warnings": [
-          "Запрос вернул 0 строк и использует позиционные поля Субконто1/2/3 бухгалтерского регистра. Возможная причина — выбранная позиция субконто не совпадает с настройкой счета в ПланСчетов.<Имя>.ВидыСубконто. Проверьте позицию через get_accounting_accounts_map с account_code_prefix или используйте профильный бухгалтерский shortcut."
-        ]
+      "status": "FAIL",
+      "elapsedMs": 513,
+      "error": {
+        "message": "run_1c_query did not return ok=true: {\"code\":\"query_validation_failed\",\"message\":\"Запрос не прошёл проверку.\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"e3af5909-f812-4c32-9fbf-2d74663daadd\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(96)}: [query_validation_failed] Запрос не прошёл проверку. | {\\n\\\"validation_errors\\\": [\\n{\\n\\\"code\\\": \\\"vt_filter_in_external_where\\\",\\n\\\"message\\\": \\\"Отбор по полю виртуальной таблицы (Остатки.Счет) вынесен во внешний ГДЕ. Параметры виртуальной таблицы применяются ДО агрегации, внешний ГДЕ — ПОСЛЕ: это влияет на корректность результата, а не только на скорость. Перенести отбор в параметры РегистрБухгалтерии.Хозрасчетный.Остатки: отбор по счёту — в позицию условия по счёту, виды субконто — в позицию Субконто, отборы по значению — в последнюю позицию (общее условие). Проверку типа записывать как ТИПЗНАЧЕНИЯ(Поле) = ТИПЗНАЧЕНИЯ(ЗНАЧЕНИЕ(<Тип>.ПустаяСсылка)).\\\",\\n\\\"location\\\": \\\"Остатки\\\"\\n}\\n],\\n\\\"validation_warnings\\\": [],\\n\\\"detected_objects\\\": [\\n\\\"РегистрБухгалтерии.Хозрасчетный\\\"\\n],\\n\\\"detected_parameters\\\": [\\n\\\"Период\\\",\\n\\\"Код\\\"\\n],\\n\\\"estimated_risk\\\": \\\"blocked\\\",\\n\\\"query_guidance\\\": [\\n{\\n\\\"id\\\": \\\"metadata_first\\\",\\n\\\"title\\\": \\\"Сначала проверьте метаданные\\",
+        "stack": "Error: run_1c_query did not return ok=true: {\"code\":\"query_validation_failed\",\"message\":\"Запрос не прошёл проверку.\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"e3af5909-f812-4c32-9fbf-2d74663daadd\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(96)}: [query_validation_failed] Запрос не прошёл проверку. | {\\n\\\"validation_errors\\\": [\\n{\\n\\\"code\\\": \\\"vt_filter_in_external_where\\\",\\n\\\"message\\\": \\\"Отбор по полю виртуальной таблицы (Остатки.Счет) вынесен во внешний ГДЕ. Параметры виртуальной таблицы применяются ДО агрегации, внешний ГДЕ — ПОСЛЕ: это влияет на корректность результата, а не только на скорость. Перенести отбор в параметры РегистрБухгалтерии.Хозрасчетный.Остатки: отбор по счёту — в позицию условия по счёту, виды субконто — в позицию Субконто, отборы по значению — в последнюю позицию (общее условие). Проверку типа записывать как ТИПЗНАЧЕНИЯ(Поле) = ТИПЗНАЧЕНИЯ(ЗНАЧЕНИЕ(<Тип>.ПустаяСсылка)).\\\",\\n\\\"location\\\": \\\"Остатки\\\"\\n}\\n],\\n\\\"validation_warnings\\\": [],\\n\\\"detected_objects\\\": [\\n\\\"РегистрБухгалтерии.Хозрасчетный\\\"\\n],\\n\\\"detected_parameters\\\": [\\n\\\"Период\\\",\\n\\\"Код\\\"\\n],\\n\\\"estimated_risk\\\": \\\"blocked\\\",\\n\\\"query_guidance\\\": [\\n{\\n\\\"id\\\": \\\"metadata_first\\\",\\n\\\"title\\\": \\\"Сначала проверьте метаданные\\\n    at assert (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2887:25)\n    at okTool (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2775:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:1704:22\n    at async ContractRunner.test (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:240:23)\n    at async ContractRunner.queryAndSchemaTests (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:1699:5)\n    at async ContractRunner.run (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:275:5)\n    at async runContract (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:3003:19)\n    at async main (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2978:22)"
       }
     },
     {
       "name": "tool.search_objects_returns_structured_refs",
       "status": "PASS",
-      "elapsedMs": 225,
+      "elapsedMs": 151,
       "details": {
         "skipped": true,
         "reason": "sample reference presentation is not searchable for this type",
@@ -1218,7 +1248,7 @@
     {
       "name": "tool.get_object_by_ref_with_tabular_section",
       "status": "PASS",
-      "elapsedMs": 225,
+      "elapsedMs": 181,
       "details": {
         "ref": {
           "type": "Документ.АвансовыйОтчет",
@@ -1234,7 +1264,7 @@
     {
       "name": "tool.find_object_by_id",
       "status": "PASS",
-      "elapsedMs": 7186,
+      "elapsedMs": 6495,
       "details": {
         "searchedTypes": 1,
         "matches": 1
@@ -1243,7 +1273,7 @@
     {
       "name": "tool.get_link_of_object",
       "status": "PASS",
-      "elapsedMs": 417,
+      "elapsedMs": 328,
       "details": {
         "links": [
           {
@@ -1257,7 +1287,7 @@
     {
       "name": "tool.find_references_to_object",
       "status": "PASS",
-      "elapsedMs": 718,
+      "elapsedMs": 697,
       "details": {
         "groups": 2,
         "searchedTypes": 2,
@@ -1267,7 +1297,7 @@
     {
       "name": "tool.get_object_history_graceful",
       "status": "PASS",
-      "elapsedMs": 4264,
+      "elapsedMs": 3862,
       "details": {
         "supported": true,
         "events": 1,
@@ -1281,7 +1311,7 @@
     {
       "name": "tool.get_enum_values",
       "status": "PASS",
-      "elapsedMs": 485,
+      "elapsedMs": 151,
       "details": {
         "values": [
           "ПустаяСсылка",
@@ -1294,7 +1324,7 @@
     {
       "name": "tool.get_register_records_records_mode",
       "status": "PASS",
-      "elapsedMs": 217,
+      "elapsedMs": 291,
       "details": {
         "rows": 0,
         "truncated": false,
@@ -1304,7 +1334,7 @@
     {
       "name": "tool.get_register_records_accounting_debit_credit_mode",
       "status": "PASS",
-      "elapsedMs": 394,
+      "elapsedMs": 395,
       "details": {
         "register": "РегистрБухгалтерии.Хозрасчетный",
         "columns": [
@@ -1320,7 +1350,7 @@
     {
       "name": "tool.get_register_records_accounting_debit_credit_filter",
       "status": "PASS",
-      "elapsedMs": 451,
+      "elapsedMs": 485,
       "details": {
         "register": "РегистрБухгалтерии.Хозрасчетный",
         "account": "09",
@@ -1331,7 +1361,7 @@
     {
       "name": "tool.get_register_records_accounting_turnovers_filter",
       "status": "PASS",
-      "elapsedMs": 683,
+      "elapsedMs": 739,
       "details": {
         "register": "РегистрБухгалтерии.Хозрасчетный",
         "account": "60.01",
@@ -1344,7 +1374,7 @@
     {
       "name": "tool.get_accounting_balances",
       "status": "PASS",
-      "elapsedMs": 215,
+      "elapsedMs": 578,
       "details": {
         "register": "РегистрБухгалтерии.Хозрасчетный",
         "rows": 2,
@@ -1353,45 +1383,44 @@
     },
     {
       "name": "tool.get_accounting_balances_by_subconto_age",
-      "status": "PASS",
-      "elapsedMs": 3372,
-      "details": {
-        "register": "РегистрБухгалтерии.Хозрасчетный",
-        "rows": 5,
-        "buckets": 2
+      "status": "FAIL",
+      "elapsedMs": 2002,
+      "error": {
+        "message": "get_accounting_balances_by_subconto_age did not return ok=true: {\"code\":\"query_validation_failed\",\"message\":\"Запрос не прошёл проверку.\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"86a8f6f9-d317-4c9f-8c9e-00323ce10e30\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(96)}: [query_validation_failed] Запрос не прошёл проверку. | {\\n\\\"validation_errors\\\": [\\n{\\n\\\"code\\\": \\\"vt_filter_in_external_where\\\",\\n\\\"message\\\": \\\"Отбор по полю виртуальной таблицы (Остатки.Счет) вынесен во внешний ГДЕ. Параметры виртуальной таблицы применяются ДО агрегации, внешний ГДЕ — ПОСЛЕ: это влияет на корректность результата, а не только на скорость. Перенести отбор в параметры РегистрБухгалтерии.Хозрасчетный.Остатки: отбор по счёту — в позицию условия по счёту, виды субконто — в позицию Субконто, отборы по значению — в последнюю позицию (общее условие). Проверку типа записывать как ТИПЗНАЧЕНИЯ(Поле) = ТИПЗНАЧЕНИЯ(ЗНАЧЕНИЕ(<Тип>.ПустаяСсылка)).\\\",\\n\\\"location\\\": \\\"Остатки\\\"\\n}\\n],\\n\\\"validation_warnings\\\": [\\n\\\"Запрос не содержит явного ограничения ПЕРВЫЕ N. Будет применён server-side limit.\\\"\\n],\\n\\\"detected_objects\\\": [\\n\\\"РегистрБухгалтерии.Хозрасчетный\\\"\\n],\\n\\\"detected_parameters\\\": [\\n\\\"ДатаОстатков\\\",\\n\\\"ВидыСубконто\\\",\\n\\\"КодПрефиксСчета0\\\",\\n\\\"MinAm",
+        "stack": "Error: get_accounting_balances_by_subconto_age did not return ok=true: {\"code\":\"query_validation_failed\",\"message\":\"Запрос не прошёл проверку.\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"86a8f6f9-d317-4c9f-8c9e-00323ce10e30\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(96)}: [query_validation_failed] Запрос не прошёл проверку. | {\\n\\\"validation_errors\\\": [\\n{\\n\\\"code\\\": \\\"vt_filter_in_external_where\\\",\\n\\\"message\\\": \\\"Отбор по полю виртуальной таблицы (Остатки.Счет) вынесен во внешний ГДЕ. Параметры виртуальной таблицы применяются ДО агрегации, внешний ГДЕ — ПОСЛЕ: это влияет на корректность результата, а не только на скорость. Перенести отбор в параметры РегистрБухгалтерии.Хозрасчетный.Остатки: отбор по счёту — в позицию условия по счёту, виды субконто — в позицию Субконто, отборы по значению — в последнюю позицию (общее условие). Проверку типа записывать как ТИПЗНАЧЕНИЯ(Поле) = ТИПЗНАЧЕНИЯ(ЗНАЧЕНИЕ(<Тип>.ПустаяСсылка)).\\\",\\n\\\"location\\\": \\\"Остатки\\\"\\n}\\n],\\n\\\"validation_warnings\\\": [\\n\\\"Запрос не содержит явного ограничения ПЕРВЫЕ N. Будет применён server-side limit.\\\"\\n],\\n\\\"detected_objects\\\": [\\n\\\"РегистрБухгалтерии.Хозрасчетный\\\"\\n],\\n\\\"detected_parameters\\\": [\\n\\\"ДатаОстатков\\\",\\n\\\"ВидыСубконто\\\",\\n\\\"КодПрефиксСчета0\\\",\\n\\\"MinAm\n    at assert (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2887:25)\n    at okTool (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2775:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2011:22\n    at async ContractRunner.test (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:240:23)\n    at async ContractRunner.registerTests (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:1991:5)\n    at async ContractRunner.run (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:277:5)\n    at async runContract (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:3003:19)\n    at async main (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2978:22)"
       }
     },
     {
       "name": "tool.compare_accounting_balances_by_subconto",
-      "status": "PASS",
-      "elapsedMs": 2342,
-      "details": {
-        "register": "РегистрБухгалтерии.Хозрасчетный",
-        "rows": 0
+      "status": "FAIL",
+      "elapsedMs": 1924,
+      "error": {
+        "message": "compare_accounting_balances_by_subconto did not return ok=true: {\"code\":\"query_validation_failed\",\"message\":\"Запрос не прошёл проверку.\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"c9791bac-d8ca-46dd-832b-8af9c85f2bae\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(96)}: [query_validation_failed] Запрос не прошёл проверку. | {\\n\\\"validation_errors\\\": [\\n{\\n\\\"code\\\": \\\"vt_filter_in_external_where\\\",\\n\\\"message\\\": \\\"Отбор по полю виртуальной таблицы (Остатки.Счет) вынесен во внешний ГДЕ. Параметры виртуальной таблицы применяются ДО агрегации, внешний ГДЕ — ПОСЛЕ: это влияет на корректность результата, а не только на скорость. Перенести отбор в параметры РегистрБухгалтерии.Хозрасчетный.Остатки: отбор по счёту — в позицию условия по счёту, виды субконто — в позицию Субконто, отборы по значению — в последнюю позицию (общее условие). Проверку типа записывать как ТИПЗНАЧЕНИЯ(Поле) = ТИПЗНАЧЕНИЯ(ЗНАЧЕНИЕ(<Тип>.ПустаяСсылка)).\\\",\\n\\\"location\\\": \\\"Остатки\\\"\\n}\\n],\\n\\\"validation_warnings\\\": [\\n\\\"Запрос не содержит явного ограничения ПЕРВЫЕ N. Будет применён server-side limit.\\\"\\n],\\n\\\"detected_objects\\\": [\\n\\\"РегистрБухгалтерии.Хозрасчетный\\\"\\n],\\n\\\"detected_parameters\\\": [\\n\\\"ДатаОстатков\\\",\\n\\\"ВидыСубконто\\\",\\n\\\"LeftPrefix0\\\",\\n\\\"MinAmount\\",
+        "stack": "Error: compare_accounting_balances_by_subconto did not return ok=true: {\"code\":\"query_validation_failed\",\"message\":\"Запрос не прошёл проверку.\",\"details\":{\"diagnostic_mode\":true,\"correlation_id\":\"c9791bac-d8ca-46dd-832b-8af9c85f2bae\",\"raw_exception\":\"{MCP ОбщийМодуль.MCP_Errors.Модуль(96)}: [query_validation_failed] Запрос не прошёл проверку. | {\\n\\\"validation_errors\\\": [\\n{\\n\\\"code\\\": \\\"vt_filter_in_external_where\\\",\\n\\\"message\\\": \\\"Отбор по полю виртуальной таблицы (Остатки.Счет) вынесен во внешний ГДЕ. Параметры виртуальной таблицы применяются ДО агрегации, внешний ГДЕ — ПОСЛЕ: это влияет на корректность результата, а не только на скорость. Перенести отбор в параметры РегистрБухгалтерии.Хозрасчетный.Остатки: отбор по счёту — в позицию условия по счёту, виды субконто — в позицию Субконто, отборы по значению — в последнюю позицию (общее условие). Проверку типа записывать как ТИПЗНАЧЕНИЯ(Поле) = ТИПЗНАЧЕНИЯ(ЗНАЧЕНИЕ(<Тип>.ПустаяСсылка)).\\\",\\n\\\"location\\\": \\\"Остатки\\\"\\n}\\n],\\n\\\"validation_warnings\\\": [\\n\\\"Запрос не содержит явного ограничения ПЕРВЫЕ N. Будет применён server-side limit.\\\"\\n],\\n\\\"detected_objects\\\": [\\n\\\"РегистрБухгалтерии.Хозрасчетный\\\"\\n],\\n\\\"detected_parameters\\\": [\\n\\\"ДатаОстатков\\\",\\n\\\"ВидыСубконто\\\",\\n\\\"LeftPrefix0\\\",\\n\\\"MinAmount\\\n    at assert (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2887:25)\n    at okTool (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2775:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2050:22\n    at async ContractRunner.test (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:240:23)\n    at async ContractRunner.registerTests (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2031:5)\n    at async ContractRunner.run (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:277:5)\n    at async runContract (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:3003:19)\n    at async main (file:///D:/Projects/1c-mcp-server/scripts/mcp_contract_test.mjs:2978:22)"
       }
     },
     {
       "name": "tool.get_register_records_bad_mode_is_diagnostic",
       "status": "PASS",
-      "elapsedMs": 193,
+      "elapsedMs": 150,
       "details": {
         "error": {
           "code": "register_mode_not_supported",
           "message": "Режим balance не поддерживается для РегистрСведений",
           "details": {
             "diagnostic_mode": true,
-            "correlation_id": "4f000fef-fe28-4ac1-af83-1adc8fffdc1a",
+            "correlation_id": "20757175-9fc4-4704-babb-721ee86d0fef",
             "raw_exception": "{MCP ОбщийМодуль.MCP_Errors.Модуль(96)}: [register_mode_not_supported] Режим balance не поддерживается для РегистрСведений",
             "parsed_details": {}
           },
-          "correlation_id": "4f000fef-fe28-4ac1-af83-1adc8fffdc1a"
+          "correlation_id": "20757175-9fc4-4704-babb-721ee86d0fef"
         }
       }
     },
     {
       "name": "fixture.query_document_with_movements",
       "status": "PASS",
-      "elapsedMs": 434,
+      "elapsedMs": 320,
       "details": {
         "ref": {
           "type": "Документ.АвансовыйОтчет",
@@ -1403,7 +1432,7 @@
     {
       "name": "tool.get_document_movements",
       "status": "PASS",
-      "elapsedMs": 1827,
+      "elapsedMs": 1577,
       "details": {
         "registers": [
           "РегистрНакопления.НДСПредъявленный"
@@ -1414,7 +1443,7 @@
     {
       "name": "tool.list_reports",
       "status": "PASS",
-      "elapsedMs": 3052,
+      "elapsedMs": 2346,
       "details": {
         "reports": [
           "Отчет.АнализВерсийОбъектов",
@@ -1429,7 +1458,7 @@
     {
       "name": "tool.get_report_info",
       "status": "PASS",
-      "elapsedMs": 227,
+      "elapsedMs": 173,
       "details": {
         "report": "Отчет.АнализВерсийОбъектов",
         "variants": [
@@ -1443,7 +1472,7 @@
     {
       "name": "tool.run_1c_report_graceful",
       "status": "PASS",
-      "elapsedMs": 240,
+      "elapsedMs": 184,
       "details": {
         "report": "Отчет.АнализВерсийОбъектов",
         "executionSupported": false,
@@ -1457,7 +1486,7 @@
     {
       "name": "negative.validate_missing_metadata_is_invalid",
       "status": "PASS",
-      "elapsedMs": 198,
+      "elapsedMs": 189,
       "details": {
         "errors": [
           {
@@ -1481,7 +1510,7 @@
     {
       "name": "negative.run_missing_metadata_is_diagnostic",
       "status": "PASS",
-      "elapsedMs": 368,
+      "elapsedMs": 282,
       "details": {
         "errorCode": "query_validation_failed",
         "message": "Запрос не прошёл проверку.",
@@ -1533,7 +1562,7 @@
     {
       "name": "negative.run_validate_before_run_false_is_ignored",
       "status": "PASS",
-      "elapsedMs": 338,
+      "elapsedMs": 275,
       "details": {
         "errorCode": "query_validation_failed",
         "parsedDetails": {
@@ -1584,7 +1613,7 @@
     {
       "name": "negative.validate_forbidden_keyword",
       "status": "PASS",
-      "elapsedMs": 216,
+      "elapsedMs": 184,
       "details": {
         "errors": [
           {
@@ -1598,7 +1627,7 @@
     {
       "name": "negative.validate_invalid_imeya_keyword",
       "status": "PASS",
-      "elapsedMs": 326,
+      "elapsedMs": 234,
       "details": {
         "errors": [
           {
@@ -1612,7 +1641,7 @@
     {
       "name": "negative.get_accounting_entries_rejects_subconto_value_without_kind",
       "status": "PASS",
-      "elapsedMs": 329,
+      "elapsedMs": 299,
       "details": {
         "skipped": true,
         "reason": "no reference row"
@@ -1621,7 +1650,7 @@
     {
       "name": "negative.run_main_register_subconto_dtkt_is_smart_error",
       "status": "PASS",
-      "elapsedMs": 566,
+      "elapsedMs": 389,
       "details": {
         "errorCode": "subconto_wrong_table",
         "hint": "Используйте таблицу РегистрБухгалтерии.Хозрасчетный.Субконто с полями: Период, Регистратор, НомерСтроки, ВидДвижения, Вид, Значение. Соединяйте с основной таблицей по Регистратор и НомерСтроки."
@@ -1630,7 +1659,7 @@
     {
       "name": "negative.validate_rejects_accounting_balance_vt_deref_params",
       "status": "PASS",
-      "elapsedMs": 1433,
+      "elapsedMs": 826,
       "details": {
         "validationErrors": [
           {
@@ -1645,7 +1674,7 @@
     {
       "name": "positive.validate_vt_param_type_check_forms",
       "status": "PASS",
-      "elapsedMs": 967,
+      "elapsedMs": 551,
       "details": {
         "refs": true,
         "type": true
@@ -1654,7 +1683,7 @@
     {
       "name": "positive.validate_composite_index_by",
       "status": "PASS",
-      "elapsedMs": 470,
+      "elapsedMs": 256,
       "details": {
         "valid": true
       }
@@ -1662,7 +1691,7 @@
     {
       "name": "negative.validate_unknown_source_still_rejected",
       "status": "PASS",
-      "elapsedMs": 213,
+      "elapsedMs": 178,
       "details": {
         "errors": [
           {
@@ -1676,7 +1705,7 @@
     {
       "name": "positive.validate_drop_temp_table",
       "status": "PASS",
-      "elapsedMs": 893,
+      "elapsedMs": 499,
       "details": {
         "cyrillic": true,
         "english": true
@@ -1685,7 +1714,7 @@
     {
       "name": "negative.validate_drop_non_temp_table",
       "status": "PASS",
-      "elapsedMs": 382,
+      "elapsedMs": 313,
       "details": {
         "errors": [
           {
@@ -1699,7 +1728,7 @@
     {
       "name": "negative.validate_plain_batch_without_temp_tables",
       "status": "PASS",
-      "elapsedMs": 326,
+      "elapsedMs": 284,
       "details": {
         "errors": [
           {
@@ -1713,7 +1742,7 @@
     {
       "name": "negative.validate_temp_table_without_final_select",
       "status": "PASS",
-      "elapsedMs": 341,
+      "elapsedMs": 289,
       "details": {
         "errors": [
           {
@@ -1727,25 +1756,25 @@
     {
       "name": "negative.get_object_by_ref_bad_uuid",
       "status": "PASS",
-      "elapsedMs": 167,
+      "elapsedMs": 144,
       "details": {
         "error": {
           "code": "invalid_arguments",
           "message": "Некорректный UUID: not-a-uuid",
           "details": {
             "diagnostic_mode": true,
-            "correlation_id": "1131dbfb-f2e6-42f1-af7b-31c0f404ab6f",
+            "correlation_id": "4003624e-185f-4e9d-bdf3-9db0b3fe54fe",
             "raw_exception": "{MCP ОбщийМодуль.MCP_Errors.Модуль(96)}: [invalid_arguments] Некорректный UUID: not-a-uuid",
             "parsed_details": {}
           },
-          "correlation_id": "1131dbfb-f2e6-42f1-af7b-31c0f404ab6f"
+          "correlation_id": "4003624e-185f-4e9d-bdf3-9db0b3fe54fe"
         }
       }
     },
     {
       "name": "negative.unknown_tool",
       "status": "PASS",
-      "elapsedMs": 217,
+      "elapsedMs": 134,
       "details": {
         "error": {
           "code": "unknown_tool",
@@ -1753,32 +1782,32 @@
           "details": {
             "tool": "definitely_not_a_tool"
           },
-          "correlation_id": "0fd35d54-c62c-4337-b9f4-f12358f9de8f"
+          "correlation_id": "6363c6ff-28ab-42cb-9ae0-5a0691302e66"
         }
       }
     },
     {
       "name": "negative.parse_error_hides_internal_details",
       "status": "PASS",
-      "elapsedMs": 197,
+      "elapsedMs": 135,
       "details": {
         "code": -32700,
-        "correlation_id": "07641ddc-9c7b-4686-91e5-07fd56bf082b"
+        "correlation_id": "9aca9da6-5b66-4407-999d-556009da96f6"
       }
     },
     {
       "name": "negative.internal_error_hides_internal_details",
       "status": "PASS",
-      "elapsedMs": 202,
+      "elapsedMs": 128,
       "details": {
         "code": -32603,
-        "correlation_id": "89599e4b-7a58-4d48-9a2e-e924ffddd18a"
+        "correlation_id": "e64c3df8-5112-44d2-95eb-36582d8f0b4a"
       }
     },
     {
       "name": "crosscheck.every_listed_query_object_has_basic_structure_sample",
       "status": "PASS",
-      "elapsedMs": 12477,
+      "elapsedMs": 10451,
       "details": {
         "checked": [
           "Документ.АвансовыйОтчет",
@@ -1799,7 +1828,7 @@
     {
       "name": "query_examples.precondition_enabled_flag",
       "status": "PASS",
-      "elapsedMs": 1291,
+      "elapsedMs": 1213,
       "details": {
         "enabled": true
       }
@@ -1807,54 +1836,54 @@
     {
       "name": "query_examples.seed_and_fetch",
       "status": "PASS",
-      "elapsedMs": 1076,
+      "elapsedMs": 1035,
       "details": {
-        "uses": 21
+        "uses": 37
       }
     },
     {
       "name": "query_examples.anonymization_no_leak",
       "status": "PASS",
-      "elapsedMs": 715,
+      "elapsedMs": 690,
       "details": {}
     },
     {
       "name": "query_examples.dedup_increments_uses",
       "status": "PASS",
-      "elapsedMs": 1801,
+      "elapsedMs": 1733,
       "details": {
-        "before": 21,
-        "after": 22
+        "before": 37,
+        "after": 38
       }
     },
     {
       "name": "query_examples.response_schema",
       "status": "PASS",
-      "elapsedMs": 1248,
+      "elapsedMs": 1265,
       "details": {}
     },
     {
       "name": "query_examples.invalid_arguments",
       "status": "PASS",
-      "elapsedMs": 515,
+      "elapsedMs": 419,
       "details": {}
     },
     {
       "name": "query_examples.run_1c_query_shape_unchanged",
       "status": "PASS",
-      "elapsedMs": 310,
+      "elapsedMs": 270,
       "details": {}
     },
     {
       "name": "query_examples.unknown_object_metadata_not_found",
       "status": "PASS",
-      "elapsedMs": 296,
+      "elapsedMs": 147,
       "details": {}
     },
     {
       "name": "query_examples.only_with_rows_filter",
       "status": "PASS",
-      "elapsedMs": 1763,
+      "elapsedMs": 1826,
       "details": {
         "verified": true
       }
