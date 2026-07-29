@@ -13,9 +13,12 @@
 
 | Коммит | Issue | Правка |
 |---|---|---|
-| `d2be904` | [#79](https://github.com/gsbelarus/1c-mcp-server/issues/79) | `СсылкиСчетовПоПрефиксам` отдаёт настоящие ссылки счетов + новый кейс `tool.get_inventory_balances_by_item` |
-| `d234349` | [#80](https://github.com/gsbelarus/1c-mcp-server/issues/80) | `stage` читается с верхнего уровня и из `error`, а не из `error.details` (smoke-gate + контракт-тест) |
+| `d2be904`, `38991d7` | [#79](https://github.com/gsbelarus/1c-mcp-server/issues/79) | `СсылкиСчетовПоПрефиксам` отдаёт настоящие ссылки счетов + новый кейс `tool.get_inventory_balances_by_item` |
+| `d234349`, `38991d7` | [#80](https://github.com/gsbelarus/1c-mcp-server/issues/80) | `stage` читается с верхнего уровня и из `error`, а не из `error.details` (smoke-gate + контракт-тест) |
 | `2d42f07` | #79 | кейс инвентарного инструмента не уходит в `skipped` |
+| `c9ade70` | #79 | восстановлены обе проверки доступа: тип по allowlist и поле `Код` |
+| `ebbaf5c` | #79, #80 | приёмочный набор `reports/live_issue79_80_2026-07-29/` |
+| `2e0561f`, `a67cc4b` | #79, #80 | объединение двух ветвей одного фикса |
 
 База — `upstream/master` `b987da3`.
 
@@ -60,7 +63,7 @@ node scripts/mcp_deploy_smoke.mjs --url https://laba-1c.astondevs.ru/BUH_KORP/hs
 ### Шаг 3. Контракт-тест, все три режима ответа
 
 ```bash
-node scripts/mcp_contract_test.mjs --url https://laba-1c.astondevs.ru/BUH_KORP/hs/mcp/rpc --all-response-modes --timeout-ms 40000 --out reports/mcp_contract_report.1c-korp.latest.json
+node scripts/mcp_contract_test.mjs --url https://laba-1c.astondevs.ru/BUH_KORP/hs/mcp/rpc --all-response-modes --out reports/mcp_contract_report.1c-korp.latest.json
 ```
 
 Гонять **версией скрипта из объединённой ветки** `fix/account-list-refs-and-stage-readers`.
@@ -162,6 +165,12 @@ node scripts/mcp_contract_test.mjs --url https://laba-1c.astondevs.ru/BUH_KORP/h
 `Код` скрыто настройками доступа, инструменты обязаны отвечать `access_denied` с внятным
 текстом, а не падать в платформенную ошибку; при плане счетов вне allowlist —
 `type_not_allowed`/`access_denied`, а не платформенную ошибку.
+
+Эта проверка **сессии приёмки недоступна**: allowlist читается из константы
+`MCP_Allowlist` в самой базе (`MCP_Config.Allowlist`, `ТекстКонстантыAllowlist`), а
+инструменты MCP только читают данные и константу не меняют. Нужен человек, который на
+контуре задаст ограничение (`denied_objects` с планом счетов либо скрытое поле `Код`),
+иначе пункт остаётся непроверенным — и так его и надо помечать, а не считать выполненным.
 
 ### #80
 
