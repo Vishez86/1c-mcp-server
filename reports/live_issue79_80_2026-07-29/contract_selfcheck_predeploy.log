@@ -1,0 +1,373 @@
+MCP contract test target: https://laba-1c.astondevs.ru/BUH_KORP/hs/mcp/rpc
+Response mode: text_only
+Started: 2026-07-29T14:05:41.300Z
+[PASS]   410ms protocol.initialize
+[PASS]   631ms protocol.tools_list_has_expected_tools
+[PASS]   573ms protocol.resources_list_and_read
+[PASS]   145ms transport.notification_returns_202_empty
+[PASS]   130ms transport.get_returns_405_with_allow
+[PASS]   146ms transport.delete_returns_405
+[PASS]   146ms transport.ping_returns_empty_result
+[PASS]   141ms transport.prompts_list_is_method_not_found
+[FAIL]   218ms transport.unsupported_version_header_returns_400 :: expected HTTP 400, got 500
+[PASS]   144ms transport.works_under_protocol_2025_11_25
+[PASS] 17406ms fixtures.discover_generic_metadata
+[PASS] 14966ms tool.get_current_user_context
+[PASS]  4447ms tool.list_metadata_objects_pagination
+[PASS]  2346ms tool.search_metadata_fields_pagination
+[PASS]  1572ms tool.count_event_subscriptions_by_event
+[PASS]  1536ms tool.list_event_subscriptions_filters
+[PASS]  6087ms tool.list_registers_pagination
+[PASS]  2421ms tool.list_metadata_objects_does_not_mask_technical_metadata
+[PASS]   456ms tool.list_metadata_objects_does_not_invent_missing_register
+[PASS]  5834ms tool.discovery_returns_guidance_is_contextual
+[PASS]  1173ms tool.get_metadata_structure_generic_reference_object
+[PASS]   179ms tool.get_metadata_structure_information_register_schema
+[PASS]   857ms tool.get_metadata_structure_accounting_register_virtual_tables
+[PASS]   852ms tool.get_metadata_structure_accumulation_resources_by_mode
+[PASS]   172ms tool.validate_1c_query_existing_tabular_section
+[PASS]   350ms tool.validate_1c_query_guidance_is_opt_in
+[PASS]  2975ms tool.validate_1c_query_warns_document_tabular_register_fanout
+[PASS]   267ms tool.validate_1c_query_warns_accounting_subconto_fanout
+[PASS]   600ms regression.domain_guidance_survives_query_formatting
+[PASS]   828ms tool.validate_1c_query_returns_guidance_is_contextual
+[PASS]  4520ms tool.domain_guidance_parity_payroll_and_balance_TC029
+[PASS]   305ms tool.validate_1c_query_rejects_main_register_subconto_dtkt
+[PASS]   234ms tool.validate_1c_query_having_keyword
+[PASS]   987ms tool.get_1c_query_guidance_contextual
+[PASS]   907ms tool.1c_language_docs_generated_index
+[PASS]  4887ms tool.get_accounting_accounts_map
+[PASS]   558ms tool.get_accounting_entries_grouped
+[PASS]  2251ms tool.get_accounting_entries_subconto_join
+[PASS]  4120ms tool.get_accounting_entries_preflight_rejects_mismatched_subconto_kind
+[PASS]   143ms tool.get_accounting_entries_rejects_ambiguous_subconto_grouping
+[PASS]  1447ms tool.get_calculation_types_map
+[PASS] 12026ms tool.get_database_passport
+[PASS]   474ms tool.list_legal_sources
+[PASS]   143ms tool.get_legal_source_guide
+[PASS]   150ms negative.get_legal_source_guide_unknown_source
+[PASS]   462ms tool.run_1c_query_temporary_table_package
+[PASS]   721ms tool.run_1c_query_guidance_is_opt_in
+[PASS]   211ms tool.run_1c_query_counterparty_contact_info
+[PASS]   336ms tool.run_1c_query_reference_encoding
+[PASS]   429ms tool.run_1c_query_accounting_debit_credit_subconto
+[PASS]   592ms negative.run_1c_query_vt_field_rejected_pre_flight
+[PASS]   415ms tool.vt_field_generator_authoritative_superset
+[PASS]   330ms regression.run_1c_query_developed_balance_fields_not_rejected
+[PASS]   943ms parity.pre_flight_and_metadata_fields_match
+[PASS]   616ms negative.run_1c_query_accumulation_vt_field_rejected_pre_flight
+[PASS]   324ms negative.run_1c_query_tabular_part_rejected_pre_flight
+[PASS]   523ms negative.run_1c_query_object_field_rejected_pre_flight
+[PASS]   239ms regression.run_1c_query_tabular_part_standard_fields_not_rejected
+[PASS]   301ms regression.run_1c_query_accounting_register_fields_not_pre_flight_rejected
+[PASS]   212ms tool.run_1c_query_alias_collides_with_tabular_part_warns
+[PASS]   190ms regression.run_1c_query_distinct_aliases_no_collision_warning
+[PASS]   345ms tool.run_1c_query_accounting_balance_subconto
+[PASS]   299ms tool.run_1c_query_zero_row_subconto_position_warning
+[PASS]   149ms tool.search_objects_returns_structured_refs
+[PASS]   210ms tool.get_object_by_ref_with_tabular_section
+[PASS]  6382ms tool.find_object_by_id
+[PASS]   385ms tool.get_link_of_object
+[PASS]   903ms tool.find_references_to_object
+[PASS]  4040ms tool.get_object_history_graceful
+[PASS]   309ms tool.get_enum_values
+[PASS]   184ms tool.get_register_records_records_mode
+[PASS]   291ms tool.get_register_records_accounting_debit_credit_mode
+[PASS]   319ms tool.get_register_records_accounting_debit_credit_filter
+[PASS]   500ms tool.get_register_records_accounting_turnovers_filter
+[PASS]   160ms tool.get_accounting_balances
+[FAIL]  2214ms tool.get_accounting_balances_by_subconto_age :: get_accounting_balances_by_subconto_age did not return ok=true: {"code":"query_execute_error","message":"Ошибка выполнения запроса 1С: {MCP ОбщийМодуль.MCP_Query.Модуль(360)}: Ошибка при вызове метода контекста (ВыполнитьПакет): {(1, 374)}: Неверные параметры\nВЫБРАТЬ Остатки.Счет.Код КАК Счет, Остатки.Субконто1 КАК ГруппировкаСубконто, УникальныйИдентификатор(Остатки.Субконто1) КАК ГруппировкаUUID, Остатки.Субконто3 КАК ВозрастноеСубконто, Остатки.Субконто3.Дата КАК ДатаВозрастногоСубконто, СУММА(Остатки.СуммаОстатокДт) КАК Сумма ПОМЕСТИТЬ ВТ_ВозрастныеОстатки ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (<<?>>&СписокСчетов), &ВидыСубконто, ) КАК Остатки СГРУППИРОВАТЬ ПО Остатки.Счет.Код, Остатки.Субконто1, УникальныйИдентификатор(Остатки.Субконто1), Остатки.Субконто3, Остатки.Субконто3.Дата ИМЕЮЩИЕ СУММА(Остатки.СуммаОстатокДт) > &MinAmount ; ВЫБРАТЬ ПЕРВЫЕ 6  ВТ.Счет, ВТ.ГруппировкаСубконто, ВТ.ГруппировкаUUID, ВТ.ВозрастноеСубконто, ВТ.ДатаВозрастногоСубконто, РАЗНОСТЬДАТ(ВТ.ДатаВозрастногоСубконто, &ДатаОстатков, ДЕНЬ) КАК ВозрастДней, ВТ.Сумма ИЗ ВТ_ВозрастныеОстатки КАК ВТ ГДЕ РАЗНОСТЬДАТ(ВТ.ДатаВозрастногоСубконто, &ДатаОстатков, ДЕНЬ) >= &MinAgeDays УПОРЯДОЧИТЬ ПО Сумма УБЫВ, ВозрастДней УБЫВ","details":{"diagnostic
+[FAIL]  2858ms tool.compare_accounting_balances_by_subconto :: compare_accounting_balances_by_subconto did not return ok=true: {"code":"query_execute_error","message":"Ошибка выполнения запроса 1С: {MCP ОбщийМодуль.MCP_Query.Модуль(360)}: Ошибка при вызове метода контекста (ВыполнитьПакет): {(1, 239)}: Неверные параметры\nВЫБРАТЬ УникальныйИдентификатор(Остатки.Субконто1) КАК СубконтоUUID, Остатки.Субконто1 КАК Субконто, СУММА(Остатки.СуммаОстатокДт) КАК ЛеваяСумма ПОМЕСТИТЬ ВТ_ЛевыеОстатки ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (<<?>>&СписокСчетовЛево), &ВидыСубконто, ) КАК Остатки СГРУППИРОВАТЬ ПО УникальныйИдентификатор(Остатки.Субконто1), Остатки.Субконто1 ИМЕЮЩИЕ СУММА(Остатки.СуммаОстатокДт) > &MinAmount ИНДЕКСИРОВАТЬ ПО СубконтоUUID ; ВЫБРАТЬ УникальныйИдентификатор(Остатки.Субконто1) КАК СубконтоUUID, Остатки.Субконто1 КАК Субконто, СУММА(Остатки.СуммаОстатокКт) КАК ПраваяСумма ПОМЕСТИТЬ ВТ_ПравыеОстатки ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (&СписокСчетовПраво), &ВидыСубконто, ) КАК Остатки СГРУППИРОВАТЬ ПО УникальныйИдентификатор(Остатки.Субконто1), Остатки.Субконто1 ИМЕЮЩИЕ СУММА(Остатки.СуммаОстатокКт) > &MinAmount ИНДЕКСИРОВАТЬ ПО СубконтоUUID ; ВЫБРАТЬ ПЕРВЫЕ 6  Левые.Субконто КАК Субконто, Левые.СубконтоUUID КАК СубконтоUUID, Левые.ЛеваяСу
+[FAIL]  3620ms tool.get_inventory_balances_by_item :: get_inventory_balances_by_item did not return ok=true: {"code":"query_execute_error","message":"Ошибка выполнения запроса 1С: {MCP ОбщийМодуль.MCP_Query.Модуль(367)}: Ошибка при вызове метода контекста (Выполнить): {(1, 251)}: Неверные параметры\nВЫБРАТЬ ПЕРВЫЕ 5 Остатки.Организация КАК Организация, Остатки.Субконто2 КАК Склад, СУММА(Остатки.КоличествоОстаток) КАК КоличествоОстаток, СУММА(Остатки.СуммаОстаток) КАК СуммаОстаток ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (<<?>>&СписокСчетов), &ВидыСубконто, Субконто1 = &Номенклатура) КАК Остатки СГРУППИРОВАТЬ ПО Остатки.Организация, Остатки.Субконто2 УПОРЯДОЧИТЬ ПО Организация, Склад","details":{"diagnostic_mode":true,"correlation_id":"d4e2a593-bddf-4906-a947-5c2d9d4b957d","raw_exception":"{MCP ОбщийМодуль.MCP_Errors.Модуль(96)}: [query_execute_error] Ошибка выполнения запроса 1С: {MCP ОбщийМодуль.MCP_Query.Модуль(367)}: Ошибка при вызове метода контекста (Выполнить): {(1, 251)}: Неверные параметры\nВЫБРАТЬ ПЕРВЫЕ 5 Остатки.Организация КАК Организация, Остатки.Субконто2 КАК Склад, СУММА(Остатки.КоличествоОстаток) КАК КоличествоОстаток, СУММА(Остатки.СуммаОстаток) КАК СуммаОстаток ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (<<?>>&СписокСчетов), 
+[PASS]   148ms tool.get_register_records_bad_mode_is_diagnostic
+[PASS]   343ms fixture.query_document_with_movements
+[PASS]  1513ms tool.get_document_movements
+[PASS]  2225ms tool.list_reports
+[PASS]   185ms tool.get_report_info
+[PASS]   176ms tool.run_1c_report_graceful
+[PASS]   191ms negative.validate_missing_metadata_is_invalid
+[PASS]   286ms negative.run_missing_metadata_is_diagnostic
+[PASS]   284ms negative.run_validate_before_run_false_is_ignored
+[PASS]   194ms negative.validate_forbidden_keyword
+[PASS]   224ms negative.validate_invalid_imeya_keyword
+[PASS]   316ms negative.get_accounting_entries_rejects_subconto_value_without_kind
+[PASS]   390ms negative.run_main_register_subconto_dtkt_is_smart_error
+[PASS]   628ms negative.validate_rejects_accounting_balance_vt_deref_params
+[PASS]   544ms positive.validate_vt_param_type_check_forms
+[PASS]   269ms positive.validate_composite_index_by
+[PASS]   177ms negative.validate_unknown_source_still_rejected
+[PASS]   498ms positive.validate_drop_temp_table
+[PASS]   251ms negative.validate_drop_non_temp_table
+[PASS]   196ms negative.validate_plain_batch_without_temp_tables
+[PASS]   211ms negative.validate_temp_table_without_final_select
+[PASS]   164ms negative.get_object_by_ref_bad_uuid
+[PASS]   145ms negative.unknown_tool
+[PASS]   127ms negative.parse_error_hides_internal_details
+[PASS]   159ms negative.internal_error_hides_internal_details
+[PASS] 10372ms crosscheck.every_listed_query_object_has_basic_structure_sample
+[PASS]  1684ms query_examples.precondition_enabled_flag
+[PASS]  1331ms query_examples.seed_and_fetch
+[PASS]   934ms query_examples.anonymization_no_leak
+[PASS]  2260ms query_examples.dedup_increments_uses
+[PASS]  1774ms query_examples.response_schema
+[PASS]   461ms query_examples.invalid_arguments
+[PASS]   263ms query_examples.run_1c_query_shape_unchanged
+[PASS]   166ms query_examples.unknown_object_metadata_not_found
+[PASS]  2313ms query_examples.only_with_rows_filter
+
+Summary: 109 passed, 4 failed, 113 total
+Failures:
+- transport.unsupported_version_header_returns_400: expected HTTP 400, got 500
+- tool.get_accounting_balances_by_subconto_age: get_accounting_balances_by_subconto_age did not return ok=true: {"code":"query_execute_error","message":"Ошибка выполнения запроса 1С: {MCP ОбщийМодуль.MCP_Query.Модуль(360)}: Ошибка при вызове метода контекста (ВыполнитьПакет): {(1, 374)}: Неверные параметры\nВЫБРАТЬ Остатки.Счет.Код КАК Счет, Остатки.Субконто1 КАК ГруппировкаСубконто, УникальныйИдентификатор(Остатки.Субконто1) КАК ГруппировкаUUID, Остатки.Субконто3 КАК ВозрастноеСубконто, Остатки.Субконто3.Дата КАК ДатаВозрастногоСубконто, СУММА(Остатки.СуммаОстатокДт) КАК Сумма ПОМЕСТИТЬ ВТ_ВозрастныеОстатки ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (<<?>>&СписокСчетов), &ВидыСубконто, ) КАК Остатки СГРУППИРОВАТЬ ПО Остатки.Счет.Код, Остатки.Субконто1, УникальныйИдентификатор(Остатки.Субконто1), Остатки.Субконто3, Остатки.Субконто3.Дата ИМЕЮЩИЕ СУММА(Остатки.СуммаОстатокДт) > &MinAmount ; ВЫБРАТЬ ПЕРВЫЕ 6  ВТ.Счет, ВТ.ГруппировкаСубконто, ВТ.ГруппировкаUUID, ВТ.ВозрастноеСубконто, ВТ.ДатаВозрастногоСубконто, РАЗНОСТЬДАТ(ВТ.ДатаВозрастногоСубконто, &ДатаОстатков, ДЕНЬ) КАК ВозрастДней, ВТ.Сумма ИЗ ВТ_ВозрастныеОстатки КАК ВТ ГДЕ РАЗНОСТЬДАТ(ВТ.ДатаВозрастногоСубконто, &ДатаОстатков, ДЕНЬ) >= &MinAgeDays УПОРЯДОЧИТЬ ПО Сумма УБЫВ, ВозрастДней УБЫВ","details":{"diagnostic
+- tool.compare_accounting_balances_by_subconto: compare_accounting_balances_by_subconto did not return ok=true: {"code":"query_execute_error","message":"Ошибка выполнения запроса 1С: {MCP ОбщийМодуль.MCP_Query.Модуль(360)}: Ошибка при вызове метода контекста (ВыполнитьПакет): {(1, 239)}: Неверные параметры\nВЫБРАТЬ УникальныйИдентификатор(Остатки.Субконто1) КАК СубконтоUUID, Остатки.Субконто1 КАК Субконто, СУММА(Остатки.СуммаОстатокДт) КАК ЛеваяСумма ПОМЕСТИТЬ ВТ_ЛевыеОстатки ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (<<?>>&СписокСчетовЛево), &ВидыСубконто, ) КАК Остатки СГРУППИРОВАТЬ ПО УникальныйИдентификатор(Остатки.Субконто1), Остатки.Субконто1 ИМЕЮЩИЕ СУММА(Остатки.СуммаОстатокДт) > &MinAmount ИНДЕКСИРОВАТЬ ПО СубконтоUUID ; ВЫБРАТЬ УникальныйИдентификатор(Остатки.Субконто1) КАК СубконтоUUID, Остатки.Субконто1 КАК Субконто, СУММА(Остатки.СуммаОстатокКт) КАК ПраваяСумма ПОМЕСТИТЬ ВТ_ПравыеОстатки ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (&СписокСчетовПраво), &ВидыСубконто, ) КАК Остатки СГРУППИРОВАТЬ ПО УникальныйИдентификатор(Остатки.Субконто1), Остатки.Субконто1 ИМЕЮЩИЕ СУММА(Остатки.СуммаОстатокКт) > &MinAmount ИНДЕКСИРОВАТЬ ПО СубконтоUUID ; ВЫБРАТЬ ПЕРВЫЕ 6  Левые.Субконто КАК Субконто, Левые.СубконтоUUID КАК СубконтоUUID, Левые.ЛеваяСу
+- tool.get_inventory_balances_by_item: get_inventory_balances_by_item did not return ok=true: {"code":"query_execute_error","message":"Ошибка выполнения запроса 1С: {MCP ОбщийМодуль.MCP_Query.Модуль(367)}: Ошибка при вызове метода контекста (Выполнить): {(1, 251)}: Неверные параметры\nВЫБРАТЬ ПЕРВЫЕ 5 Остатки.Организация КАК Организация, Остатки.Субконто2 КАК Склад, СУММА(Остатки.КоличествоОстаток) КАК КоличествоОстаток, СУММА(Остатки.СуммаОстаток) КАК СуммаОстаток ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (<<?>>&СписокСчетов), &ВидыСубконто, Субконто1 = &Номенклатура) КАК Остатки СГРУППИРОВАТЬ ПО Остатки.Организация, Остатки.Субконто2 УПОРЯДОЧИТЬ ПО Организация, Склад","details":{"diagnostic_mode":true,"correlation_id":"d4e2a593-bddf-4906-a947-5c2d9d4b957d","raw_exception":"{MCP ОбщийМодуль.MCP_Errors.Модуль(96)}: [query_execute_error] Ошибка выполнения запроса 1С: {MCP ОбщийМодуль.MCP_Query.Модуль(367)}: Ошибка при вызове метода контекста (Выполнить): {(1, 251)}: Неверные параметры\nВЫБРАТЬ ПЕРВЫЕ 5 Остатки.Организация КАК Организация, Остатки.Субконто2 КАК Склад, СУММА(Остатки.КоличествоОстаток) КАК КоличествоОстаток, СУММА(Остатки.СуммаОстаток) КАК СуммаОстаток ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (<<?>>&СписокСчетов), 
+Report written: D:\Projects\1c-mcp-server\.claude\worktrees\tasks-register-work\reports\live_issue79_80_2026-07-29\contract_selfcheck_predeploy.text_only.json
+MCP contract test target: https://laba-1c.astondevs.ru/BUH_KORP/hs/mcp/rpc
+Response mode: structured_only
+Started: 2026-07-29T14:08:23.898Z
+[PASS]   171ms protocol.initialize
+[PASS]   667ms protocol.tools_list_has_expected_tools
+[PASS]   536ms protocol.resources_list_and_read
+[PASS]   132ms transport.notification_returns_202_empty
+[PASS]   151ms transport.get_returns_405_with_allow
+[PASS]   131ms transport.delete_returns_405
+[PASS]   133ms transport.ping_returns_empty_result
+[PASS]   128ms transport.prompts_list_is_method_not_found
+[FAIL]   137ms transport.unsupported_version_header_returns_400 :: expected HTTP 400, got 500
+[PASS]   123ms transport.works_under_protocol_2025_11_25
+[PASS] 18423ms fixtures.discover_generic_metadata
+[PASS] 15230ms tool.get_current_user_context
+[PASS]  4570ms tool.list_metadata_objects_pagination
+[PASS]  2447ms tool.search_metadata_fields_pagination
+[PASS]  1623ms tool.count_event_subscriptions_by_event
+[PASS]  1637ms tool.list_event_subscriptions_filters
+[PASS]  6210ms tool.list_registers_pagination
+[PASS]  2530ms tool.list_metadata_objects_does_not_mask_technical_metadata
+[PASS]   476ms tool.list_metadata_objects_does_not_invent_missing_register
+[PASS]  6431ms tool.discovery_returns_guidance_is_contextual
+[PASS]  1221ms tool.get_metadata_structure_generic_reference_object
+[PASS]   183ms tool.get_metadata_structure_information_register_schema
+[PASS]   864ms tool.get_metadata_structure_accounting_register_virtual_tables
+[PASS]   887ms tool.get_metadata_structure_accumulation_resources_by_mode
+[PASS]   178ms tool.validate_1c_query_existing_tabular_section
+[PASS]   367ms tool.validate_1c_query_guidance_is_opt_in
+[PASS]  3127ms tool.validate_1c_query_warns_document_tabular_register_fanout
+[PASS]   287ms tool.validate_1c_query_warns_accounting_subconto_fanout
+[PASS]   630ms regression.domain_guidance_survives_query_formatting
+[PASS]   864ms tool.validate_1c_query_returns_guidance_is_contextual
+[PASS]  4492ms tool.domain_guidance_parity_payroll_and_balance_TC029
+[PASS]   184ms tool.validate_1c_query_rejects_main_register_subconto_dtkt
+[PASS]   218ms tool.validate_1c_query_having_keyword
+[PASS]   960ms tool.get_1c_query_guidance_contextual
+[PASS]   911ms tool.1c_language_docs_generated_index
+[PASS]  4812ms tool.get_accounting_accounts_map
+[PASS]   495ms tool.get_accounting_entries_grouped
+[PASS]  2151ms tool.get_accounting_entries_subconto_join
+[PASS]  4140ms tool.get_accounting_entries_preflight_rejects_mismatched_subconto_kind
+[PASS]   145ms tool.get_accounting_entries_rejects_ambiguous_subconto_grouping
+[PASS]  1280ms tool.get_calculation_types_map
+[PASS] 12064ms tool.get_database_passport
+[PASS]   480ms tool.list_legal_sources
+[PASS]   239ms tool.get_legal_source_guide
+[PASS]   149ms negative.get_legal_source_guide_unknown_source
+[PASS]   480ms tool.run_1c_query_temporary_table_package
+[PASS]   698ms tool.run_1c_query_guidance_is_opt_in
+[PASS]   228ms tool.run_1c_query_counterparty_contact_info
+[PASS]   326ms tool.run_1c_query_reference_encoding
+[PASS]   430ms tool.run_1c_query_accounting_debit_credit_subconto
+[PASS]   508ms negative.run_1c_query_vt_field_rejected_pre_flight
+[PASS]   444ms tool.vt_field_generator_authoritative_superset
+[PASS]   299ms regression.run_1c_query_developed_balance_fields_not_rejected
+[PASS]   880ms parity.pre_flight_and_metadata_fields_match
+[PASS]   603ms negative.run_1c_query_accumulation_vt_field_rejected_pre_flight
+[PASS]   332ms negative.run_1c_query_tabular_part_rejected_pre_flight
+[PASS]   514ms negative.run_1c_query_object_field_rejected_pre_flight
+[PASS]   241ms regression.run_1c_query_tabular_part_standard_fields_not_rejected
+[PASS]   288ms regression.run_1c_query_accounting_register_fields_not_pre_flight_rejected
+[PASS]   237ms tool.run_1c_query_alias_collides_with_tabular_part_warns
+[PASS]   185ms regression.run_1c_query_distinct_aliases_no_collision_warning
+[PASS]   344ms tool.run_1c_query_accounting_balance_subconto
+[PASS]   300ms tool.run_1c_query_zero_row_subconto_position_warning
+[PASS]   156ms tool.search_objects_returns_structured_refs
+[PASS]   180ms tool.get_object_by_ref_with_tabular_section
+[PASS]  6106ms tool.find_object_by_id
+[PASS]   319ms tool.get_link_of_object
+[PASS]   698ms tool.find_references_to_object
+[PASS]  3895ms tool.get_object_history_graceful
+[PASS]   149ms tool.get_enum_values
+[PASS]   177ms tool.get_register_records_records_mode
+[PASS]   300ms tool.get_register_records_accounting_debit_credit_mode
+[PASS]   675ms tool.get_register_records_accounting_debit_credit_filter
+[PASS]   489ms tool.get_register_records_accounting_turnovers_filter
+[PASS]   175ms tool.get_accounting_balances
+[FAIL]  2295ms tool.get_accounting_balances_by_subconto_age :: get_accounting_balances_by_subconto_age did not return ok=true: {"code":"query_execute_error","message":"Ошибка выполнения запроса 1С: {MCP ОбщийМодуль.MCP_Query.Модуль(360)}: Ошибка при вызове метода контекста (ВыполнитьПакет): {(1, 374)}: Неверные параметры\nВЫБРАТЬ Остатки.Счет.Код КАК Счет, Остатки.Субконто1 КАК ГруппировкаСубконто, УникальныйИдентификатор(Остатки.Субконто1) КАК ГруппировкаUUID, Остатки.Субконто3 КАК ВозрастноеСубконто, Остатки.Субконто3.Дата КАК ДатаВозрастногоСубконто, СУММА(Остатки.СуммаОстатокДт) КАК Сумма ПОМЕСТИТЬ ВТ_ВозрастныеОстатки ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (<<?>>&СписокСчетов), &ВидыСубконто, ) КАК Остатки СГРУППИРОВАТЬ ПО Остатки.Счет.Код, Остатки.Субконто1, УникальныйИдентификатор(Остатки.Субконто1), Остатки.Субконто3, Остатки.Субконто3.Дата ИМЕЮЩИЕ СУММА(Остатки.СуммаОстатокДт) > &MinAmount ; ВЫБРАТЬ ПЕРВЫЕ 6  ВТ.Счет, ВТ.ГруппировкаСубконто, ВТ.ГруппировкаUUID, ВТ.ВозрастноеСубконто, ВТ.ДатаВозрастногоСубконто, РАЗНОСТЬДАТ(ВТ.ДатаВозрастногоСубконто, &ДатаОстатков, ДЕНЬ) КАК ВозрастДней, ВТ.Сумма ИЗ ВТ_ВозрастныеОстатки КАК ВТ ГДЕ РАЗНОСТЬДАТ(ВТ.ДатаВозрастногоСубконто, &ДатаОстатков, ДЕНЬ) >= &MinAgeDays УПОРЯДОЧИТЬ ПО Сумма УБЫВ, ВозрастДней УБЫВ","details":{"diagnostic
+[FAIL]  2788ms tool.compare_accounting_balances_by_subconto :: compare_accounting_balances_by_subconto did not return ok=true: {"code":"query_execute_error","message":"Ошибка выполнения запроса 1С: {MCP ОбщийМодуль.MCP_Query.Модуль(360)}: Ошибка при вызове метода контекста (ВыполнитьПакет): {(1, 239)}: Неверные параметры\nВЫБРАТЬ УникальныйИдентификатор(Остатки.Субконто1) КАК СубконтоUUID, Остатки.Субконто1 КАК Субконто, СУММА(Остатки.СуммаОстатокДт) КАК ЛеваяСумма ПОМЕСТИТЬ ВТ_ЛевыеОстатки ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (<<?>>&СписокСчетовЛево), &ВидыСубконто, ) КАК Остатки СГРУППИРОВАТЬ ПО УникальныйИдентификатор(Остатки.Субконто1), Остатки.Субконто1 ИМЕЮЩИЕ СУММА(Остатки.СуммаОстатокДт) > &MinAmount ИНДЕКСИРОВАТЬ ПО СубконтоUUID ; ВЫБРАТЬ УникальныйИдентификатор(Остатки.Субконто1) КАК СубконтоUUID, Остатки.Субконто1 КАК Субконто, СУММА(Остатки.СуммаОстатокКт) КАК ПраваяСумма ПОМЕСТИТЬ ВТ_ПравыеОстатки ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (&СписокСчетовПраво), &ВидыСубконто, ) КАК Остатки СГРУППИРОВАТЬ ПО УникальныйИдентификатор(Остатки.Субконто1), Остатки.Субконто1 ИМЕЮЩИЕ СУММА(Остатки.СуммаОстатокКт) > &MinAmount ИНДЕКСИРОВАТЬ ПО СубконтоUUID ; ВЫБРАТЬ ПЕРВЫЕ 6  Левые.Субконто КАК Субконто, Левые.СубконтоUUID КАК СубконтоUUID, Левые.ЛеваяСу
+[FAIL]  2521ms tool.get_inventory_balances_by_item :: get_inventory_balances_by_item did not return ok=true: {"code":"query_execute_error","message":"Ошибка выполнения запроса 1С: {MCP ОбщийМодуль.MCP_Query.Модуль(367)}: Ошибка при вызове метода контекста (Выполнить): {(1, 251)}: Неверные параметры\nВЫБРАТЬ ПЕРВЫЕ 5 Остатки.Организация КАК Организация, Остатки.Субконто2 КАК Склад, СУММА(Остатки.КоличествоОстаток) КАК КоличествоОстаток, СУММА(Остатки.СуммаОстаток) КАК СуммаОстаток ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (<<?>>&СписокСчетов), &ВидыСубконто, Субконто1 = &Номенклатура) КАК Остатки СГРУППИРОВАТЬ ПО Остатки.Организация, Остатки.Субконто2 УПОРЯДОЧИТЬ ПО Организация, Склад","details":{"diagnostic_mode":true,"correlation_id":"f3bfdc96-658b-4177-bbd3-93900ae06278","raw_exception":"{MCP ОбщийМодуль.MCP_Errors.Модуль(96)}: [query_execute_error] Ошибка выполнения запроса 1С: {MCP ОбщийМодуль.MCP_Query.Модуль(367)}: Ошибка при вызове метода контекста (Выполнить): {(1, 251)}: Неверные параметры\nВЫБРАТЬ ПЕРВЫЕ 5 Остатки.Организация КАК Организация, Остатки.Субконто2 КАК Склад, СУММА(Остатки.КоличествоОстаток) КАК КоличествоОстаток, СУММА(Остатки.СуммаОстаток) КАК СуммаОстаток ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (<<?>>&СписокСчетов), 
+[PASS]   148ms tool.get_register_records_bad_mode_is_diagnostic
+[PASS]   321ms fixture.query_document_with_movements
+[PASS]  1427ms tool.get_document_movements
+[PASS]  2300ms tool.list_reports
+[PASS]   182ms tool.get_report_info
+[PASS]   194ms tool.run_1c_report_graceful
+[PASS]   189ms negative.validate_missing_metadata_is_invalid
+[PASS]   286ms negative.run_missing_metadata_is_diagnostic
+[PASS]   305ms negative.run_validate_before_run_false_is_ignored
+[PASS]   170ms negative.validate_forbidden_keyword
+[PASS]   223ms negative.validate_invalid_imeya_keyword
+[PASS]   294ms negative.get_accounting_entries_rejects_subconto_value_without_kind
+[PASS]   412ms negative.run_main_register_subconto_dtkt_is_smart_error
+[PASS]   622ms negative.validate_rejects_accounting_balance_vt_deref_params
+[PASS]   537ms positive.validate_vt_param_type_check_forms
+[PASS]   260ms positive.validate_composite_index_by
+[PASS]   177ms negative.validate_unknown_source_still_rejected
+[PASS]   487ms positive.validate_drop_temp_table
+[PASS]   219ms negative.validate_drop_non_temp_table
+[PASS]   260ms negative.validate_plain_batch_without_temp_tables
+[PASS]   202ms negative.validate_temp_table_without_final_select
+[PASS]   160ms negative.get_object_by_ref_bad_uuid
+[PASS]   137ms negative.unknown_tool
+[PASS]   145ms negative.parse_error_hides_internal_details
+[PASS]   132ms negative.internal_error_hides_internal_details
+[PASS] 10300ms crosscheck.every_listed_query_object_has_basic_structure_sample
+[PASS]  1646ms query_examples.precondition_enabled_flag
+[PASS]  1359ms query_examples.seed_and_fetch
+[PASS]   965ms query_examples.anonymization_no_leak
+[PASS]  2381ms query_examples.dedup_increments_uses
+[PASS]  1755ms query_examples.response_schema
+[PASS]   489ms query_examples.invalid_arguments
+[PASS]   280ms query_examples.run_1c_query_shape_unchanged
+[PASS]   166ms query_examples.unknown_object_metadata_not_found
+[PASS]  2340ms query_examples.only_with_rows_filter
+
+Summary: 109 passed, 4 failed, 113 total
+Failures:
+- transport.unsupported_version_header_returns_400: expected HTTP 400, got 500
+- tool.get_accounting_balances_by_subconto_age: get_accounting_balances_by_subconto_age did not return ok=true: {"code":"query_execute_error","message":"Ошибка выполнения запроса 1С: {MCP ОбщийМодуль.MCP_Query.Модуль(360)}: Ошибка при вызове метода контекста (ВыполнитьПакет): {(1, 374)}: Неверные параметры\nВЫБРАТЬ Остатки.Счет.Код КАК Счет, Остатки.Субконто1 КАК ГруппировкаСубконто, УникальныйИдентификатор(Остатки.Субконто1) КАК ГруппировкаUUID, Остатки.Субконто3 КАК ВозрастноеСубконто, Остатки.Субконто3.Дата КАК ДатаВозрастногоСубконто, СУММА(Остатки.СуммаОстатокДт) КАК Сумма ПОМЕСТИТЬ ВТ_ВозрастныеОстатки ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (<<?>>&СписокСчетов), &ВидыСубконто, ) КАК Остатки СГРУППИРОВАТЬ ПО Остатки.Счет.Код, Остатки.Субконто1, УникальныйИдентификатор(Остатки.Субконто1), Остатки.Субконто3, Остатки.Субконто3.Дата ИМЕЮЩИЕ СУММА(Остатки.СуммаОстатокДт) > &MinAmount ; ВЫБРАТЬ ПЕРВЫЕ 6  ВТ.Счет, ВТ.ГруппировкаСубконто, ВТ.ГруппировкаUUID, ВТ.ВозрастноеСубконто, ВТ.ДатаВозрастногоСубконто, РАЗНОСТЬДАТ(ВТ.ДатаВозрастногоСубконто, &ДатаОстатков, ДЕНЬ) КАК ВозрастДней, ВТ.Сумма ИЗ ВТ_ВозрастныеОстатки КАК ВТ ГДЕ РАЗНОСТЬДАТ(ВТ.ДатаВозрастногоСубконто, &ДатаОстатков, ДЕНЬ) >= &MinAgeDays УПОРЯДОЧИТЬ ПО Сумма УБЫВ, ВозрастДней УБЫВ","details":{"diagnostic
+- tool.compare_accounting_balances_by_subconto: compare_accounting_balances_by_subconto did not return ok=true: {"code":"query_execute_error","message":"Ошибка выполнения запроса 1С: {MCP ОбщийМодуль.MCP_Query.Модуль(360)}: Ошибка при вызове метода контекста (ВыполнитьПакет): {(1, 239)}: Неверные параметры\nВЫБРАТЬ УникальныйИдентификатор(Остатки.Субконто1) КАК СубконтоUUID, Остатки.Субконто1 КАК Субконто, СУММА(Остатки.СуммаОстатокДт) КАК ЛеваяСумма ПОМЕСТИТЬ ВТ_ЛевыеОстатки ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (<<?>>&СписокСчетовЛево), &ВидыСубконто, ) КАК Остатки СГРУППИРОВАТЬ ПО УникальныйИдентификатор(Остатки.Субконто1), Остатки.Субконто1 ИМЕЮЩИЕ СУММА(Остатки.СуммаОстатокДт) > &MinAmount ИНДЕКСИРОВАТЬ ПО СубконтоUUID ; ВЫБРАТЬ УникальныйИдентификатор(Остатки.Субконто1) КАК СубконтоUUID, Остатки.Субконто1 КАК Субконто, СУММА(Остатки.СуммаОстатокКт) КАК ПраваяСумма ПОМЕСТИТЬ ВТ_ПравыеОстатки ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (&СписокСчетовПраво), &ВидыСубконто, ) КАК Остатки СГРУППИРОВАТЬ ПО УникальныйИдентификатор(Остатки.Субконто1), Остатки.Субконто1 ИМЕЮЩИЕ СУММА(Остатки.СуммаОстатокКт) > &MinAmount ИНДЕКСИРОВАТЬ ПО СубконтоUUID ; ВЫБРАТЬ ПЕРВЫЕ 6  Левые.Субконто КАК Субконто, Левые.СубконтоUUID КАК СубконтоUUID, Левые.ЛеваяСу
+- tool.get_inventory_balances_by_item: get_inventory_balances_by_item did not return ok=true: {"code":"query_execute_error","message":"Ошибка выполнения запроса 1С: {MCP ОбщийМодуль.MCP_Query.Модуль(367)}: Ошибка при вызове метода контекста (Выполнить): {(1, 251)}: Неверные параметры\nВЫБРАТЬ ПЕРВЫЕ 5 Остатки.Организация КАК Организация, Остатки.Субконто2 КАК Склад, СУММА(Остатки.КоличествоОстаток) КАК КоличествоОстаток, СУММА(Остатки.СуммаОстаток) КАК СуммаОстаток ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (<<?>>&СписокСчетов), &ВидыСубконто, Субконто1 = &Номенклатура) КАК Остатки СГРУППИРОВАТЬ ПО Остатки.Организация, Остатки.Субконто2 УПОРЯДОЧИТЬ ПО Организация, Склад","details":{"diagnostic_mode":true,"correlation_id":"f3bfdc96-658b-4177-bbd3-93900ae06278","raw_exception":"{MCP ОбщийМодуль.MCP_Errors.Модуль(96)}: [query_execute_error] Ошибка выполнения запроса 1С: {MCP ОбщийМодуль.MCP_Query.Модуль(367)}: Ошибка при вызове метода контекста (Выполнить): {(1, 251)}: Неверные параметры\nВЫБРАТЬ ПЕРВЫЕ 5 Остатки.Организация КАК Организация, Остатки.Субконто2 КАК Склад, СУММА(Остатки.КоличествоОстаток) КАК КоличествоОстаток, СУММА(Остатки.СуммаОстаток) КАК СуммаОстаток ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (<<?>>&СписокСчетов), 
+Report written: D:\Projects\1c-mcp-server\.claude\worktrees\tasks-register-work\reports\live_issue79_80_2026-07-29\contract_selfcheck_predeploy.structured_only.json
+MCP contract test target: https://laba-1c.astondevs.ru/BUH_KORP/hs/mcp/rpc
+Response mode: both
+Started: 2026-07-29T14:11:06.859Z
+[PASS]   135ms protocol.initialize
+[PASS]   608ms protocol.tools_list_has_expected_tools
+[PASS]   551ms protocol.resources_list_and_read
+[PASS]   152ms transport.notification_returns_202_empty
+[PASS]   127ms transport.get_returns_405_with_allow
+[PASS]   143ms transport.delete_returns_405
+[PASS]   135ms transport.ping_returns_empty_result
+[PASS]   136ms transport.prompts_list_is_method_not_found
+[FAIL]   132ms transport.unsupported_version_header_returns_400 :: expected HTTP 400, got 500
+[PASS]   144ms transport.works_under_protocol_2025_11_25
+[PASS] 19581ms fixtures.discover_generic_metadata
+[PASS] 15694ms tool.get_current_user_context
+[PASS]  4890ms tool.list_metadata_objects_pagination
+[PASS]  2415ms tool.search_metadata_fields_pagination
+[PASS]  1755ms tool.count_event_subscriptions_by_event
+[PASS]  1829ms tool.list_event_subscriptions_filters
+[PASS]  6419ms tool.list_registers_pagination
+[PASS]  2581ms tool.list_metadata_objects_does_not_mask_technical_metadata
+[PASS]   458ms tool.list_metadata_objects_does_not_invent_missing_register
+[PASS]  6029ms tool.discovery_returns_guidance_is_contextual
+[PASS]  1430ms tool.get_metadata_structure_generic_reference_object
+[PASS]   188ms tool.get_metadata_structure_information_register_schema
+[PASS]   935ms tool.get_metadata_structure_accounting_register_virtual_tables
+[PASS]   969ms tool.get_metadata_structure_accumulation_resources_by_mode
+[PASS]   260ms tool.validate_1c_query_existing_tabular_section
+[PASS]   440ms tool.validate_1c_query_guidance_is_opt_in
+[PASS]  3396ms tool.validate_1c_query_warns_document_tabular_register_fanout
+[PASS]   285ms tool.validate_1c_query_warns_accounting_subconto_fanout
+[PASS]   623ms regression.domain_guidance_survives_query_formatting
+[PASS]   936ms tool.validate_1c_query_returns_guidance_is_contextual
+[PASS]  5024ms tool.domain_guidance_parity_payroll_and_balance_TC029
+[PASS]   287ms tool.validate_1c_query_rejects_main_register_subconto_dtkt
+[PASS]   307ms tool.validate_1c_query_having_keyword
+[PASS]  1132ms tool.get_1c_query_guidance_contextual
+[PASS]  1028ms tool.1c_language_docs_generated_index
+[PASS]  6136ms tool.get_accounting_accounts_map
+[PASS]   711ms tool.get_accounting_entries_grouped
+[PASS]  2269ms tool.get_accounting_entries_subconto_join
+[PASS]  5235ms tool.get_accounting_entries_preflight_rejects_mismatched_subconto_kind
+[PASS]   155ms tool.get_accounting_entries_rejects_ambiguous_subconto_grouping
+[PASS]  1267ms tool.get_calculation_types_map
+[PASS] 11535ms tool.get_database_passport
+[PASS]   475ms tool.list_legal_sources
+[PASS]   252ms tool.get_legal_source_guide
+[PASS]   141ms negative.get_legal_source_guide_unknown_source
+[PASS]   455ms tool.run_1c_query_temporary_table_package
+[PASS]   738ms tool.run_1c_query_guidance_is_opt_in
+[PASS]   233ms tool.run_1c_query_counterparty_contact_info
+[PASS]   342ms tool.run_1c_query_reference_encoding
+[PASS]   421ms tool.run_1c_query_accounting_debit_credit_subconto
+[PASS]   626ms negative.run_1c_query_vt_field_rejected_pre_flight
+[PASS]   540ms tool.vt_field_generator_authoritative_superset
+[PASS]   322ms regression.run_1c_query_developed_balance_fields_not_rejected
+[PASS]  1179ms parity.pre_flight_and_metadata_fields_match
+[PASS]   824ms negative.run_1c_query_accumulation_vt_field_rejected_pre_flight
+[PASS]   415ms negative.run_1c_query_tabular_part_rejected_pre_flight
+[PASS]   624ms negative.run_1c_query_object_field_rejected_pre_flight
+[PASS]   227ms regression.run_1c_query_tabular_part_standard_fields_not_rejected
+[PASS]   303ms regression.run_1c_query_accounting_register_fields_not_pre_flight_rejected
+[PASS]   298ms tool.run_1c_query_alias_collides_with_tabular_part_warns
+[PASS]   186ms regression.run_1c_query_distinct_aliases_no_collision_warning
+[PASS]   438ms tool.run_1c_query_accounting_balance_subconto
+[PASS]   320ms tool.run_1c_query_zero_row_subconto_position_warning
+[PASS]   158ms tool.search_objects_returns_structured_refs
+[PASS]   195ms tool.get_object_by_ref_with_tabular_section
+[PASS]  6426ms tool.find_object_by_id
+[PASS]   349ms tool.get_link_of_object
+[PASS]   628ms tool.find_references_to_object
+[PASS]  4261ms tool.get_object_history_graceful
+[PASS]   344ms tool.get_enum_values
+[PASS]   190ms tool.get_register_records_records_mode
+[PASS]   289ms tool.get_register_records_accounting_debit_credit_mode
+[PASS]   346ms tool.get_register_records_accounting_debit_credit_filter
+[PASS]   518ms tool.get_register_records_accounting_turnovers_filter
+[PASS]   157ms tool.get_accounting_balances
+[FAIL]  2473ms tool.get_accounting_balances_by_subconto_age :: get_accounting_balances_by_subconto_age did not return ok=true: {"code":"query_execute_error","message":"Ошибка выполнения запроса 1С: {MCP ОбщийМодуль.MCP_Query.Модуль(360)}: Ошибка при вызове метода контекста (ВыполнитьПакет): {(1, 374)}: Неверные параметры\nВЫБРАТЬ Остатки.Счет.Код КАК Счет, Остатки.Субконто1 КАК ГруппировкаСубконто, УникальныйИдентификатор(Остатки.Субконто1) КАК ГруппировкаUUID, Остатки.Субконто3 КАК ВозрастноеСубконто, Остатки.Субконто3.Дата КАК ДатаВозрастногоСубконто, СУММА(Остатки.СуммаОстатокДт) КАК Сумма ПОМЕСТИТЬ ВТ_ВозрастныеОстатки ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (<<?>>&СписокСчетов), &ВидыСубконто, ) КАК Остатки СГРУППИРОВАТЬ ПО Остатки.Счет.Код, Остатки.Субконто1, УникальныйИдентификатор(Остатки.Субконто1), Остатки.Субконто3, Остатки.Субконто3.Дата ИМЕЮЩИЕ СУММА(Остатки.СуммаОстатокДт) > &MinAmount ; ВЫБРАТЬ ПЕРВЫЕ 6  ВТ.Счет, ВТ.ГруппировкаСубконто, ВТ.ГруппировкаUUID, ВТ.ВозрастноеСубконто, ВТ.ДатаВозрастногоСубконто, РАЗНОСТЬДАТ(ВТ.ДатаВозрастногоСубконто, &ДатаОстатков, ДЕНЬ) КАК ВозрастДней, ВТ.Сумма ИЗ ВТ_ВозрастныеОстатки КАК ВТ ГДЕ РАЗНОСТЬДАТ(ВТ.ДатаВозрастногоСубконто, &ДатаОстатков, ДЕНЬ) >= &MinAgeDays УПОРЯДОЧИТЬ ПО Сумма УБЫВ, ВозрастДней УБЫВ","details":{"diagnostic
+[FAIL]  2916ms tool.compare_accounting_balances_by_subconto :: compare_accounting_balances_by_subconto did not return ok=true: {"code":"query_execute_error","message":"Ошибка выполнения запроса 1С: {MCP ОбщийМодуль.MCP_Query.Модуль(360)}: Ошибка при вызове метода контекста (ВыполнитьПакет): {(1, 239)}: Неверные параметры\nВЫБРАТЬ УникальныйИдентификатор(Остатки.Субконто1) КАК СубконтоUUID, Остатки.Субконто1 КАК Субконто, СУММА(Остатки.СуммаОстатокДт) КАК ЛеваяСумма ПОМЕСТИТЬ ВТ_ЛевыеОстатки ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (<<?>>&СписокСчетовЛево), &ВидыСубконто, ) КАК Остатки СГРУППИРОВАТЬ ПО УникальныйИдентификатор(Остатки.Субконто1), Остатки.Субконто1 ИМЕЮЩИЕ СУММА(Остатки.СуммаОстатокДт) > &MinAmount ИНДЕКСИРОВАТЬ ПО СубконтоUUID ; ВЫБРАТЬ УникальныйИдентификатор(Остатки.Субконто1) КАК СубконтоUUID, Остатки.Субконто1 КАК Субконто, СУММА(Остатки.СуммаОстатокКт) КАК ПраваяСумма ПОМЕСТИТЬ ВТ_ПравыеОстатки ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (&СписокСчетовПраво), &ВидыСубконто, ) КАК Остатки СГРУППИРОВАТЬ ПО УникальныйИдентификатор(Остатки.Субконто1), Остатки.Субконто1 ИМЕЮЩИЕ СУММА(Остатки.СуммаОстатокКт) > &MinAmount ИНДЕКСИРОВАТЬ ПО СубконтоUUID ; ВЫБРАТЬ ПЕРВЫЕ 6  Левые.Субконто КАК Субконто, Левые.СубконтоUUID КАК СубконтоUUID, Левые.ЛеваяСу
+[FAIL]  2801ms tool.get_inventory_balances_by_item :: get_inventory_balances_by_item did not return ok=true: {"code":"query_execute_error","message":"Ошибка выполнения запроса 1С: {MCP ОбщийМодуль.MCP_Query.Модуль(367)}: Ошибка при вызове метода контекста (Выполнить): {(1, 251)}: Неверные параметры\nВЫБРАТЬ ПЕРВЫЕ 5 Остатки.Организация КАК Организация, Остатки.Субконто2 КАК Склад, СУММА(Остатки.КоличествоОстаток) КАК КоличествоОстаток, СУММА(Остатки.СуммаОстаток) КАК СуммаОстаток ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (<<?>>&СписокСчетов), &ВидыСубконто, Субконто1 = &Номенклатура) КАК Остатки СГРУППИРОВАТЬ ПО Остатки.Организация, Остатки.Субконто2 УПОРЯДОЧИТЬ ПО Организация, Склад","details":{"diagnostic_mode":true,"correlation_id":"6a50f3f4-165a-4e59-808d-04f630a87f4e","raw_exception":"{MCP ОбщийМодуль.MCP_Errors.Модуль(96)}: [query_execute_error] Ошибка выполнения запроса 1С: {MCP ОбщийМодуль.MCP_Query.Модуль(367)}: Ошибка при вызове метода контекста (Выполнить): {(1, 251)}: Неверные параметры\nВЫБРАТЬ ПЕРВЫЕ 5 Остатки.Организация КАК Организация, Остатки.Субконто2 КАК Склад, СУММА(Остатки.КоличествоОстаток) КАК КоличествоОстаток, СУММА(Остатки.СуммаОстаток) КАК СуммаОстаток ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (<<?>>&СписокСчетов), 
+[PASS]   173ms tool.get_register_records_bad_mode_is_diagnostic
+[PASS]   382ms fixture.query_document_with_movements
+[PASS]  1602ms tool.get_document_movements
+[PASS]  3418ms tool.list_reports
+[PASS]   213ms tool.get_report_info
+[PASS]   229ms tool.run_1c_report_graceful
+[PASS]   214ms negative.validate_missing_metadata_is_invalid
+[PASS]   512ms negative.run_missing_metadata_is_diagnostic
+[PASS]   360ms negative.run_validate_before_run_false_is_ignored
+[PASS]   421ms negative.validate_forbidden_keyword
+[PASS]   556ms negative.validate_invalid_imeya_keyword
+[PASS]   407ms negative.get_accounting_entries_rejects_subconto_value_without_kind
+[PASS]   833ms negative.run_main_register_subconto_dtkt_is_smart_error
+[PASS]  1429ms negative.validate_rejects_accounting_balance_vt_deref_params
+[PASS]  1431ms positive.validate_vt_param_type_check_forms
+[PASS]   670ms positive.validate_composite_index_by
+[PASS]   196ms negative.validate_unknown_source_still_rejected
+[PASS]  1570ms positive.validate_drop_temp_table
+[PASS]   326ms negative.validate_drop_non_temp_table
+[PASS]   287ms negative.validate_plain_batch_without_temp_tables
+[PASS]   304ms negative.validate_temp_table_without_final_select
+[PASS]   166ms negative.get_object_by_ref_bad_uuid
+[PASS]   155ms negative.unknown_tool
+[PASS]   197ms negative.parse_error_hides_internal_details
+[PASS]   157ms negative.internal_error_hides_internal_details
+[PASS] 10518ms crosscheck.every_listed_query_object_has_basic_structure_sample
+[PASS]  1739ms query_examples.precondition_enabled_flag
+[PASS]  1611ms query_examples.seed_and_fetch
+[PASS]  1101ms query_examples.anonymization_no_leak
+[PASS]  2547ms query_examples.dedup_increments_uses
+[PASS]  1903ms query_examples.response_schema
+[PASS]   412ms query_examples.invalid_arguments
+[PASS]   275ms query_examples.run_1c_query_shape_unchanged
+[PASS]   132ms query_examples.unknown_object_metadata_not_found
+[PASS]  2567ms query_examples.only_with_rows_filter
+
+Summary: 109 passed, 4 failed, 113 total
+Failures:
+- transport.unsupported_version_header_returns_400: expected HTTP 400, got 500
+- tool.get_accounting_balances_by_subconto_age: get_accounting_balances_by_subconto_age did not return ok=true: {"code":"query_execute_error","message":"Ошибка выполнения запроса 1С: {MCP ОбщийМодуль.MCP_Query.Модуль(360)}: Ошибка при вызове метода контекста (ВыполнитьПакет): {(1, 374)}: Неверные параметры\nВЫБРАТЬ Остатки.Счет.Код КАК Счет, Остатки.Субконто1 КАК ГруппировкаСубконто, УникальныйИдентификатор(Остатки.Субконто1) КАК ГруппировкаUUID, Остатки.Субконто3 КАК ВозрастноеСубконто, Остатки.Субконто3.Дата КАК ДатаВозрастногоСубконто, СУММА(Остатки.СуммаОстатокДт) КАК Сумма ПОМЕСТИТЬ ВТ_ВозрастныеОстатки ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (<<?>>&СписокСчетов), &ВидыСубконто, ) КАК Остатки СГРУППИРОВАТЬ ПО Остатки.Счет.Код, Остатки.Субконто1, УникальныйИдентификатор(Остатки.Субконто1), Остатки.Субконто3, Остатки.Субконто3.Дата ИМЕЮЩИЕ СУММА(Остатки.СуммаОстатокДт) > &MinAmount ; ВЫБРАТЬ ПЕРВЫЕ 6  ВТ.Счет, ВТ.ГруппировкаСубконто, ВТ.ГруппировкаUUID, ВТ.ВозрастноеСубконто, ВТ.ДатаВозрастногоСубконто, РАЗНОСТЬДАТ(ВТ.ДатаВозрастногоСубконто, &ДатаОстатков, ДЕНЬ) КАК ВозрастДней, ВТ.Сумма ИЗ ВТ_ВозрастныеОстатки КАК ВТ ГДЕ РАЗНОСТЬДАТ(ВТ.ДатаВозрастногоСубконто, &ДатаОстатков, ДЕНЬ) >= &MinAgeDays УПОРЯДОЧИТЬ ПО Сумма УБЫВ, ВозрастДней УБЫВ","details":{"diagnostic
+- tool.compare_accounting_balances_by_subconto: compare_accounting_balances_by_subconto did not return ok=true: {"code":"query_execute_error","message":"Ошибка выполнения запроса 1С: {MCP ОбщийМодуль.MCP_Query.Модуль(360)}: Ошибка при вызове метода контекста (ВыполнитьПакет): {(1, 239)}: Неверные параметры\nВЫБРАТЬ УникальныйИдентификатор(Остатки.Субконто1) КАК СубконтоUUID, Остатки.Субконто1 КАК Субконто, СУММА(Остатки.СуммаОстатокДт) КАК ЛеваяСумма ПОМЕСТИТЬ ВТ_ЛевыеОстатки ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (<<?>>&СписокСчетовЛево), &ВидыСубконто, ) КАК Остатки СГРУППИРОВАТЬ ПО УникальныйИдентификатор(Остатки.Субконто1), Остатки.Субконто1 ИМЕЮЩИЕ СУММА(Остатки.СуммаОстатокДт) > &MinAmount ИНДЕКСИРОВАТЬ ПО СубконтоUUID ; ВЫБРАТЬ УникальныйИдентификатор(Остатки.Субконто1) КАК СубконтоUUID, Остатки.Субконто1 КАК Субконто, СУММА(Остатки.СуммаОстатокКт) КАК ПраваяСумма ПОМЕСТИТЬ ВТ_ПравыеОстатки ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (&СписокСчетовПраво), &ВидыСубконто, ) КАК Остатки СГРУППИРОВАТЬ ПО УникальныйИдентификатор(Остатки.Субконто1), Остатки.Субконто1 ИМЕЮЩИЕ СУММА(Остатки.СуммаОстатокКт) > &MinAmount ИНДЕКСИРОВАТЬ ПО СубконтоUUID ; ВЫБРАТЬ ПЕРВЫЕ 6  Левые.Субконто КАК Субконто, Левые.СубконтоUUID КАК СубконтоUUID, Левые.ЛеваяСу
+- tool.get_inventory_balances_by_item: get_inventory_balances_by_item did not return ok=true: {"code":"query_execute_error","message":"Ошибка выполнения запроса 1С: {MCP ОбщийМодуль.MCP_Query.Модуль(367)}: Ошибка при вызове метода контекста (Выполнить): {(1, 251)}: Неверные параметры\nВЫБРАТЬ ПЕРВЫЕ 5 Остатки.Организация КАК Организация, Остатки.Субконто2 КАК Склад, СУММА(Остатки.КоличествоОстаток) КАК КоличествоОстаток, СУММА(Остатки.СуммаОстаток) КАК СуммаОстаток ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (<<?>>&СписокСчетов), &ВидыСубконто, Субконто1 = &Номенклатура) КАК Остатки СГРУППИРОВАТЬ ПО Остатки.Организация, Остатки.Субконто2 УПОРЯДОЧИТЬ ПО Организация, Склад","details":{"diagnostic_mode":true,"correlation_id":"6a50f3f4-165a-4e59-808d-04f630a87f4e","raw_exception":"{MCP ОбщийМодуль.MCP_Errors.Модуль(96)}: [query_execute_error] Ошибка выполнения запроса 1С: {MCP ОбщийМодуль.MCP_Query.Модуль(367)}: Ошибка при вызове метода контекста (Выполнить): {(1, 251)}: Неверные параметры\nВЫБРАТЬ ПЕРВЫЕ 5 Остатки.Организация КАК Организация, Остатки.Субконто2 КАК Склад, СУММА(Остатки.КоличествоОстаток) КАК КоличествоОстаток, СУММА(Остатки.СуммаОстаток) КАК СуммаОстаток ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&ДатаОстатков, Счет В (<<?>>&СписокСчетов), 
+Report written: D:\Projects\1c-mcp-server\.claude\worktrees\tasks-register-work\reports\live_issue79_80_2026-07-29\contract_selfcheck_predeploy.both.json
+Report written: D:\Projects\1c-mcp-server\.claude\worktrees\tasks-register-work\reports\live_issue79_80_2026-07-29\contract_selfcheck_predeploy.json
