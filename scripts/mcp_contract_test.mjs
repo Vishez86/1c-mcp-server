@@ -1701,11 +1701,16 @@ class ContractRunner {
       if (!accountingRegister) {
         return { skipped: true, reason: "no accounting register in metadata" };
       }
+      // Нулевая выборка задаётся пустым списком счетов в ПАРАМЕТРАХ ВТ, а не отбором
+      // во внешнем ГДЕ: отбор по счёту в ГДЕ нарушает §2 стандартов и отклоняется
+      // правилом vt_filter_in_external_where. Прежняя форма «ГДЕ Остатки.Счет.Код = &Код»
+      // вдобавок разыменовывала счёт, что в параметрах ВТ запрещено, поэтому простой
+      // перенос условия не подошёл бы — нужен именно пустой массив ссылок.
       const result = await okTool(this.client, "run_1c_query", {
-        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Остатки.Счет, Остатки.Субконто1 ИЗ ${accountingRegister.fullName}.Остатки(&Период) КАК Остатки ГДЕ Остатки.Счет.Код = &Код`,
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Остатки.Счет, Остатки.Субконто1 ИЗ ${accountingRegister.fullName}.Остатки(&Период, Счет В (&ПустойСписокСчетов), , ) КАК Остатки`,
         parameters: {
           Период: { kind: "datetime", value: CONTRACT_PERIOD.end },
-          Код: { kind: "string", value: "__mcp_no_such_account_code__" },
+          ПустойСписокСчетов: { kind: "array", value: [] },
         },
         limit: 1,
       });
