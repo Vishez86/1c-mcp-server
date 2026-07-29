@@ -769,10 +769,10 @@ class ContractRunner {
         // Основная таблица регистра нужна по существу: кейс проверяет именно риск
         // умножения строк при соединении табличной части с записями регистра, а
         // ДвиженияССубконто отдаёт готовые пары Дт+Кт и умножала бы строки иначе.
-        // Исключение объявлено штатным маркером, как требует §1.
-        query: `ВЫБРАТЬ ПЕРВЫЕ 10 ТЧ.Ссылка КАК Документ, СУММА(ТЧ.Сумма) КАК Сумма ИЗ ${documentWithTabular.full_name}.${documentWithTabular.tabularSection.name} КАК ТЧ ВНУТРЕННЕЕ СОЕДИНЕНИЕ\n`
-          + "// СТАНДАРТ-ИСКЛЮЧЕНИЕ: base_register_table_without_vt_check — кейс проверяет умножение строк на записях регистра, ДвиженияССубконто отдаёт пары Дт+Кт и меняет саму проверяемую семантику\n"
-          + `${accountingRegister.fullName} КАК Рег ПО Рег.Регистратор = ТЧ.Ссылка СГРУППИРОВАТЬ ПО ТЧ.Ссылка`,
+        // Исключение объявлено штатным маркером, как требует §1, и стоит ПЕРВОЙ строкой:
+        // предмет кейса — fanout, а не расположение комментария.
+        query: "// СТАНДАРТ-ИСКЛЮЧЕНИЕ: base_register_table_without_vt_check — кейс проверяет умножение строк на записях регистра, ДвиженияССубконто отдаёт пары Дт+Кт и меняет саму проверяемую семантику\n"
+          + `ВЫБРАТЬ ПЕРВЫЕ 10 ТЧ.Ссылка КАК Документ, СУММА(ТЧ.Сумма) КАК Сумма ИЗ ${documentWithTabular.full_name}.${documentWithTabular.tabularSection.name} КАК ТЧ ВНУТРЕННЕЕ СОЕДИНЕНИЕ ${accountingRegister.fullName} КАК Рег ПО Рег.Регистратор = ТЧ.Ссылка СГРУППИРОВАТЬ ПО ТЧ.Ссылка`,
         strict: true,
         explain: true,
       });
@@ -806,6 +806,30 @@ class ContractRunner {
       assert((result.warnings || []).some((warning) => warning.includes("без отбора по Вид")), `subconto kind fanout warning is missing: ${JSON.stringify(result.warnings)}`);
       assert((result.warnings || []).some((warning) => warning.includes("ВидДвижения")), `subconto movement warning is missing: ${JSON.stringify(result.warnings)}`);
       return { register: accountingRegister.fullName, warnings: result.warnings };
+    });
+
+    // Подбор доменной подсказки не должен зависеть от форматирования запроса: триггеры
+    // ищут ключевые слова вместе с окружающими пробелами, поэтому до нормализации
+    // перевод строки после СОЕДИНЕНИЕ — обычный стиль — терял подсказку целиком.
+    await this.test("regression.domain_guidance_survives_query_formatting", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      const documentWithTabular = this.context.genericDocument || this.context.catalogWithTabular;
+      if (!accountingRegister || !documentWithTabular?.full_name) {
+        return { skipped: true, reason: "no accounting register or document fixture" };
+      }
+      const ids = [];
+      for (const [shape, joinSeparator] of [["одна строка", " "], ["перенос строки после СОЕДИНЕНИЕ", "\n\t"]]) {
+        const result = await okTool(this.client, "validate_1c_query", {
+          query: `ВЫБРАТЬ ПЕРВЫЕ 1 ТЧ.Ссылка КАК Документ ИЗ ${documentWithTabular.full_name} КАК ТЧ`
+            + ` ВНУТРЕННЕЕ СОЕДИНЕНИЕ${joinSeparator}${accountingRegister.fullName} КАК Рег ПО Рег.Регистратор = ТЧ.Ссылка`,
+          strict: true,
+          explain: true,
+        });
+        const has = hasGuidance(result, "document_tabular_register_join_fanout");
+        assert(has, `guidance пропала при форматировании «${shape}»: ${JSON.stringify((result.domain_guidance || []).map((item) => item.id))}`);
+        ids.push(shape);
+      }
+      return { shapes: ids };
     });
 
     await this.test("tool.validate_1c_query_returns_guidance_is_contextual", async () => {
