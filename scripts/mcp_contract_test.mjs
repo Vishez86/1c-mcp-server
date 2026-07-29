@@ -1509,7 +1509,14 @@ class ContractRunner {
       assert(!dtkt.includes("СуммаПРОборот"), "ОборотыДтКт must NOT include plain СуммаПРОборот");
 
       const balTurn = fieldsOf("ОстаткиИОбороты");
-      for (const f of ["СуммаНачальныйОстаток", "СуммаОборот", "СуммаКонечныйОстаток"]) {
+      for (const f of [
+        "СуммаНачальныйОстаток", "СуммаОборот", "СуммаКонечныйОстаток",
+        // Развёрнутый остаток на начало/конец периода (Дт/Кт). Тот же генератор
+        // (ДобавитьСемействоОстаткаБухгалтерии), что и для Остатки; порядок сегментов —
+        // <Ресурс>Развернутый<Начальный|Конечный>Остаток<Дт|Кт> (report 2026-07-16).
+        "СуммаРазвернутыйНачальныйОстатокДт", "СуммаРазвернутыйНачальныйОстатокКт",
+        "СуммаРазвернутыйКонечныйОстатокДт", "СуммаРазвернутыйКонечныйОстатокКт",
+      ]) {
         assert(balTurn.includes(f), `ОстаткиИОбороты superset must include ${f}`);
       }
       return { balance: balance.length, dtkt: dtkt.length, balTurn: balTurn.length };
@@ -1532,6 +1539,98 @@ class ContractRunner {
         return { softFail: true, reason: `engine rejected (likely non-correspondence register): ${code}` };
       }
       return { register: accountingRegister.fullName, rows: result.rows?.length ?? 0 };
+    });
+
+    await this.test("regression.run_1c_query_balance_turnover_developed_fields_not_rejected", async () => {
+      // Прямое воспроизведение отчёта 2026-07-16 (BUH_KORP): развёрнутый конечный остаток
+      // в ОстаткиИОбороты перечислялся в available_fields, но pre-flight его отклонял
+      // (само-противоречие hint). Поле обязано проходить проверку — движок вызывается.
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) return { skipped: true, reason: "no accounting register" };
+      const result = await rawTool(this.client, "run_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 100 Ост.Период, Ост.СуммаРазвернутыйКонечныйОстатокДт `
+          + `ИЗ ${accountingRegister.fullName}.ОстаткиИОбороты(&Начало, &Конец, Месяц, ДвиженияИГраницыПериода, , , ) КАК Ост`,
+        parameters: {
+          Начало: { kind: "datetime", value: CONTRACT_PERIOD.start },
+          Конец: { kind: "datetime", value: CONTRACT_PERIOD.end },
+        },
+        limit: 100,
+      });
+      const code = result.error_code || result.error?.error_code;
+      assert(code !== "validation_failed_before_run",
+        `report 2026-07-16: developed closing balance must NOT be rejected pre-flight (got ${code})`);
+      if (!result.ok) {
+        return { softFail: true, reason: `engine rejected (likely non-correspondence register): ${code}` };
+      }
+      return { register: accountingRegister.fullName, rows: result.rows?.length ?? 0 };
+    });
+
+    await this.test("invariant.pre_flight_never_rejects_advertised_vt_field", async () => {
+      // Ядро отчёта 2026-07-16: валидатор не должен отклонять поле, которое сам же
+      // объявляет в available_fields. Инвариант «advertised ⟹ accepted» проверяем на
+      // семействе развёрнутых остатков ОстаткиИОбороты (ровно там всплыл дефект).
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) return { skipped: true, reason: "no accounting register" };
+      const meta = await okTool(this.client, "get_metadata_structure", {
+        type: accountingRegister.fullName,
+        include_virtual_tables: true,
+      });
+      const advertised = ((meta.metadata?.register_schema?.virtual_tables || [])
+        .find((v) => v.name === "ОстаткиИОбороты")?.common_fields) || [];
+      const developed = advertised.filter((f) => /^.+Развернутый.+Остаток(Дт|Кт)$/.test(f));
+      if (developed.length === 0) return { skipped: true, reason: "register exposes no developed-balance fields" };
+      // Адресуем КАЖДОЕ объявленное развёрнутое поле — если хоть одно pre-flight отклонит,
+      // это ровно баг из отчёта (перечислено как доступное, но не проходит проверку).
+      const selectList = developed.map((f) => `Ост.${f}`).join(", ");
+      const result = await rawTool(this.client, "run_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 ${selectList} `
+          + `ИЗ ${accountingRegister.fullName}.ОстаткиИОбороты(&Начало, &Конец) КАК Ост`,
+        parameters: {
+          Начало: { kind: "datetime", value: CONTRACT_PERIOD.start },
+          Конец: { kind: "datetime", value: CONTRACT_PERIOD.end },
+        },
+        limit: 1,
+      });
+      const code = result.error_code || result.error?.error_code;
+      assert(code !== "validation_failed_before_run",
+        `advertised⟹accepted violated: pre-flight rejected an advertised field (got ${code}); field=${result.field || result.error?.field}`);
+      if (!result.ok) {
+        return { softFail: true, reason: `engine rejected (likely non-correspondence register): ${code}`, advertised: developed.length };
+      }
+      return { register: accountingRegister.fullName, advertisedDeveloped: developed.length };
+    });
+
+    await this.test("invariant.pre_flight_rejection_never_suggests_rejected_field", async () => {
+      // Само-противоречие из отчёта: hint отклонял поле и одновременно предлагал его же
+      // как «Возможная замена». Guard в ВариантыПохожихПолей это запрещает: отклонённое
+      // поле не должно фигурировать среди предложенных замен, а available_fields не должен
+      // содержать его точную (нормализованную) форму.
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) return { skipped: true, reason: "no accounting register" };
+      const badField = "СуммаРазвернутыйКонечныйОстатокДтНесуществует";
+      const result = await rawTool(this.client, "run_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Ост.${badField} `
+          + `ИЗ ${accountingRegister.fullName}.ОстаткиИОбороты(&Начало, &Конец) КАК Ост`,
+        parameters: {
+          Начало: { kind: "datetime", value: CONTRACT_PERIOD.start },
+          Конец: { kind: "datetime", value: CONTRACT_PERIOD.end },
+        },
+        limit: 1,
+      });
+      const code = result.error_code || result.error?.error_code;
+      assert(code === "validation_failed_before_run", `truly-absent field must be pre-flight rejected (got ${code})`);
+      const rejected = result.field || result.error?.field;
+      const available = result.available_fields || result.error?.available_fields || [];
+      const hint = result.hint || result.error?.hint || "";
+      const norm = (s) => String(s).trim().toUpperCase();
+      assert(!available.some((f) => norm(f) === norm(rejected)),
+        "self-consistency: available_fields must NOT contain the rejected field");
+      // «Возможная замена: <...>» не должна перечислять само отклонённое поле.
+      const replMatch = hint.match(/Возможная замена:\s*(.+?)\.\s*$/);
+      const replacements = replMatch ? replMatch[1].split(/\s+или\s+/).map(norm) : [];
+      assert(!replacements.includes(norm(rejected)),
+        "self-consistency: hint must NOT suggest the rejected field as its own replacement");
+      return { register: accountingRegister.fullName, rejected, replacements: replacements.length };
     });
 
     await this.test("parity.pre_flight_and_metadata_fields_match", async () => {
