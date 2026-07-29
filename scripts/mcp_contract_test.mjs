@@ -2101,6 +2101,81 @@ class ContractRunner {
       return { register: accountingRegister.fullName, rows: result.rows.length };
     });
 
+    // Третий инструмент, собирающий список счетов внутри сервера и отдающий его в
+    // позицию условия по счёту ВТ. До этого кейса он не вызывался ни одним тестом —
+    // имя было только в EXPECTED_TOOLS, поэтому его отказ на непустом списке ссылок
+    // оставался невидимым. Попутно кейс покрывает саму форму «Счет В (непустой массив)»:
+    // единственная другая проба этой формы в наборе передаёт ПУСТОЙ массив, а он
+    // проходит и при сломанной сборке списка.
+    await this.test("tool.get_inventory_balances_by_item", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) {
+        return { skipped: true, reason: "no accounting register in metadata" };
+      }
+      const map = await okTool(this.client, "get_accounting_accounts_map", {
+        account_code_prefix: "41",
+        include_empty_subconto: false,
+        limit: 20,
+      });
+      const inventoryAccount = (map.accounts || []).find((account) =>
+        (account.subconto || []).some((item) => item.position === 1)
+        && (account.subconto || []).some((item) => item.position === 2)
+      );
+      if (!inventoryAccount) {
+        return { skipped: true, reason: "no 41 account with subconto positions 1 and 2" };
+      }
+      const byPosition = (position) => (inventoryAccount.subconto || []).find((item) => item.position === position);
+      const subcontoKinds = (inventoryAccount.subconto || [])
+        .sort((left, right) => left.position - right.position)
+        .map((item) => item.name);
+
+      // Товар подбирается discovery по остаткам самого счёта, а не именем: имя
+      // номенклатуры конфигурационно-зависимо. Заодно это проба формы
+      // «Счет В (&Список)» с НЕПУСТЫМ массивом ссылок.
+      const probe = await okTool(this.client, "run_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Остатки.Субконто1 КАК Товар`
+          + ` ИЗ ${accountingRegister.fullName}.Остатки(&Период, Счет В (&СписокСчетов), &ВидыСубконто, ) КАК Остатки`,
+        parameters: {
+          Период: { kind: "datetime", value: CONTRACT_PERIOD.end },
+          СписокСчетов: {
+            kind: "array",
+            value: [{ kind: "ref", type: inventoryAccount.account.type, uuid: inventoryAccount.uuid }],
+          },
+          ВидыСубконто: {
+            kind: "array",
+            value: (inventoryAccount.subconto || [])
+              .sort((left, right) => left.position - right.position)
+              .map((item) => ({ kind: "ref", type: item.ref.type, uuid: item.ref.uuid })),
+          },
+        },
+        limit: 1,
+      });
+      const item = probe.rows?.[0]?.Товар;
+      if (!item?.uuid || !item?.type) {
+        return { skipped: true, reason: "no inventory balance rows to take an item from", account: inventoryAccount.code };
+      }
+
+      const result = await okTool(this.client, "get_inventory_balances_by_item", {
+        accounting_register: accountingRegister.name,
+        as_of: CONTRACT_PERIOD.end,
+        account_code_prefixes: [inventoryAccount.code],
+        item_ref: { type: item.type, uuid: item.uuid },
+        item_subconto_name: byPosition(1)?.name,
+        warehouse_subconto_name: byPosition(2)?.name,
+        include_zero: true,
+        limit: 5,
+        include_query: true,
+      });
+      assert(Array.isArray(result.rows), "inventory rows must be an array");
+      assert(String(result.query_used || "").includes(".Остатки("), "inventory query must use Остатки");
+      return {
+        register: accountingRegister.fullName,
+        account: inventoryAccount.code,
+        subcontoKinds,
+        rows: result.rows.length,
+      };
+    });
+
     await this.test("tool.get_register_records_bad_mode_is_diagnostic", async () => {
       const fixture = this.context.infoRegister;
       if (!fixture) return { skipped: true, reason: "no information register fixture" };
