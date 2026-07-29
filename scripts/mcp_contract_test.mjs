@@ -963,6 +963,34 @@ class ContractRunner {
       return { errors: result.errors };
     });
 
+    // #86: АБС/ABS — функция встроенного языка, в языке запросов её нет. Предвалидатор
+    // пропускал вызов как валидный, а движок падал синтаксической ошибкой на первом же
+    // АБС(. Второй ассерт кейса охраняет обратную сторону правила: список закрыт, и
+    // подстрока в имени поля вызовом не считается — иначе правило начнёт давать ложные
+    // отказы на функциях конфигурации и на собственных псевдонимах.
+    await this.test("tool.validate_1c_query_rejects_unsupported_function", async () => {
+      const fixture = this.context.genericCatalog;
+      if (!fixture) return { skipped: true, reason: "no generic catalog fixture" };
+      const rejected = await okTool(this.client, "validate_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 АБС(-1) КАК Модуль ИЗ ${fixture.full_name} КАК Объект`,
+        strict: true,
+        explain: true,
+      });
+      const codes = (rejected.errors || []).map((error) => error.code);
+      assert(rejected.valid === false, "АБС(...) must be rejected before the engine");
+      assert(codes.includes("unsupported_query_function"),
+        `expected unsupported_query_function, got: ${codes.join(", ") || "нет"}`);
+
+      const allowed = await okTool(this.client, "validate_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Объект.Ссылка КАК СсылкаАБС ИЗ ${fixture.full_name} КАК Объект`,
+        strict: true,
+        explain: true,
+      });
+      assert(allowed.valid === true,
+        `identifier containing АБС must stay valid: ${JSON.stringify(allowed.errors || [])}`);
+      return { rejectedCodes: codes, allowed: allowed.valid };
+    });
+
     await this.test("tool.validate_1c_query_having_keyword", async () => {
       const fixture = this.context.genericCatalog;
       if (!fixture) return { skipped: true, reason: "no generic catalog fixture" };
