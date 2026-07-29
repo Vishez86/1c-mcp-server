@@ -2121,33 +2121,38 @@ class ContractRunner {
         include_empty_subconto: false,
         limit: 20,
       });
-      const inventoryAccount = (map.accounts || []).find((account) =>
+      // В список идут ВСЕ подходящие счёта префикса, а не первый: у счёта-группы
+      // (41) остатков не бывает — они лежат на субсчетах (41.01…), и проба по одной
+      // группе давала 0 строк, из-за чего кейс уходил в skipped. Пропуск выглядит как
+      // успех, поэтому здесь он допустим только когда в базе действительно нет
+      // товарных остатков.
+      const candidates = (map.accounts || []).filter((account) =>
         (account.subconto || []).some((item) => item.position === 1)
         && (account.subconto || []).some((item) => item.position === 2)
       );
-      if (!inventoryAccount) {
+      if (candidates.length === 0) {
         return { skipped: true, reason: "no 41 account with subconto positions 1 and 2" };
       }
-      const byPosition = (position) => (inventoryAccount.subconto || []).find((item) => item.position === position);
-      const subcontoKinds = (inventoryAccount.subconto || [])
-        .sort((left, right) => left.position - right.position)
-        .map((item) => item.name);
 
-      // Товар подбирается discovery по остаткам самого счёта, а не именем: имя
+      // Товар подбирается discovery по остаткам самих счетов, а не именем: имя
       // номенклатуры конфигурационно-зависимо. Заодно это проба формы
-      // «Счет В (&Список)» с НЕПУСТЫМ массивом ссылок.
+      // «Счет В (&Список)» с НЕПУСТЫМ массивом ссылок — той, на которой инструменты
+      // и падали, пока список собирался из сериализованных значений.
       const probe = await okTool(this.client, "run_1c_query", {
-        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Остатки.Субконто1 КАК Товар`
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Остатки.Счет КАК Счет, Остатки.Субконто1 КАК Товар`
           + ` ИЗ ${accountingRegister.fullName}.Остатки(&Период, Счет В (&СписокСчетов), &ВидыСубконто, ) КАК Остатки`,
         parameters: {
           Период: { kind: "datetime", value: CONTRACT_PERIOD.end },
           СписокСчетов: {
             kind: "array",
-            value: [{ kind: "ref", type: inventoryAccount.account.type, uuid: inventoryAccount.uuid }],
+            value: candidates.map((account) => ({ kind: "ref", type: account.account.type, uuid: account.uuid })),
           },
+          // Виды субконто берутся у первого кандидата: параметр переиндексирует поля
+          // Субконто1/2 по порядку массива, поэтому позиции у остальных счетов из
+          // выборки совпадут с этим порядком.
           ВидыСубконто: {
             kind: "array",
-            value: (inventoryAccount.subconto || [])
+            value: (candidates[0].subconto || [])
               .sort((left, right) => left.position - right.position)
               .map((item) => ({ kind: "ref", type: item.ref.type, uuid: item.ref.uuid })),
           },
@@ -2156,13 +2161,22 @@ class ContractRunner {
       });
       const item = probe.rows?.[0]?.Товар;
       if (!item?.uuid || !item?.type) {
-        return { skipped: true, reason: "no inventory balance rows to take an item from", account: inventoryAccount.code };
+        return {
+          skipped: true,
+          reason: "no inventory balance rows to take an item from",
+          accounts: candidates.map((account) => account.code),
+        };
       }
+
+      // Счёт из строки остатков определяет, чьи имена видов субконто передавать:
+      // у разных субсчетов порядок аналитик может отличаться.
+      const balanceAccount = candidates.find((account) => account.uuid === probe.rows[0].Счет?.uuid) || candidates[0];
+      const byPosition = (position) => (balanceAccount.subconto || []).find((item) => item.position === position);
 
       const result = await okTool(this.client, "get_inventory_balances_by_item", {
         accounting_register: accountingRegister.name,
         as_of: CONTRACT_PERIOD.end,
-        account_code_prefixes: [inventoryAccount.code],
+        account_code_prefixes: [balanceAccount.code],
         item_ref: { type: item.type, uuid: item.uuid },
         item_subconto_name: byPosition(1)?.name,
         warehouse_subconto_name: byPosition(2)?.name,
@@ -2174,8 +2188,10 @@ class ContractRunner {
       assert(String(result.query_used || "").includes(".Остатки("), "inventory query must use Остатки");
       return {
         register: accountingRegister.fullName,
-        account: inventoryAccount.code,
-        subcontoKinds,
+        account: balanceAccount.code,
+        subcontoKinds: (balanceAccount.subconto || [])
+          .sort((left, right) => left.position - right.position)
+          .map((subconto) => subconto.name),
         rows: result.rows.length,
       };
     });
