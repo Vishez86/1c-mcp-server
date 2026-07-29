@@ -1613,7 +1613,11 @@ class ContractRunner {
       assert(object === fixture.full_name, `unexpected object: ${object}`);
       assert(parts.includes(fixture.tabularSection.name), "available_tabular_parts must list the real tabular section");
       assert(!platformMessage, "engine must not be called: platform_message must be absent");
-      assert(result.error?.details?.stage === "validation", `stage must be validation, got: ${result.error?.details?.stage}`);
+      // stage по контракту виден клиенту: он лежит на верхнем уровне ответа и в error,
+      // а не внутри error.details (MCP_Tools.bsl копирует его именно туда, чтобы признак
+      // «движок не вызывался» не приходилось выкапывать из details).
+      const stage = result.stage ?? result.error?.stage;
+      assert(stage === "validation", `stage must be validation, got: ${stage}`);
       return { object, availableTabularParts: parts.slice(0, 8), code };
     });
 
@@ -1736,6 +1740,12 @@ class ContractRunner {
       // правилом vt_filter_in_external_where. Прежняя форма «ГДЕ Остатки.Счет.Код = &Код»
       // вдобавок разыменовывала счёт, что в параметрах ВТ запрещено, поэтому простой
       // перенос условия не подошёл бы — нужен именно пустой массив ссылок.
+      //
+      // Пустой массив здесь — требование самого кейса (нужны ровно нулевые строки), и он
+      // НЕ покрывает список счетов, который сервер собирает сам: пустой список — как раз
+      // единственная форма, при которой сериализация ссылок в параметрах ВТ не проявляется.
+      // За непустой внутренний список отвечают tool.get_inventory_balances_by_item,
+      // tool.get_accounting_balances_by_subconto_age и tool.compare_accounting_balances_by_subconto.
       const result = await okTool(this.client, "run_1c_query", {
         query: `ВЫБРАТЬ ПЕРВЫЕ 1 Остатки.Счет, Остатки.Субконто1 ИЗ ${accountingRegister.fullName}.Остатки(&Период, Счет В (&ПустойСписокСчетов), , ) КАК Остатки`,
         parameters: {
@@ -2099,6 +2109,62 @@ class ContractRunner {
       assert(Array.isArray(result.rows), "compare rows must be an array");
       assert(result.query_used?.includes("ВТ_ЛевыеОстатки"), "compare query must use temporary left table");
       return { register: accountingRegister.fullName, rows: result.rows.length };
+    });
+
+    // До этого кейса get_inventory_balances_by_item не вызывался ни одним тестом — его
+    // имя было только в EXPECTED_TOOLS. Инструмент строит список счетов по префиксам
+    // внутри сервера и передаёт его в параметры виртуальной таблицы, поэтому именно он
+    // ломался молча: отказ «Неверные параметры» не был виден прогону.
+    await this.test("tool.get_inventory_balances_by_item", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) {
+        return { skipped: true, reason: "no accounting register in metadata" };
+      }
+      // Инструмент по умолчанию ищет номенклатуру в Справочник.Номенклатура, а виды
+      // субконто — по именам Номенклатура/Склады среди счетов 41/43. База без этих
+      // имён пропускает кейс, а не заваливает прогон: проверяется контракт
+      // инструмента, а не наличие товарного учёта в конфигурации.
+      const itemType = "Справочник.Номенклатура";
+      const structure = await rawTool(this.client, "get_metadata_structure", { type: itemType });
+      if (structure?.ok !== true) {
+        return { skipped: true, reason: `${itemType} is absent in this configuration` };
+      }
+      const sample = await okTool(this.client, "run_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Т.Ссылка КАК Ссылка ИЗ ${itemType} КАК Т`,
+        limit: 1,
+      });
+      const itemRef = sample.rows?.[0]?.Ссылка;
+      if (!itemRef?.uuid) {
+        return { skipped: true, reason: `${itemType} is empty` };
+      }
+      assertRef(itemRef, "inventory item fixture ref");
+      const result = await rawTool(this.client, "get_inventory_balances_by_item", {
+        accounting_register: accountingRegister.name,
+        item_ref: { type: itemRef.type, uuid: itemRef.uuid },
+        as_of: CONTRACT_PERIOD.end,
+        include_query: true,
+        limit: 5,
+      });
+      if (result?.ok === false && result.error?.code === "metadata_not_found") {
+        return { skipped: true, reason: String(result.error?.message || "item/warehouse subconto kinds not found") };
+      }
+      assert(result?.ok === true,
+        `get_inventory_balances_by_item did not return ok=true: ${JSON.stringify(result?.error || {}).slice(0, 1200)}`);
+      assert(result.configuration_agnostic === true, "inventory tool must be configuration agnostic");
+      assert(Array.isArray(result.rows), "inventory rows must be an array");
+      assert(Array.isArray(result.account_code_prefixes) && result.account_code_prefixes.length > 0,
+        "inventory tool must report the account prefixes it used");
+      // Непустой список счетов внутренней сборки — регресс-страховка: если он снова
+      // уйдёт в параметры ВТ сериализованным, 1С ответит «Неверные параметры» и
+      // проверка ok=true выше не пройдёт.
+      assert(String(result.query_used || "").includes("&СписокСчетов"),
+        "inventory query must filter accounts through virtual table parameters");
+      return {
+        register: accountingRegister.fullName,
+        item: itemRef.presentation,
+        rows: result.rows.length,
+        prefixes: result.account_code_prefixes,
+      };
     });
 
     await this.test("tool.get_register_records_bad_mode_is_diagnostic", async () => {

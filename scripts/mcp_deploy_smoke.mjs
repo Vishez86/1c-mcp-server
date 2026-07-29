@@ -9,7 +9,7 @@
 //
 // Затем проверяются МАРКЕРЫ МОДУЛЕЙ — по одному наблюдаемому признаку на критичный
 // модуль комплекта. Без них гейт пропускал частичную публикацию: при неопубликованном
-// MCP_Tools он проходил, хотя поле error.details.stage в ответе отсутствовало.
+// MCP_Tools он проходил, хотя поле stage в ответе отсутствовало.
 // Маркер — это ПОЛ ревизии модуля, а не полный контракт. Отключается флагом --base-only.
 //
 // Гейт: процесс завершается кодом 1 при ok:false / internal_error / транспортной ошибке
@@ -167,17 +167,22 @@ const MODULE_MARKERS = [
   },
   {
     module: "MCP_Tools",
-    what: "stage в error.details при отказе до выполнения",
+    what: "stage виден клиенту при отказе до выполнения",
     async run(options, fixtures) {
       if (!fixtures.tabularSection) return { status: "skip", note: "нет справочника с табличной частью" };
       const r = await callTool(options, "run_1c_query", {
         query: `ВЫБРАТЬ ПЕРВЫЕ 1 Т.Ссылка ИЗ ${fixtures.tabularOwner}.ЗаведомоНетТакойТабличнойЧастиГейта КАК Т`,
         limit: 1,
       });
-      const stage = r?.error?.details?.stage;
+      // stage по контракту лежит на верхнем уровне ответа и в error, а НЕ в error.details:
+      // MCP_Tools.bsl копирует его СкопироватьПолеДеталей(Детали, Данные, Ошибка, "stage")
+      // именно затем, чтобы признак «движок не вызывался» был виден клиенту. Маркер,
+      // читавший error.details.stage, давал FAIL на полностью корректном контуре и
+      // сообщал о неполной публикации, которой не было.
+      const stage = r?.stage ?? r?.error?.stage;
       return stage
         ? { status: "pass", note: `stage=${stage}` }
-        : { status: "fail", note: "error.details.stage отсутствует" };
+        : { status: "fail", note: `stage отсутствует и на верхнем уровне, и в error (ключи: ${Object.keys(r ?? {}).join(", ") || "нет"})` };
     },
   },
   {
