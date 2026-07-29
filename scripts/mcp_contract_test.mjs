@@ -1613,8 +1613,12 @@ class ContractRunner {
       assert(object === fixture.full_name, `unexpected object: ${object}`);
       assert(parts.includes(fixture.tabularSection.name), "available_tabular_parts must list the real tabular section");
       assert(!platformMessage, "engine must not be called: platform_message must be absent");
-      assert(result.error?.details?.stage === "validation", `stage must be validation, got: ${result.error?.details?.stage}`);
-      return { object, availableTabularParts: parts.slice(0, 8), code };
+      // stage сервер отдаёт на верхнем уровне ответа и в error, а не в error.details:
+      // MCP_Tools копирует его туда намеренно, чтобы признак «движок не вызывался» был
+      // виден клиенту. Проверка одного лишь error.details.stage не проходила никогда.
+      const stage = result.stage ?? result.error?.stage ?? result.error?.details?.stage;
+      assert(stage === "validation", `stage must be validation, got: ${stage}`);
+      return { object, availableTabularParts: parts.slice(0, 8), code, stage };
     });
 
     await this.test("negative.run_1c_query_object_field_rejected_pre_flight", async () => {
