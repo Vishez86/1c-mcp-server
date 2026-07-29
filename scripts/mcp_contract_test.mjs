@@ -1118,6 +1118,12 @@ class ContractRunner {
       const columnNames = (result.columns || []).map((item) => item.name);
       assert(columnNames.includes("СубконтоКт"), "credit subconto grouping column is missing");
       assert(result.query_used?.includes(`${accountingRegister.fullName}.Субконто КАК СубконтоКт`), "query must join accounting register subconto table");
+      // Соединение обязано быть внутренним: при левом поле компаньона попадает в выборку
+      // и группировку как потенциальный NULL, что отклоняется правилом
+      // outer_join_field_without_isnull, а обёртка в ЕСТЬNULL для составной ссылки
+      // невозможна (§4.4 — нет значения того же типа).
+      assert(result.query_used?.includes("ВНУТРЕННЕЕ СОЕДИНЕНИЕ"), "subconto companion must be joined with ВНУТРЕННЕЕ СОЕДИНЕНИЕ");
+      assert(!result.query_used?.includes("ЛЕВОЕ СОЕДИНЕНИЕ"), "left join with subconto companion reintroduces the NULL trap");
       assert(result.query_used?.includes("СубконтоКт.Вид = &ВидСубконто"), "subconto kind filter must be emitted");
       return { register: accountingRegister.fullName, account: account.code, subconto: subconto.presentation, rows: result.rows?.length || 0 };
     });
