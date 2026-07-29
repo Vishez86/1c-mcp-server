@@ -51,6 +51,14 @@ node reports/live_issue79_80_2026-07-29/run_issue79_80.mjs reports/live_issue79_
 Если `P2`–`P4` уже PASS до деплоя — значит контур новее ожидаемого, отпечаток
 из шапки отчёта надо перепроверить прежде, чем считать приёмку выполненной.
 
+Прогон 29.07.2026 дал именно такую картину, кроме `P5`: та проба выбирала из
+бухгалтерской ВТ `Остатки` одно `КОЛИЧЕСТВО(*)`, чего платформа не принимает
+(«В выборке должно быть указано хотя бы одно измерение или ресурс»), и падала до
+того, как что-либо проверить. Исправлено: проба выбирает `Счет` и суммы остатка,
+строки считаются на клиенте. Контроль непустоты того прогона выполнен вручную —
+данные на `2026-07-24T11:46:21` есть по всем счетам из `P2`–`P4` (41.01, 62.01,
+62.02, 60.01, 60.22).
+
 ### Шаг 2 — smoke-gate без деплоя: приёмка #80
 
 ```bash
@@ -95,14 +103,23 @@ node reports/live_issue79_80_2026-07-29/run_issue79_80.mjs reports/live_issue79_
 node scripts/mcp_contract_test.mjs --all-response-modes --out reports/live_issue79_80_2026-07-29/contract_after_deploy.json
 ```
 
-Ожидание: **113 кейсов** (112 из прогона в #79 плюс новый), **2 FAIL**, оба к
-#79/#80 отношения не имеют и в трекере не заведены:
+Ожидание: **113 кейсов**, **1 FAIL** —
+`transport.unsupported_version_header_returns_400` (HTTP 500 вместо 400). Он к
+#79/#80 отношения не имеет, старше этих правок и в трекере не заведён.
 
-- `transport.unsupported_version_header_returns_400` — HTTP 500 вместо 400;
-- `validate_1c_query_warns_document_tabular_register_fanout` — «fanout guidance is missing».
+Прогон до деплоя (29.07.2026, все три режима: 113/109/4) уточнил ожидание,
+которое стояло здесь раньше:
 
-Третий провал прошлого прогона — `negative.run_1c_query_tabular_part_rejected_pre_flight`
-(«stage не validation, а undefined») — закрыт правкой самого кейса и должен стать PASS.
+- `validate_1c_query_warns_document_tabular_register_fanout` — **PASS**, провал
+  из отчёта приёмки #77/#78 закрылся мержем #74–#76. Ждать его больше не нужно;
+- `negative.run_1c_query_tabular_part_rejected_pre_flight` — **PASS**, это был
+  дефект самого кейса (читал `error.details.stage`), а не сервера;
+- три остальных провала того прогона — ровно дефект #79
+  (`get_accounting_balances_by_subconto_age`, `compare_accounting_balances_by_subconto`,
+  `get_inventory_balances_by_item`), после публикации обязаны стать PASS.
+
+Базовая линия до деплоя: `probe_before_deploy.json` рядом с этим файлом и
+`reports/live_issue79_80_2026-07-29_predeploy.md`.
 
 ## Ловушки
 
@@ -120,6 +137,14 @@ node scripts/mcp_contract_test.mjs --all-response-modes --out reports/live_issue
 4. **Отпечаток обязателен.** Git-ревизию сервер не отдаёт. Шапка отчёта
    `probe_*.json` (`tools_count`, состав инструментов, пользователь) — это и есть
    отпечаток; без него «PASS» не привязан к проверенной ревизии.
+5. **Транспортный срыв читается как регресс.** В прогоне 29.07.2026
+   `structured_only` дал два лишних провала — `tool.list_metadata_objects_pagination`
+   и `tool.search_metadata_fields_pagination` — с `TypeError: fetch failed` на
+   10,7 с; повтор режима дал PASS. Это не клиентский таймаут: дефолт
+   `mcp_contract_test.mjs` — 60 000 мс (`MCP_TIMEOUT_MS`), и прерывание по нему
+   выглядело бы иначе. Обрыв идёт со стороны контура, поднятие `--timeout-ms`
+   от него не защищает — упавшие кейсы надо перепрогнать и пометить как
+   транспортный срыв, а не как провал контракта.
 
 ## Что записать в итоговый отчёт
 

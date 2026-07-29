@@ -231,20 +231,26 @@ async function main() {
   if (controlAccounts.length === 0) {
     add('P5', 'контроль непустоты остатков', 'SKIP', 'в карте счетов нет ссылок на счета', null);
   } else {
+    // КОЛИЧЕСТВО(*) единственным полем выборки бухгалтерская ВТ Остатки не принимает:
+    // платформа отвечает «В выборке должно быть указано хотя бы одно измерение или
+    // ресурс» (проверено живьём 29.07.2026, прогон до деплоя). Поэтому выбираются
+    // измерение и ресурсы, а строки считаются на клиенте.
     const control = await tool('run_1c_query', {
-      query: `ВЫБРАТЬ КОЛИЧЕСТВО(*) КАК Кол ИЗ ${register}.Остатки(&Период, Счет В (&СписокСчетов), , ) КАК Остатки`,
+      query: `ВЫБРАТЬ Остатки.Счет КАК Счет, Остатки.СуммаОстатокДт КАК СуммаДт,`
+        + ` Остатки.СуммаОстатокКт КАК СуммаКт`
+        + ` ИЗ ${register}.Остатки(&Период, Счет В (&СписокСчетов), , ) КАК Остатки`,
       parameters: {
         Период: { kind: 'datetime', value: asOf },
         // Ловушка формата: массив только {kind:'array', value:[...]}, ссылка только с uuid.
         // Неверный ключ раньше давал ноль строк без ошибки — с PR #78 это ошибка.
         СписокСчетов: { kind: 'array', value: controlAccounts },
       },
-      limit: 1,
+      limit: 50,
     });
-    const count = Number(control?.rows?.[0]?.Кол ?? 0);
+    const count = (control?.rows ?? []).length;
     add('P5', 'контроль непустоты остатков', control?.ok === true && count > 0 ? 'PASS' : 'FAIL',
       control?.ok === true
-        ? `строк остатков по ${controlAccounts.length} счетам: ${count}`
+        ? `строк остатков по ${controlAccounts.length} счетам: ${count}${count === 0 ? ' — данных на дату нет, нули в P2–P4 неинформативны' : ''}`
         : `отказ: ${errText(control)}`,
       { ok: control?.ok, count, accounts: controlAccounts.length, error: control?.error ?? null });
   }
