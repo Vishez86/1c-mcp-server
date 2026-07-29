@@ -7,8 +7,7 @@
     "subcontoChart": "ПланВидовХарактеристик.ВидыСубконтоХозрасчетные"
   },
   "tally": {
-    "PASS": 35,
-    "AWAITING-DEPLOY": 5,
+    "PASS": 40,
     "KNOWN-FAIL": 1
   },
   "results": [
@@ -190,9 +189,9 @@
       "awaitingDeploy": true,
       "query": "ВЫБРАТЬ ПЕРВЫЕ 1 Данные.Счет КАК Счет ИЗ РегистрБухгалтерии.Хозрасчетный.Остатки(&Дата, , , ) КАК Данные ГДЕ Данные.Субконто1 <> НЕОПРЕДЕЛЕНО",
       "expectCode": "vt_filter_in_external_where",
-      "status": "AWAITING-DEPLOY",
-      "note": "нет ожидаемого vt_filter_in_external_where; получено: (пусто)",
-      "valid": true
+      "status": "PASS",
+      "note": "codes: vt_filter_in_external_where",
+      "valid": false
     },
     {
       "pr": "#63",
@@ -236,9 +235,9 @@
       "awaitingDeploy": true,
       "query": "ВЫБРАТЬ ПЕРВЫЕ 1 Записи.Счет КАК Счет\nИЗ\n// СТАНДАРТ-ИСКЛЮЧЕНИЕ: base_register_table_without_vt_check —\n// нужен Регистратор вместе с периодом, ни одна ВТ этого регистра не отдаёт оба поля\nРегистрБухгалтерии.Хозрасчетный КАК Записи",
       "forbidCode": "base_register_table_without_vt_check",
-      "status": "AWAITING-DEPLOY",
-      "note": "ложное срабатывание base_register_table_without_vt_check",
-      "valid": false
+      "status": "PASS",
+      "note": "codes: (нет)",
+      "valid": true
     },
     {
       "pr": "#63",
@@ -303,9 +302,9 @@
       "awaitingDeploy": true,
       "query": "ВЫБРАТЬ ПЕРВЫЕ 1 1 КАК ЕстьДанные ИЗ Справочник.Билеты КАК Т",
       "forbidCode": "explicit_limit_not_numeric",
-      "status": "AWAITING-DEPLOY",
-      "note": "ложное срабатывание explicit_limit_not_numeric",
-      "valid": false
+      "status": "PASS",
+      "note": "codes: (нет)",
+      "valid": true
     },
     {
       "pr": "прогон",
@@ -330,8 +329,8 @@
         "period_to": "2025-01-31",
         "limit": 1
       },
-      "status": "AWAITING-DEPLOY",
-      "note": "base_register_table_without_vt_check: Запрос не прошёл проверку."
+      "status": "PASS",
+      "note": "ok, строк: 1"
     },
     {
       "pr": "прогон",
@@ -342,8 +341,8 @@
       "tool": "get_database_passport",
       "toolArgs": {},
       "passportPeriodOk": true,
-      "status": "AWAITING-DEPLOY",
-      "note": "period_error у РегистрБухгалтерии.Хозрасчетный"
+      "status": "PASS",
+      "note": "регистров: 1, period_error нет"
     },
     {
       "pr": "#65",

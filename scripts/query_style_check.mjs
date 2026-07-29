@@ -544,65 +544,12 @@ function checkInlineSubcontoLiteral(raw, code, findings) {
   }
 }
 
-// §6 (#62) — проверка типа в параметрах ВТ прямой формой, которую отвергает предвалидатор.
-function checkTypeCheckInVtParams(raw, code, findings) {
-  // грубая эвристика: ищем ССЫЛКА <Тип> или ТИП(<Тип>) внутри скобок вызова ВТ
-  const vtCall = /\.(Остатки|Обороты|ОстаткиИОбороты|ОборотыДтКт|СрезПоследних|СрезПервых)\s*\(/gi;
-  let m;
-  while ((m = vtCall.exec(code)) !== null) {
-    const start = m.index + m[0].length;
-    let depth = 1;
-    let i = start;
-    while (i < code.length && depth > 0) {
-      if (code[i] === "(") depth += 1;
-      else if (code[i] === ")") depth -= 1;
-      i += 1;
-    }
-    const args = code.slice(start, i - 1);
-    const bad = /(ССЫЛКА\s+(Справочник|Документ|ПланСчетов|ПланВидовХарактеристик)\.)|(ТИП\s*\(\s*(Справочник|Документ|ПланСчетов)\.)/i.exec(args);
-    if (bad) {
-      pushFinding(findings, {
-        id: "vt_param_type_check_rejected_form",
-        severity: "error",
-        section: "§6 (#62)",
-        message: "Проверка типа в параметрах ВТ записана формой, которую отвергает предвалидатор " +
-          "(vt_param_field_error). Использовать ТИПЗНАЧЕНИЯ(Поле) = ТИПЗНАЧЕНИЯ(ЗНАЧЕНИЕ(Справочник.X.ПустаяСсылка)).",
-        text: raw,
-        index: start + bad.index,
-        fragment: bad[0],
-      });
-    }
-  }
-}
-
-// §3 п.3 (#60) — составной ИНДЕКСИРОВАТЬ ПО без предшествующего ГДЕ/СГРУППИРОВАТЬ ПО.
-function checkCompositeIndexWithoutGroupBy(raw, code, findings) {
-  const re = /ИНДЕКСИРОВАТЬ\s+ПО\s+([А-Яа-яЁёA-Za-z0-9_.]+\s*,\s*[А-Яа-яЁёA-Za-z0-9_.]+)/gi;
-  let m;
-  while ((m = re.exec(code)) !== null) {
-    const before = code.slice(0, m.index);
-    const lastPlace = before.toUpperCase().lastIndexOf("ПОМЕСТИТЬ");
-    if (lastPlace === -1) continue;
-    const segment = before.slice(lastPlace);
-    // Ключевое слово как отдельный токен: перевод строки после ГДЕ так же валиден,
-    // как пробел. \b в JS не работает с кириллицей — проверяем соседние символы явно.
-    const hasGroupBy = /(^|[^А-Яа-яЁёA-Za-z0-9_])СГРУППИРОВАТЬ\s+ПО([^А-Яа-яЁёA-Za-z0-9_]|$)/i.test(segment);
-    const hasWhere = /(^|[^А-Яа-яЁёA-Za-z0-9_])ГДЕ([^А-Яа-яЁёA-Za-z0-9_]|$)/i.test(segment);
-    if (hasGroupBy || hasWhere) continue;
-    pushFinding(findings, {
-      id: "composite_index_without_preceding_group_by",
-      severity: "warning",
-      section: "§3 п.3 (#60)",
-      message: "Составной ИНДЕКСИРОВАТЬ ПО сразу после источника без ГДЕ/СГРУППИРОВАТЬ ПО — " +
-        "предвалидатор распознаёт его как список источников (unknown_query_source). " +
-        "Обход: вставить СГРУППИРОВАТЬ ПО даже при тривиальной группировке. " +
-        "Снять обход после закрытия issue #60.",
-      text: raw,
-      index: m.index,
-      fragment: m[0],
-    });
-  }
-}
+// Правила vt_param_type_check_rejected_form и composite_index_without_preceding_group_by
+// удалены: они описывали обходы дефектов предвалидатора issue #62 и #60, закрытых в
+// PR #65 (деплой 28.07.2026, живая проверка 29.07.2026). Предвалидатор принимает и
+// прямые формы проверки типа (ССЫЛКА <Тип>, ТИП(<Тип>) в параметрах ВТ), и составной
+// ИНДЕКСИРОВАТЬ ПО без предшествующей группировки. Держать проверки дальше значило бы
+// запрещать законный синтаксис и советовать лишнюю группировку, меняющую план запроса.
 
 const RULES = [
   checkYo,
@@ -614,8 +561,6 @@ const RULES = [
   checkVtSignature,
   checkDirectJoinWithVt,
   checkInlineSubcontoLiteral,
-  checkTypeCheckInVtParams,
-  checkCompositeIndexWithoutGroupBy,
 ];
 
 // Реестр реализованных проверок — машинная истина о покрытии.
@@ -634,8 +579,6 @@ export const IMPLEMENTED_RULES = [
   { id: "vt_subconto_condition_in_account_position", section: "§1/§2 п.4", severity: "error", title: "Условие по субконто в позиции условия по счёту" },
   { id: "direct_join_with_virtual_table", section: "§4.1", severity: "error", title: "Прямое СОЕДИНЕНИЕ с виртуальной таблицей" },
   { id: "subconto_inline_literal_instead_of_array_param", section: "§2 п.3", severity: "error", title: "Инлайн-массив видов субконто" },
-  { id: "vt_param_type_check_rejected_form", section: "§6 (#62)", severity: "error", title: "Отвергаемая форма проверки типа в параметрах ВТ" },
-  { id: "composite_index_without_preceding_group_by", section: "§3 п.3 (#60)", severity: "warning", title: "Составной индекс без СГРУППИРОВАТЬ ПО" },
 ];
 
 export function checkQuery(text) {
