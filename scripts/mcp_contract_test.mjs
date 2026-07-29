@@ -1613,12 +1613,26 @@ class ContractRunner {
       assert(object === fixture.full_name, `unexpected object: ${object}`);
       assert(parts.includes(fixture.tabularSection.name), "available_tabular_parts must list the real tabular section");
       assert(!platformMessage, "engine must not be called: platform_message must be absent");
-      // stage сервер отдаёт на верхнем уровне ответа и в error, а не в error.details:
-      // MCP_Tools копирует его туда намеренно, чтобы признак «движок не вызывался» был
-      // виден клиенту. Проверка одного лишь error.details.stage не проходила никогда.
-      const stage = result.stage ?? result.error?.stage ?? result.error?.details?.stage;
-      assert(stage === "validation", `stage must be validation, got: ${stage}`);
-      return { object, availableTabularParts: parts.slice(0, 8), code, stage };
+      // stage сервер отдаёт на верхнем уровне ответа И в error: MCP_Tools копирует его
+      // туда намеренно (СкопироватьПолеДеталей(Детали, Данные, Ошибка, "stage")), чтобы
+      // признак «движок не вызывался» был виден клиенту. Проверка одного лишь
+      // error.details.stage не проходила никогда — это и был дефект кейса.
+      //
+      // Оба контрактных пути проверяются ПОРОЗНЬ и без запасного error.details.stage.
+      // Цепочка с фолбэком здесь недопустима: публикация, отдающая stage только по
+      // устаревшему пути, прошла бы проверку. Фолбэк оставлен только в smoke-gate,
+      // где задача обратная — не завалить гейт на старой публикации.
+      assert(result.stage === "validation",
+        `top-level stage must be validation, got: ${JSON.stringify(result.stage)}`);
+      assert(result.error?.stage === "validation",
+        `error.stage must be validation, got: ${JSON.stringify(result.error?.stage)}`);
+      return {
+        object,
+        availableTabularParts: parts.slice(0, 8),
+        code,
+        stage: result.stage,
+        errorStage: result.error?.stage,
+      };
     });
 
     await this.test("negative.run_1c_query_object_field_rejected_pre_flight", async () => {
