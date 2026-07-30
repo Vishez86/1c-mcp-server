@@ -429,7 +429,27 @@ class ContractRunner {
         JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ping", params: {} }),
         { "mcp-protocol-version": "1999-01-01" });
       assert(resp.status === 400, `expected HTTP 400, got ${resp.status}`);
+      // Тело проверяется отдельно от статуса: пока ветка отказа падала на сериализации,
+      // ассерт на статусе срабатывал первым и первопричину (платформенное исключение
+      // вместо JSON-RPC) не было видно три прогона подряд.
+      assert(resp.json !== null, `body must be JSON, got: ${String(resp.text).slice(0, 200)}`);
       assert(resp.json?.error?.code === -32000, `expected -32000, got ${resp.json?.error?.code}`);
+      assert("id" in resp.json && resp.json.id === null, `id must be present and null, got: ${JSON.stringify(resp.json?.id)}`);
+      return { status: resp.status, code: resp.json?.error?.code, contentType: resp.headers["content-type"] };
+    });
+
+    // Тот же путь формирования ответа, что у отказа по версии протокола
+    // (СформироватьОшибкуJSONRPC), но ни одним кейсом он раньше не покрывался —
+    // поэтому дефект сериализации был виден только в одном из четырёх проявлений.
+    // Статус здесь намеренно НЕ проверяется: обработчик отдаёт 200 с JSON-RPC
+    // ошибкой, а отказ по версии — 400; согласование этих статусов между собой —
+    // отдельное решение, а не предмет этого кейса.
+    await this.test("transport.empty_body_returns_parse_error", async () => {
+      const resp = await this.client.rawRequest("POST", "");
+      assert(resp.json !== null, `body must be JSON, got: ${String(resp.text).slice(0, 200)}`);
+      assert(resp.json?.error?.code === -32700, `expected -32700, got ${resp.json?.error?.code}`);
+      assert("id" in resp.json && resp.json.id === null, `id must be present and null, got: ${JSON.stringify(resp.json?.id)}`);
+      assert(resp.json?.jsonrpc === "2.0", `jsonrpc must be 2.0, got: ${resp.json?.jsonrpc}`);
       return { status: resp.status, code: resp.json?.error?.code };
     });
 
