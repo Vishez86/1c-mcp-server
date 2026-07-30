@@ -120,6 +120,10 @@ Environment:
   MCP_CONTRACT_OUT Optional JSON report path.
   MCP_RESPONSE_MODE Optional tool result mode: text_only, structured_only, both.
   MCP_RESPONSE_MODES Optional comma-separated modes for repeated runs.
+  MCP_TRANSPORT_RETRY_DELAY_MS Пауза перед единственным повтором транспортного отказа, по умолчанию 800.
+
+Коды возврата: 0 — провалов нет; 1 — есть ассертные провалы (дефект контракта);
+3 — провалы только транспортные, прогон недостоверен и подлежит повтору.
 `);
 }
 
@@ -130,6 +134,12 @@ class McpHttpClient {
     this.verbose = options.verbose;
     this.responseMode = options.responseMode || "";
     this.nextId = 1;
+    // Учёт транспортных повторов: счётчик и список восстановленных вызовов уходят в
+    // отчёт, чтобы восстановленный прогон нельзя было спутать с чистым.
+    this.transportRetries = 0;
+    this.recovered = [];
+    this.lastRetry = null;
+    this.retryDelayMs = Number(process.env.MCP_TRANSPORT_RETRY_DELAY_MS || 800);
     this.headers = {
       "content-type": "application/json",
       accept: "application/json",
@@ -140,7 +150,63 @@ class McpHttpClient {
     }
   }
 
+  // Транспортный отказ — обрыв соединения, а НЕ отказ сервера. Различие принципиально:
+  // повторять можно только транспорт. HTTP-статус, JSON-RPC error и упавший ассерт
+  // повторять нельзя — иначе реальная регрессия будет замаскирована повтором.
+  //
+  // Проверяется не только сообщение верхнего уровня (`fetch failed`), но и цепочка
+  // cause: undici кладёт настоящую причину туда, и по одному тексту класс отказа не
+  // определить.
+  static isTransportFailure(error) {
+    if (!error) return false;
+    if (error.rpcError) return false;          // сервер ответил — это не транспорт
+    if (error.httpStatus !== undefined) return false;
+    const codes = new Set(["ECONNRESET", "ECONNREFUSED", "ETIMEDOUT", "EPIPE", "ENOTFOUND",
+      "EAI_AGAIN", "UND_ERR_SOCKET", "UND_ERR_CONNECT_TIMEOUT", "UND_ERR_HEADERS_TIMEOUT",
+      "UND_ERR_BODY_TIMEOUT", "UND_ERR_ABORTED"]);
+    for (let current = error, depth = 0; current && depth < 5; current = current.cause, depth += 1) {
+      if (current.code && codes.has(String(current.code))) return true;
+      const message = String(current.message || "");
+      if (/fetch failed|socket hang up|terminated|other side closed|network socket/i.test(message)) return true;
+    }
+    return false;
+  }
+
+  // Повторяем только чтение. Сервер read-only, но перечень задан явно: если появится
+  // изменяющий метод, он не должен попасть под повтор автоматически.
+  static isRetryableMethod(method) {
+    return ["initialize", "tools/list", "tools/call", "resources/list", "resources/read", "prompts/list"].includes(method);
+  }
+
   async rpc(method, params = {}) {
+    if (!McpHttpClient.isRetryableMethod(method)) return this.rpcOnce(method, params);
+    try {
+      return await this.rpcOnce(method, params);
+    } catch (error) {
+      if (!McpHttpClient.isTransportFailure(error)) throw error;
+      // Один повтор, короткая пауза: цель — отличить перемежающийся обрыв от отказа,
+      // а не «дожать» контур. Признак повтора уходит в отчёт, поэтому восстановленный
+      // прогон не выглядит обычным PASS.
+      this.transportRetries += 1;
+      const first = `${error.message}${error.cause?.code ? " cause=" + error.cause.code : ""}`;
+      await new Promise((done) => setTimeout(done, this.retryDelayMs));
+      try {
+        const outcome = await this.rpcOnce(method, params);
+        this.recovered.push({ method, first_transport_error: first });
+        this.lastRetry = { transport_retry: true, attempts: 2, first_transport_error: first };
+        return outcome;
+      } catch (again) {
+        if (McpHttpClient.isTransportFailure(again)) {
+          again.transportFailure = true;
+          again.attempts = 2;
+          again.firstTransportError = first;
+        }
+        throw again;
+      }
+    }
+  }
+
+  async rpcOnce(method, params = {}) {
     const id = this.nextId;
     this.nextId += 1;
     if (this.responseMode && (method === "tools/list" || method === "tools/call")) {
@@ -168,7 +234,12 @@ class McpHttpClient {
         }
       }
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${text.slice(0, 500)}`);
+        // httpStatus проставляется явно: классификатор отказов по нему отличает ответ
+        // сервера от обрыва соединения, не полагаясь на текст сообщения. Тело ответа
+        // может содержать любые слова, включая те, по которым узнаётся транспорт.
+        const error = new Error(`HTTP ${response.status}: ${text.slice(0, 500)}`);
+        error.httpStatus = response.status;
+        throw error;
       }
       if (this.verbose) {
         console.log(`[rpc] ${method} #${id} ${elapsedMs}ms`);
@@ -236,6 +307,7 @@ class ContractRunner {
 
   async test(name, fn, meta = {}) {
     const started = Date.now();
+    this.client.lastRetry = null;
     try {
       const details = await fn();
       const row = {
@@ -245,6 +317,9 @@ class ContractRunner {
         details: details || {},
         ...meta,
       };
+      // Восстановленный транспортным повтором кейс помечается: без этого он выглядит
+      // как обычный PASS, и нестабильность контура исчезает из отчёта.
+      if (this.client.lastRetry) Object.assign(row, this.client.lastRetry);
       this.tests.push(row);
       printRow(row);
       return row;
@@ -254,8 +329,13 @@ class ContractRunner {
         status: "FAIL",
         elapsedMs: Date.now() - started,
         error: formatError(error),
+        failure_class: classifyFailure(error),
         ...meta,
       };
+      if (error?.transportFailure) {
+        row.attempts = error.attempts;
+        row.first_transport_error = error.firstTransportError;
+      }
       this.tests.push(row);
       printRow(row);
       if (this.options.failFast) throw error;
@@ -2935,6 +3015,7 @@ class ContractRunner {
   summary() {
     const passed = this.tests.filter((test) => test.status === "PASS").length;
     const failed = this.tests.filter((test) => test.status === "FAIL").length;
+    const byClass = (name) => this.tests.filter((test) => test.status === "FAIL" && test.failure_class === name).length;
     const summary = {
       target: this.client.url,
       responseMode: this.options.responseMode || "server_default",
@@ -2943,14 +3024,32 @@ class ContractRunner {
       total: this.tests.length,
       passed,
       failed,
+      // Раздельные счётчики: только assertion_failures означают дефект контракта.
+      // Прогон с транспортными отказами недостоверен, но регрессом не является.
+      assertion_failures: byClass("assertion"),
+      transport_failures: byClass("transport"),
+      fixture_missing_failures: byClass("fixture_missing"),
+      transport_retries_recovered: this.client.recovered.length,
+      transport_retries_attempted: this.client.transportRetries,
+      recovered_calls: this.client.recovered,
       tests: this.tests,
     };
     console.log("");
     console.log(`Summary: ${passed} passed, ${failed} failed, ${this.tests.length} total`);
+    console.log(`Failures by class: assertion ${summary.assertion_failures}`
+      + `, transport ${summary.transport_failures}`
+      + `, fixture_missing ${summary.fixture_missing_failures}`);
+    if (summary.transport_retries_recovered > 0) {
+      console.log(`Transport retries recovered: ${summary.transport_retries_recovered}`
+        + ` (attempted ${summary.transport_retries_attempted})`);
+    }
+    if (summary.transport_failures + summary.fixture_missing_failures > 0 && summary.assertion_failures === 0) {
+      console.log("ВНИМАНИЕ: провалы только транспортные — прогон недостоверен, но регресса контракта не показал.");
+    }
     if (failed > 0) {
       console.log("Failures:");
       for (const test of this.tests.filter((item) => item.status === "FAIL")) {
-        console.log(`- ${test.name}: ${test.error.message}`);
+        console.log(`- [${test.failure_class || "assertion"}] ${test.name}: ${test.error.message}`);
       }
     }
     return summary;
@@ -3202,13 +3301,28 @@ function formatError(error) {
   };
 }
 
+// Класс отказа. Три класса, и смешивать их нельзя: набор провалов сравнивается между
+// прогонами, а транспортные отказы меняются от прогона к прогону и делают сравнение
+// бессмысленным, если считать их вместе с ассертными.
+//
+// fixture_missing — следствие транспортного обрыва на discovery: кейс не смог получить
+// фикстуру и упал с текстом «fixture ... is missing». По сообщению такой провал не
+// отличить от настоящего дефекта, поэтому класс выделен отдельно.
+function classifyFailure(error) {
+  if (McpHttpClient.isTransportFailure(error)) return "transport";
+  if (/fixture .* is missing|no .* fixture/i.test(String(error?.message || ""))) return "fixture_missing";
+  return "assertion";
+}
+
 function printRow(row) {
   const status = row.status.padEnd(4);
   const elapsed = `${row.elapsedMs}ms`.padStart(7);
   if (row.status === "PASS") {
-    console.log(`[${status}] ${elapsed} ${row.name}`);
+    const retry = row.transport_retry ? " <восстановлен после транспортного обрыва>" : "";
+    console.log(`[${status}] ${elapsed} ${row.name}${retry}`);
   } else {
-    console.log(`[${status}] ${elapsed} ${row.name} :: ${row.error.message}`);
+    const cls = row.failure_class && row.failure_class !== "assertion" ? ` <${row.failure_class}>` : "";
+    console.log(`[${status}] ${elapsed} ${row.name}${cls} :: ${row.error.message}`);
   }
 }
 
@@ -3233,16 +3347,32 @@ async function main() {
       total: summaries.reduce((sum, item) => sum + item.total, 0),
       passed: summaries.reduce((sum, item) => sum + item.passed, 0),
       failed: summaries.reduce((sum, item) => sum + item.failed, 0),
+      assertion_failures: summaries.reduce((sum, item) => sum + (item.assertion_failures || 0), 0),
+      transport_failures: summaries.reduce((sum, item) => sum + (item.transport_failures || 0), 0),
+      fixture_missing_failures: summaries.reduce((sum, item) => sum + (item.fixture_missing_failures || 0), 0),
+      transport_retries_recovered: summaries.reduce((sum, item) => sum + (item.transport_retries_recovered || 0), 0),
       summaries,
     };
     if (options.out) {
       await writeReport(options.out, aggregate);
     }
-    process.exitCode = aggregate.failed > 0 ? 1 : 0;
+    process.exitCode = exitCodeFor(aggregate);
     return;
   }
   const summary = await runContract(options);
-  process.exitCode = summary.failed > 0 ? 1 : 0;
+  process.exitCode = exitCodeFor(summary);
+}
+
+// Код возврата различает дефект и недостоверный прогон:
+//   0 — провалов нет;
+//   1 — есть ассертные провалы, то есть дефект контракта;
+//   3 — провалы только транспортные (и производные от них) — прогон недостоверен и
+//       подлежит повтору, но регресса не показал. Отдельный код нужен, чтобы CI не
+//       записывал нестабильность контура в дефекты кода.
+function exitCodeFor(summary) {
+  if ((summary.assertion_failures || 0) > 0) return 1;
+  if ((summary.failed || 0) > 0) return 3;
+  return 0;
 }
 
 async function runContract(options) {
