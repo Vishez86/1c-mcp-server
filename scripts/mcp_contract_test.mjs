@@ -1602,6 +1602,74 @@ class ContractRunner {
       return { register: accountingRegister.fullName, errorCode, sourceTable, availableFieldsCount: availableFields.length, hint };
     });
 
+    // F7 (#84): область действия псевдонима. Первая команда пакета читает ВТ регистра
+    // под псевдонимом Данные и кладёт результат во временную таблицу; вторая читает эту
+    // временную таблицу ТОЖЕ под псевдонимом Данные и выбирает её поле Месяц. Поля Месяц
+    // у ОстаткиИОбороты нет, и до фикса pre-flight приписывал обращение исходной ВТ,
+    // отклоняя корректный запрос с validation_failed_before_run.
+    await this.test("regression.run_1c_query_alias_reused_in_next_batch_command", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) {
+        return { skipped: true, reason: "no accounting register in metadata" };
+      }
+      const query = `ВЫБРАТЬ
+    Данные.Период КАК Месяц,
+    СУММА(Данные.СуммаОборот) КАК Сумма
+ПОМЕСТИТЬ ВТМесячныеДанные
+ИЗ ${accountingRegister.fullName}.ОстаткиИОбороты(&Начало, &Конец, Месяц, , , , ) КАК Данные
+СГРУППИРОВАТЬ ПО Данные.Период
+;
+ВЫБРАТЬ ПЕРВЫЕ 5
+    Данные.Месяц КАК Месяц,
+    Данные.Сумма КАК Сумма
+ИЗ ВТМесячныеДанные КАК Данные
+УПОРЯДОЧИТЬ ПО Месяц`;
+      const result = await rawTool(this.client, "run_1c_query", {
+        query,
+        parameters: {
+          Начало: { kind: "datetime", value: CONTRACT_PERIOD.start },
+          Конец: { kind: "datetime", value: CONTRACT_PERIOD.end },
+        },
+        limit: 5,
+      });
+      const errorCode = result.error_code || result.error?.error_code;
+      assert(errorCode !== "validation_failed_before_run",
+        `alias reused in another batch command must not be attributed to the first source: ${JSON.stringify(result.error || {}).slice(0, 500)}`);
+      assert(result.ok === true, `batch query must reach the engine: ${JSON.stringify(result.error || {}).slice(0, 500)}`);
+      return { register: accountingRegister.fullName, rows: (result.rows || []).length };
+    });
+
+    // Обратная сторона того же правила: сужение области не должно превратить проверку в
+    // «пропускать всё». Несуществующее поле ВТ в той же команде обязано по-прежнему
+    // отклоняться до движка.
+    await this.test("regression.run_1c_query_missing_vt_field_still_rejected_in_batch", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) {
+        return { skipped: true, reason: "no accounting register in metadata" };
+      }
+      const query = `ВЫБРАТЬ
+    Данные.ЗаведомоНетТакогоПоляВТ КАК Поле
+ПОМЕСТИТЬ ВТПроба
+ИЗ ${accountingRegister.fullName}.ОстаткиИОбороты(&Начало, &Конец, Месяц, , , , ) КАК Данные
+;
+ВЫБРАТЬ ПЕРВЫЕ 1 Данные.Поле КАК Поле ИЗ ВТПроба КАК Данные`;
+      const result = await rawTool(this.client, "run_1c_query", {
+        query,
+        parameters: {
+          Начало: { kind: "datetime", value: CONTRACT_PERIOD.start },
+          Конец: { kind: "datetime", value: CONTRACT_PERIOD.end },
+        },
+        limit: 1,
+      });
+      const errorCode = result.error_code || result.error?.error_code;
+      assert(result.ok === false, "non-existent VT field must still fail");
+      assert(errorCode === "validation_failed_before_run",
+        `expected pre-flight rejection inside the declaring command, got: ${errorCode}`);
+      const field = result.field || result.error?.field;
+      assert(field === "ЗаведомоНетТакогоПоляВТ", `unexpected field: ${field}`);
+      return { register: accountingRegister.fullName, errorCode, field };
+    });
+
     await this.test("tool.vt_field_generator_authoritative_superset", async () => {
       // ТЗ критерии 3/4: генератор полей ВТ возвращает надмножество авторитетной схемы.
       const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
