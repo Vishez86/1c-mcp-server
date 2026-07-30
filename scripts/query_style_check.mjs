@@ -266,21 +266,55 @@ function splitStatements(code) {
 // Прежняя реализация всегда брала псевдоним после слова СОЕДИНЕНИЕ, поэтому при
 // ПРАВОЕ проверяла не ту сторону: требовала ЕСТЬNULL там, где NULL невозможен,
 // и пропускала настоящее нарушение на действительно нулевой стороне.
+// Все псевдонимы ИСТОЧНИКОВ до позиции — накопленная левая сторона цепочки.
+// Считаются только КАК из раздела источников (после токена ИЗ) и на нулевой глубине
+// скобок: псевдонимы колонок из списка ВЫБРАТЬ стоят до ИЗ и не попадают, подзапрос
+// участвует одним внешним псевдонимом. Тот же алгоритм — в серверной
+// MCP_Query.ПсевдонимыИсточниковДоПозиции; расхождение реализаций означает
+// расхождение вердиктов чекера и сервера.
+function sourceAliasesBefore(code, limitIndex) {
+  const upper = code.toUpperCase();
+  const isId = (c) => c !== undefined && /[А-ЯЁA-Z0-9_]/.test(c);
+  let depth = 0;
+  let fromIdx = -1;
+  for (let i = 0; i < upper.length - 1; i += 1) {
+    const c = upper[i];
+    if (c === "(") depth += 1;
+    else if (c === ")") depth = Math.max(0, depth - 1);
+    else if (depth === 0 && upper.startsWith("ИЗ", i) && !isId(upper[i - 1]) && !isId(upper[i + 2])) {
+      fromIdx = i;
+      break;
+    }
+  }
+  const result = [];
+  if (fromIdx < 0 || fromIdx >= limitIndex) return result;
+  depth = 0;
+  for (let i = fromIdx; i < limitIndex; i += 1) {
+    const c = upper[i];
+    if (c === "(") depth += 1;
+    else if (c === ")") depth = Math.max(0, depth - 1);
+    else if (depth === 0 && upper.startsWith("КАК", i) && !isId(upper[i - 1]) && !isId(upper[i + 3])) {
+      const m = /[А-Яа-яЁёA-Za-z0-9_]+/.exec(code.slice(i + 3, i + 200));
+      if (m) result.push(m[0].toUpperCase());
+      i += 3;
+    }
+  }
+  return result;
+}
+
 function outerJoinAliases(code) {
   const aliases = new Set();
   const re = /(ЛЕВОЕ|ПРАВОЕ|ПОЛНОЕ)\s+(?:ВНЕШНЕЕ\s+)?СОЕДИНЕНИЕ\s+[А-Яа-яЁёA-Za-z0-9_.]+\s+КАК\s+([А-Яа-яЁёA-Za-z0-9_]+)/gi;
-  const aliasRe = /КАК\s+([А-Яа-яЁёA-Za-z0-9_]+)/gi;
   let m;
   while ((m = re.exec(code)) !== null) {
     const kind = m[1].toUpperCase();
     if (kind === "ЛЕВОЕ" || kind === "ПОЛНОЕ") aliases.add(m[2].toUpperCase());
     if (kind === "ПРАВОЕ" || kind === "ПОЛНОЕ") {
-      // левая сторона: последний псевдоним, объявленный до вида соединения
-      let left = null;
-      aliasRe.lastIndex = 0;
-      let a;
-      while ((a = aliasRe.exec(code)) !== null && a.index < m.index) left = a[1];
-      if (left) aliases.add(left.toUpperCase());
+      // Левая сторона — ВЕСЬ накопленный результат цепочки, а не последний
+      // псевдоним: в «(К ЛЕВОЕ СОЕДИНЕНИЕ Д) ПРАВОЕ СОЕДИНЕНИЕ О» нулевыми
+      // становятся и К, и Д. «Последнее КАК до соединения» теряло К, и
+      // К.Наименование без ЕСТЬNULL молча теряло строки при исполнении (#83).
+      for (const left of sourceAliasesBefore(code, m.index)) aliases.add(left);
     }
   }
   return aliases;
