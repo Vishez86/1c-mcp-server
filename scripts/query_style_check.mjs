@@ -605,7 +605,11 @@ function checkUnsupportedQueryFunction(raw, code, findings) {
       pushFinding(findings, {
         id: "unsupported_query_function",
         severity: "error",
-        section: "§4.3",
+        // Раздела в tz_standarty_razrabotki.md для состава функций языка запросов пока
+        // нет: §4.3 — про имена и букву Ё, §6 — про дефекты предвалидатора. Правило
+        // ссылается на факт платформы, а не на пункт документа; когда раздел появится,
+        // метку заменить на него.
+        section: "платформа",
         message: `Функции ${m[2]} в языке запросов 1С нет: это функция встроенного языка. ` +
           `Модуль числа пишется как ВЫБОР КОГДА X < 0 ТОГДА -X ИНАЧЕ X КОНЕЦ; при вложенности ` +
           "выражение повторяется целиком, сослаться на псевдоним той же строки ВЫБРАТЬ нельзя.",
@@ -646,7 +650,7 @@ export const IMPLEMENTED_RULES = [
   { id: "vt_subconto_condition_in_account_position", section: "§1/§2 п.4", severity: "error", title: "Условие по субконто в позиции условия по счёту" },
   { id: "direct_join_with_virtual_table", section: "§4.1", severity: "error", title: "Прямое СОЕДИНЕНИЕ с виртуальной таблицей" },
   { id: "subconto_inline_literal_instead_of_array_param", section: "§2 п.3", severity: "error", title: "Инлайн-массив видов субконто" },
-  { id: "unsupported_query_function", section: "§4.3", severity: "error", title: "Функция встроенного языка вместо языка запросов (АБС/ABS)" },
+  { id: "unsupported_query_function", section: "платформа", severity: "error", title: "Функция встроенного языка вместо языка запросов (АБС/ABS)" },
 ];
 
 export function checkQuery(text) {
