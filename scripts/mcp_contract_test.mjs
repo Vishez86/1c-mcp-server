@@ -1648,6 +1648,80 @@ class ContractRunner {
       return { register: accountingRegister.fullName, advertisedDeveloped: developed.length };
     });
 
+    // #81: инвариант «advertised ⟹ executable» для двусторонней ВТ. Каждое поле,
+    // которое метаданные объявляют у ОборотыДтКт, обязано не только пройти pre-flight,
+    // но и исполниться движком. Ловит обе стороны дефекта: плоское небалансовое
+    // измерение в наборе (Валюта) упало бы в движке, а отсутствие стороннего имени
+    // (ВалютаДт) — на pre-flight. Поля берутся из discovery, имена конфигурации
+    // в кейсе не зашиты.
+    await this.test("invariant.two_sided_vt_advertised_fields_executable", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) return { skipped: true, reason: "no accounting register" };
+      const meta = await okTool(this.client, "get_metadata_structure", {
+        type: accountingRegister.fullName,
+        include_virtual_tables: true,
+      });
+      const advertised = ((meta.metadata?.register_schema?.virtual_tables || [])
+        .find((v) => v.name === "ОборотыДтКт")?.common_fields) || [];
+      if (advertised.length === 0) return { skipped: true, reason: "no advertised fields for ОборотыДтКт" };
+      const selectList = advertised.map((f) => `Т.${f} КАК П${advertised.indexOf(f)}`).join(", ");
+      const result = await rawTool(this.client, "run_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 ${selectList} ИЗ ${accountingRegister.fullName}.ОборотыДтКт(&Начало, &Конец) КАК Т`,
+        parameters: {
+          Начало: { kind: "datetime", value: CONTRACT_PERIOD.start },
+          Конец: { kind: "datetime", value: CONTRACT_PERIOD.end },
+        },
+        limit: 1,
+      });
+      const code = result.error_code || result.error?.error_code;
+      assert(code !== "validation_failed_before_run",
+        `advertised field rejected by pre-flight: ${result.field || result.error?.field}`);
+      assert(result.ok === true,
+        `advertised field must execute; engine said: ${String(result.error?.message || code).slice(0, 300)}`);
+      return { register: accountingRegister.fullName, advertised: advertised.length };
+    });
+
+    // #81: у ДвиженияССубконто появился pre-flight (раньше генератор возвращал для
+    // неё Ложь, и проверка не работала вовсе). Обе стороны: несуществующее поле
+    // отклоняется до движка с available_fields от правильной таблицы, а реальные
+    // поля записей движений (Регистратор и стороны счёта) проходят и исполняются.
+    await this.test("regression.run_1c_query_dvizheniya_s_subkonto_pre_flight", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) return { skipped: true, reason: "no accounting register" };
+      const params = {
+        Начало: { kind: "datetime", value: CONTRACT_PERIOD.start },
+        Конец: { kind: "datetime", value: CONTRACT_PERIOD.end },
+      };
+      const positive = await rawTool(this.client, "run_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Т.Период, Т.Регистратор, Т.СчетДт, Т.СчетКт, Т.СубконтоДт1 `
+          + `ИЗ ${accountingRegister.fullName}.ДвиженияССубконто(&Начало, &Конец) КАК Т`,
+        parameters: params,
+        limit: 1,
+      });
+      const positiveCode = positive.error_code || positive.error?.error_code;
+      assert(positiveCode !== "validation_failed_before_run",
+        `real ДвиженияССубконто fields must pass pre-flight, rejected: ${positive.field || positive.error?.field}`);
+      if (positive.ok !== true) {
+        // Регистр без корреспонденции: полей СчетДт/СчетКт нет, схема не строится —
+        // это объявленная деградация, а не провал кейса.
+        return { skipped: true, reason: `engine rejected sided fields (non-correspondence register?): ${positiveCode}` };
+      }
+      const negative = await rawTool(this.client, "run_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Т.ЗаведомоНетТакогоПоляДвижений `
+          + `ИЗ ${accountingRegister.fullName}.ДвиженияССубконто(&Начало, &Конец) КАК Т`,
+        parameters: params,
+        limit: 1,
+      });
+      const negativeCode = negative.error_code || negative.error?.error_code;
+      assert(negative.ok === false, "non-existent field must fail");
+      assert(negativeCode === "validation_failed_before_run",
+        `expected pre-flight rejection for ДвиженияССубконто, got: ${negativeCode}`);
+      const availableFields = negative.available_fields || negative.error?.available_fields || [];
+      assert(availableFields.some((f) => f.toUpperCase() === "РЕГИСТРАТОР"),
+        "available_fields must include Регистратор — the reason this VT exists");
+      return { register: accountingRegister.fullName, availableFieldsCount: availableFields.length };
+    });
+
     await this.test("invariant.pre_flight_rejection_never_suggests_rejected_field", async () => {
       // Само-противоречие из отчёта: hint отклонял поле и одновременно предлагал его же
       // как «Возможная замена». Guard в ВариантыПохожихПолей это запрещает: отклонённое
