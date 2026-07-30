@@ -1712,8 +1712,26 @@ class ContractRunner {
       assert(object === fixture.full_name, `unexpected object: ${object}`);
       assert(parts.includes(fixture.tabularSection.name), "available_tabular_parts must list the real tabular section");
       assert(!platformMessage, "engine must not be called: platform_message must be absent");
-      assert(result.error?.details?.stage === "validation", `stage must be validation, got: ${result.error?.details?.stage}`);
-      return { object, availableTabularParts: parts.slice(0, 8), code };
+      // stage сервер отдаёт на верхнем уровне ответа И в error: MCP_Tools копирует его
+      // туда намеренно (СкопироватьПолеДеталей(Детали, Данные, Ошибка, "stage")), чтобы
+      // признак «движок не вызывался» был виден клиенту. Проверка одного лишь
+      // error.details.stage не проходила никогда — это и был дефект кейса.
+      //
+      // Оба контрактных пути проверяются ПОРОЗНЬ и без запасного error.details.stage.
+      // Цепочка с фолбэком здесь недопустима: публикация, отдающая stage только по
+      // устаревшему пути, прошла бы проверку. Фолбэк оставлен только в smoke-gate,
+      // где задача обратная — не завалить гейт на старой публикации.
+      assert(result.stage === "validation",
+        `top-level stage must be validation, got: ${JSON.stringify(result.stage)}`);
+      assert(result.error?.stage === "validation",
+        `error.stage must be validation, got: ${JSON.stringify(result.error?.stage)}`);
+      return {
+        object,
+        availableTabularParts: parts.slice(0, 8),
+        code,
+        stage: result.stage,
+        errorStage: result.error?.stage,
+      };
     });
 
     await this.test("negative.run_1c_query_object_field_rejected_pre_flight", async () => {
@@ -1835,6 +1853,12 @@ class ContractRunner {
       // правилом vt_filter_in_external_where. Прежняя форма «ГДЕ Остатки.Счет.Код = &Код»
       // вдобавок разыменовывала счёт, что в параметрах ВТ запрещено, поэтому простой
       // перенос условия не подошёл бы — нужен именно пустой массив ссылок.
+      //
+      // Пустой массив здесь — требование самого кейса (нужны ровно нулевые строки), и он
+      // НЕ покрывает список счетов, который сервер собирает сам: пустой список — как раз
+      // единственная форма, при которой сериализация ссылок в параметрах ВТ не проявляется.
+      // За непустой внутренний список отвечают tool.get_inventory_balances_by_item,
+      // tool.get_accounting_balances_by_subconto_age и tool.compare_accounting_balances_by_subconto.
       const result = await okTool(this.client, "run_1c_query", {
         query: `ВЫБРАТЬ ПЕРВЫЕ 1 Остатки.Счет, Остатки.Субконто1 ИЗ ${accountingRegister.fullName}.Остатки(&Период, Счет В (&ПустойСписокСчетов), , ) КАК Остатки`,
         parameters: {
@@ -2198,6 +2222,106 @@ class ContractRunner {
       assert(Array.isArray(result.rows), "compare rows must be an array");
       assert(result.query_used?.includes("ВТ_ЛевыеОстатки"), "compare query must use temporary left table");
       return { register: accountingRegister.fullName, rows: result.rows.length };
+    });
+
+    // Третий инструмент, собирающий список счетов внутри сервера и отдающий его в
+    // позицию условия по счёту ВТ. До этого кейса он не вызывался ни одним тестом —
+    // имя было только в EXPECTED_TOOLS, поэтому его отказ на непустом списке ссылок
+    // оставался невидимым. Попутно кейс покрывает саму форму «Счет В (непустой массив)»:
+    // единственная другая проба этой формы в наборе передаёт ПУСТОЙ массив, а он
+    // проходит и при сломанной сборке списка.
+    await this.test("tool.get_inventory_balances_by_item", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) {
+        return { skipped: true, reason: "no accounting register in metadata" };
+      }
+      const map = await okTool(this.client, "get_accounting_accounts_map", {
+        account_code_prefix: "41",
+        include_empty_subconto: false,
+        limit: 20,
+      });
+      // В список идут ВСЕ подходящие счёта префикса, а не первый: у счёта-группы
+      // (41) остатков не бывает — они лежат на субсчетах (41.01…), и проба по одной
+      // группе давала 0 строк, из-за чего кейс уходил в skipped. Пропуск выглядит как
+      // успех, поэтому здесь он допустим только когда в базе действительно нет
+      // товарных остатков.
+      const candidates = (map.accounts || []).filter((account) =>
+        (account.subconto || []).some((item) => item.position === 1)
+        && (account.subconto || []).some((item) => item.position === 2)
+      );
+      if (candidates.length === 0) {
+        return { skipped: true, reason: "no 41 account with subconto positions 1 and 2" };
+      }
+
+      // Товар подбирается discovery по остаткам самих счетов, а не именем: имя
+      // номенклатуры конфигурационно-зависимо. Заодно это проба формы
+      // «Счет В (&Список)» с НЕПУСТЫМ массивом ссылок — той, на которой инструменты
+      // и падали, пока список собирался из сериализованных значений.
+      const probe = await okTool(this.client, "run_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Остатки.Счет КАК Счет, Остатки.Субконто1 КАК Товар`
+          + ` ИЗ ${accountingRegister.fullName}.Остатки(&Период, Счет В (&СписокСчетов), &ВидыСубконто, ) КАК Остатки`,
+        parameters: {
+          Период: { kind: "datetime", value: CONTRACT_PERIOD.end },
+          СписокСчетов: {
+            kind: "array",
+            value: candidates.map((account) => ({ kind: "ref", type: account.account.type, uuid: account.uuid })),
+          },
+          // Виды субконто берутся у первого кандидата: параметр переиндексирует поля
+          // Субконто1/2 по порядку массива, поэтому позиции у остальных счетов из
+          // выборки совпадут с этим порядком.
+          ВидыСубконто: {
+            kind: "array",
+            value: (candidates[0].subconto || [])
+              .sort((left, right) => left.position - right.position)
+              .map((item) => ({ kind: "ref", type: item.ref.type, uuid: item.ref.uuid })),
+          },
+        },
+        limit: 1,
+      });
+      const item = probe.rows?.[0]?.Товар;
+      if (!item?.uuid || !item?.type) {
+        return {
+          skipped: true,
+          reason: "no inventory balance rows to take an item from",
+          accounts: candidates.map((account) => account.code),
+        };
+      }
+
+      // Счёт из строки остатков определяет, чьи имена видов субконто передавать:
+      // у разных субсчетов порядок аналитик может отличаться.
+      const balanceAccount = candidates.find((account) => account.uuid === probe.rows[0].Счет?.uuid) || candidates[0];
+      const byPosition = (position) => (balanceAccount.subconto || []).find((item) => item.position === position);
+
+      const result = await okTool(this.client, "get_inventory_balances_by_item", {
+        accounting_register: accountingRegister.name,
+        as_of: CONTRACT_PERIOD.end,
+        account_code_prefixes: [balanceAccount.code],
+        item_ref: { type: item.type, uuid: item.uuid },
+        item_subconto_name: byPosition(1)?.name,
+        warehouse_subconto_name: byPosition(2)?.name,
+        include_zero: true,
+        limit: 5,
+        include_query: true,
+      });
+      assert(Array.isArray(result.rows), "inventory rows must be an array");
+      assert(result.configuration_agnostic === true, "inventory tool must be configuration agnostic");
+      assert(Array.isArray(result.account_code_prefixes) && result.account_code_prefixes.length > 0,
+        "inventory tool must report the account prefixes it used");
+      assert(String(result.query_used || "").includes(".Остатки("), "inventory query must use Остатки");
+      // Регресс-страховка ровно на дефект #79: список счетов уходит в параметры ВТ, и
+      // если он снова окажется сериализованным, okTool выше не пропустит «Неверные
+      // параметры».
+      assert(String(result.query_used || "").includes("&СписокСчетов"),
+        "inventory query must filter accounts through virtual table parameters");
+      return {
+        register: accountingRegister.fullName,
+        account: balanceAccount.code,
+        subcontoKinds: (balanceAccount.subconto || [])
+          .sort((left, right) => left.position - right.position)
+          .map((subconto) => subconto.name),
+        rows: result.rows.length,
+        prefixes: result.account_code_prefixes,
+      };
     });
 
     await this.test("tool.get_register_records_bad_mode_is_diagnostic", async () => {
