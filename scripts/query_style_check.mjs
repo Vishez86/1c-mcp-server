@@ -587,6 +587,40 @@ function checkInlineSubcontoLiteral(raw, code, findings) {
 // ИНДЕКСИРОВАТЬ ПО без предшествующей группировки. Держать проверки дальше значило бы
 // запрещать законный синтаксис и советовать лишнюю группировку, меняющую план запроса.
 
+// Функции встроенного языка, которых нет в языке запросов. Список ЗАКРЫТЫЙ: незнакомую
+// функцию отклонять нельзя — язык запросов допускает платформенные функции и функции
+// конфигурации, и ложный отказ хуже пропуска. Пополнять только после подтверждения
+// документацией и живой пробой. Тот же список — в MCP_Query.НеподдерживаемыеФункцииЗапроса;
+// расхождение между чекером и сервером означает расхождение вердиктов.
+const UNSUPPORTED_QUERY_FUNCTIONS = ["АБС", "ABS"];
+
+// АБС/ABS проходит validate_1c_query, но падает синтаксической ошибкой в движке
+// (подтверждено живьём на БП КОРП 3.0.192.25). Ищется именно вызов: токен целиком и
+// открывающая скобка за ним. Обращение к полю (Алиас.АБС) вызовом не считается.
+function checkUnsupportedQueryFunction(raw, code, findings) {
+  for (const name of UNSUPPORTED_QUERY_FUNCTIONS) {
+    const re = new RegExp(`(^|[^A-Za-zА-Яа-яЁё0-9_.])(${name})\\s*\\(`, "gi");
+    let m;
+    while ((m = re.exec(code)) !== null) {
+      pushFinding(findings, {
+        id: "unsupported_query_function",
+        severity: "error",
+        // Нормативная опора — §8 tz_standarty_razrabotki.md (функции языка запросов и
+        // отсутствующие аналоги встроенного языка). Метка остаётся «платформа», а не
+        // «§8»: правило держится на свойстве платформы, документ его лишь фиксирует, и
+        // при смене нумерации разделов метка не должна становиться ложной ссылкой.
+        section: "платформа",
+        message: `Функции ${m[2]} в языке запросов 1С нет: это функция встроенного языка. ` +
+          `Модуль числа пишется как ВЫБОР КОГДА X < 0 ТОГДА -X ИНАЧЕ X КОНЕЦ; при вложенности ` +
+          "выражение повторяется целиком, сослаться на псевдоним той же строки ВЫБРАТЬ нельзя.",
+        text: raw,
+        index: m.index + m[1].length,
+        fragment: `${m[2]}(`,
+      });
+    }
+  }
+}
+
 const RULES = [
   checkYo,
   checkMixedScript,
@@ -597,6 +631,7 @@ const RULES = [
   checkVtSignature,
   checkDirectJoinWithVt,
   checkInlineSubcontoLiteral,
+  checkUnsupportedQueryFunction,
 ];
 
 // Реестр реализованных проверок — машинная истина о покрытии.
@@ -615,6 +650,7 @@ export const IMPLEMENTED_RULES = [
   { id: "vt_subconto_condition_in_account_position", section: "§1/§2 п.4", severity: "error", title: "Условие по субконто в позиции условия по счёту" },
   { id: "direct_join_with_virtual_table", section: "§4.1", severity: "error", title: "Прямое СОЕДИНЕНИЕ с виртуальной таблицей" },
   { id: "subconto_inline_literal_instead_of_array_param", section: "§2 п.3", severity: "error", title: "Инлайн-массив видов субконто" },
+  { id: "unsupported_query_function", section: "платформа", severity: "error", title: "Функция встроенного языка вместо языка запросов (АБС/ABS)" },
 ];
 
 export function checkQuery(text) {
