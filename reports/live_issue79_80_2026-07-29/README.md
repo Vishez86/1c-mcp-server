@@ -103,7 +103,11 @@ node reports/live_issue79_80_2026-07-29/run_issue79_80.mjs reports/live_issue79_
 node scripts/mcp_contract_test.mjs --all-response-modes --out reports/live_issue79_80_2026-07-29/contract_after_deploy.json
 ```
 
-Ожидание: **113 кейсов**, **1 FAIL** —
+Ожидание по числу кейсов устарело после вливания PR #87: в контракт-тесте
+появились три новых кейса, вызовов `this.test` стало 118 против 114. Сверять
+**набор** имён провалов, а не счётчики; фактическое число фиксирует первый прогон.
+
+Ожидание: **1 FAIL** —
 `transport.unsupported_version_header_returns_400` (HTTP 500 вместо 400). Он к
 #79/#80 отношения не имеет, старше этих правок и в трекере не заведён.
 
