@@ -120,6 +120,10 @@ Environment:
   MCP_CONTRACT_OUT Optional JSON report path.
   MCP_RESPONSE_MODE Optional tool result mode: text_only, structured_only, both.
   MCP_RESPONSE_MODES Optional comma-separated modes for repeated runs.
+  MCP_TRANSPORT_RETRY_DELAY_MS Пауза перед единственным повтором транспортного отказа, по умолчанию 800.
+
+Коды возврата: 0 — провалов нет; 1 — есть ассертные провалы (дефект контракта);
+3 — провалы только транспортные, прогон недостоверен и подлежит повтору.
 `);
 }
 
@@ -130,6 +134,12 @@ class McpHttpClient {
     this.verbose = options.verbose;
     this.responseMode = options.responseMode || "";
     this.nextId = 1;
+    // Учёт транспортных повторов: счётчик и список восстановленных вызовов уходят в
+    // отчёт, чтобы восстановленный прогон нельзя было спутать с чистым.
+    this.transportRetries = 0;
+    this.recovered = [];
+    this.lastRetry = null;
+    this.retryDelayMs = Number(process.env.MCP_TRANSPORT_RETRY_DELAY_MS || 800);
     this.headers = {
       "content-type": "application/json",
       accept: "application/json",
@@ -140,7 +150,72 @@ class McpHttpClient {
     }
   }
 
+  // Транспортный отказ — соединение не состоялось или оборвалось, а НЕ отказ сервера.
+  // Различие принципиально: повторять можно только транспорт. HTTP-статус, JSON-RPC
+  // error и упавший ассерт повторять нельзя — иначе реальная регрессия будет
+  // замаскирована повтором.
+  //
+  // Проверяется не только сообщение верхнего уровня (`fetch failed`), но и цепочка
+  // cause: undici кладёт настоящую причину туда, и по одному тексту класс отказа не
+  // определить.
+  //
+  // Замеренный на практике случай — `UND_ERR_CONNECT_TIMEOUT` примерно на 10,7 с. Это
+  // СОБСТВЕННЫЙ connectTimeout undici (10 000 мс по умолчанию), а не порог сервера:
+  // отказ наступает до обмена данными, поэтому задевает даже `initialize`, а
+  // --timeout-ms на него не влияет — тот таймер ограничивает запрос целиком, а не
+  // установку соединения. Тот же признак воспроизводился одновременно на трёх
+  // несвязанных хостах, то есть источник — клиентская сеть, а не контур. Вывод для
+  // приёмки: такие провалы нельзя записывать ни в дефекты сервера, ни в регресс.
+  static isTransportFailure(error) {
+    if (!error) return false;
+    if (error.rpcError) return false;          // сервер ответил — это не транспорт
+    if (error.httpStatus !== undefined) return false;
+    const codes = new Set(["ECONNRESET", "ECONNREFUSED", "ETIMEDOUT", "EPIPE", "ENOTFOUND",
+      "EAI_AGAIN", "UND_ERR_SOCKET", "UND_ERR_CONNECT_TIMEOUT", "UND_ERR_HEADERS_TIMEOUT",
+      "UND_ERR_BODY_TIMEOUT", "UND_ERR_ABORTED"]);
+    for (let current = error, depth = 0; current && depth < 5; current = current.cause, depth += 1) {
+      if (current.code && codes.has(String(current.code))) return true;
+      const message = String(current.message || "");
+      if (/fetch failed|socket hang up|terminated|other side closed|network socket/i.test(message)) return true;
+    }
+    return false;
+  }
+
+  // Повторяем только чтение. Сервер read-only, но перечень задан явно: если появится
+  // изменяющий метод, он не должен попасть под повтор автоматически.
+  static isRetryableMethod(method) {
+    return ["initialize", "tools/list", "tools/call", "resources/list", "resources/read", "prompts/list"].includes(method);
+  }
+
   async rpc(method, params = {}) {
+    if (!McpHttpClient.isRetryableMethod(method)) return this.rpcOnce(method, params);
+    try {
+      return await this.rpcOnce(method, params);
+    } catch (error) {
+      if (!McpHttpClient.isTransportFailure(error)) throw error;
+      // Один повтор, короткая пауза: цель — отличить перемежающийся обрыв от отказа,
+      // а не «дожать» контур. Признак повтора уходит в отчёт, поэтому восстановленный
+      // прогон не выглядит обычным PASS.
+      this.transportRetries += 1;
+      const first = `${error.message}${error.cause?.code ? " cause=" + error.cause.code : ""}`;
+      await new Promise((done) => setTimeout(done, this.retryDelayMs));
+      try {
+        const outcome = await this.rpcOnce(method, params);
+        this.recovered.push({ method, first_transport_error: first });
+        this.lastRetry = { transport_retry: true, attempts: 2, first_transport_error: first };
+        return outcome;
+      } catch (again) {
+        if (McpHttpClient.isTransportFailure(again)) {
+          again.transportFailure = true;
+          again.attempts = 2;
+          again.firstTransportError = first;
+        }
+        throw again;
+      }
+    }
+  }
+
+  async rpcOnce(method, params = {}) {
     const id = this.nextId;
     this.nextId += 1;
     if (this.responseMode && (method === "tools/list" || method === "tools/call")) {
@@ -168,7 +243,12 @@ class McpHttpClient {
         }
       }
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${text.slice(0, 500)}`);
+        // httpStatus проставляется явно: классификатор отказов по нему отличает ответ
+        // сервера от обрыва соединения, не полагаясь на текст сообщения. Тело ответа
+        // может содержать любые слова, включая те, по которым узнаётся транспорт.
+        const error = new Error(`HTTP ${response.status}: ${text.slice(0, 500)}`);
+        error.httpStatus = response.status;
+        throw error;
       }
       if (this.verbose) {
         console.log(`[rpc] ${method} #${id} ${elapsedMs}ms`);
@@ -236,6 +316,7 @@ class ContractRunner {
 
   async test(name, fn, meta = {}) {
     const started = Date.now();
+    this.client.lastRetry = null;
     try {
       const details = await fn();
       const row = {
@@ -245,6 +326,9 @@ class ContractRunner {
         details: details || {},
         ...meta,
       };
+      // Восстановленный транспортным повтором кейс помечается: без этого он выглядит
+      // как обычный PASS, и нестабильность контура исчезает из отчёта.
+      if (this.client.lastRetry) Object.assign(row, this.client.lastRetry);
       this.tests.push(row);
       printRow(row);
       return row;
@@ -254,8 +338,13 @@ class ContractRunner {
         status: "FAIL",
         elapsedMs: Date.now() - started,
         error: formatError(error),
+        failure_class: classifyFailure(error),
         ...meta,
       };
+      if (error?.transportFailure) {
+        row.attempts = error.attempts;
+        row.first_transport_error = error.firstTransportError;
+      }
       this.tests.push(row);
       printRow(row);
       if (this.options.failFast) throw error;
@@ -1522,6 +1611,74 @@ class ContractRunner {
       return { register: accountingRegister.fullName, errorCode, sourceTable, availableFieldsCount: availableFields.length, hint };
     });
 
+    // F7 (#84): область действия псевдонима. Первая команда пакета читает ВТ регистра
+    // под псевдонимом Данные и кладёт результат во временную таблицу; вторая читает эту
+    // временную таблицу ТОЖЕ под псевдонимом Данные и выбирает её поле Месяц. Поля Месяц
+    // у ОстаткиИОбороты нет, и до фикса pre-flight приписывал обращение исходной ВТ,
+    // отклоняя корректный запрос с validation_failed_before_run.
+    await this.test("regression.run_1c_query_alias_reused_in_next_batch_command", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) {
+        return { skipped: true, reason: "no accounting register in metadata" };
+      }
+      const query = `ВЫБРАТЬ
+    Данные.Период КАК Месяц,
+    СУММА(Данные.СуммаОборот) КАК Сумма
+ПОМЕСТИТЬ ВТМесячныеДанные
+ИЗ ${accountingRegister.fullName}.ОстаткиИОбороты(&Начало, &Конец, Месяц, , , , ) КАК Данные
+СГРУППИРОВАТЬ ПО Данные.Период
+;
+ВЫБРАТЬ ПЕРВЫЕ 5
+    Данные.Месяц КАК Месяц,
+    Данные.Сумма КАК Сумма
+ИЗ ВТМесячныеДанные КАК Данные
+УПОРЯДОЧИТЬ ПО Месяц`;
+      const result = await rawTool(this.client, "run_1c_query", {
+        query,
+        parameters: {
+          Начало: { kind: "datetime", value: CONTRACT_PERIOD.start },
+          Конец: { kind: "datetime", value: CONTRACT_PERIOD.end },
+        },
+        limit: 5,
+      });
+      const errorCode = result.error_code || result.error?.error_code;
+      assert(errorCode !== "validation_failed_before_run",
+        `alias reused in another batch command must not be attributed to the first source: ${JSON.stringify(result.error || {}).slice(0, 500)}`);
+      assert(result.ok === true, `batch query must reach the engine: ${JSON.stringify(result.error || {}).slice(0, 500)}`);
+      return { register: accountingRegister.fullName, rows: (result.rows || []).length };
+    });
+
+    // Обратная сторона того же правила: сужение области не должно превратить проверку в
+    // «пропускать всё». Несуществующее поле ВТ в той же команде обязано по-прежнему
+    // отклоняться до движка.
+    await this.test("regression.run_1c_query_missing_vt_field_still_rejected_in_batch", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) {
+        return { skipped: true, reason: "no accounting register in metadata" };
+      }
+      const query = `ВЫБРАТЬ
+    Данные.ЗаведомоНетТакогоПоляВТ КАК Поле
+ПОМЕСТИТЬ ВТПроба
+ИЗ ${accountingRegister.fullName}.ОстаткиИОбороты(&Начало, &Конец, Месяц, , , , ) КАК Данные
+;
+ВЫБРАТЬ ПЕРВЫЕ 1 Данные.Поле КАК Поле ИЗ ВТПроба КАК Данные`;
+      const result = await rawTool(this.client, "run_1c_query", {
+        query,
+        parameters: {
+          Начало: { kind: "datetime", value: CONTRACT_PERIOD.start },
+          Конец: { kind: "datetime", value: CONTRACT_PERIOD.end },
+        },
+        limit: 1,
+      });
+      const errorCode = result.error_code || result.error?.error_code;
+      assert(result.ok === false, "non-existent VT field must still fail");
+      assert(errorCode === "validation_failed_before_run",
+        `expected pre-flight rejection inside the declaring command, got: ${errorCode}`);
+      const field = result.field || result.error?.field;
+      assert(field === "ЗаведомоНетТакогоПоляВТ", `unexpected field: ${field}`);
+      return { register: accountingRegister.fullName, errorCode, field };
+    });
+
     await this.test("tool.vt_field_generator_authoritative_superset", async () => {
       // ТЗ критерии 3/4: генератор полей ВТ возвращает надмножество авторитетной схемы.
       const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
@@ -1646,6 +1803,80 @@ class ContractRunner {
         return { softFail: true, reason: `engine rejected (likely non-correspondence register): ${code}`, advertised: developed.length };
       }
       return { register: accountingRegister.fullName, advertisedDeveloped: developed.length };
+    });
+
+    // #81: инвариант «advertised ⟹ executable» для двусторонней ВТ. Каждое поле,
+    // которое метаданные объявляют у ОборотыДтКт, обязано не только пройти pre-flight,
+    // но и исполниться движком. Ловит обе стороны дефекта: плоское небалансовое
+    // измерение в наборе (Валюта) упало бы в движке, а отсутствие стороннего имени
+    // (ВалютаДт) — на pre-flight. Поля берутся из discovery, имена конфигурации
+    // в кейсе не зашиты.
+    await this.test("invariant.two_sided_vt_advertised_fields_executable", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) return { skipped: true, reason: "no accounting register" };
+      const meta = await okTool(this.client, "get_metadata_structure", {
+        type: accountingRegister.fullName,
+        include_virtual_tables: true,
+      });
+      const advertised = ((meta.metadata?.register_schema?.virtual_tables || [])
+        .find((v) => v.name === "ОборотыДтКт")?.common_fields) || [];
+      if (advertised.length === 0) return { skipped: true, reason: "no advertised fields for ОборотыДтКт" };
+      const selectList = advertised.map((f) => `Т.${f} КАК П${advertised.indexOf(f)}`).join(", ");
+      const result = await rawTool(this.client, "run_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 ${selectList} ИЗ ${accountingRegister.fullName}.ОборотыДтКт(&Начало, &Конец) КАК Т`,
+        parameters: {
+          Начало: { kind: "datetime", value: CONTRACT_PERIOD.start },
+          Конец: { kind: "datetime", value: CONTRACT_PERIOD.end },
+        },
+        limit: 1,
+      });
+      const code = result.error_code || result.error?.error_code;
+      assert(code !== "validation_failed_before_run",
+        `advertised field rejected by pre-flight: ${result.field || result.error?.field}`);
+      assert(result.ok === true,
+        `advertised field must execute; engine said: ${String(result.error?.message || code).slice(0, 300)}`);
+      return { register: accountingRegister.fullName, advertised: advertised.length };
+    });
+
+    // #81: у ДвиженияССубконто появился pre-flight (раньше генератор возвращал для
+    // неё Ложь, и проверка не работала вовсе). Обе стороны: несуществующее поле
+    // отклоняется до движка с available_fields от правильной таблицы, а реальные
+    // поля записей движений (Регистратор и стороны счёта) проходят и исполняются.
+    await this.test("regression.run_1c_query_dvizheniya_s_subkonto_pre_flight", async () => {
+      const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
+      if (!accountingRegister) return { skipped: true, reason: "no accounting register" };
+      const params = {
+        Начало: { kind: "datetime", value: CONTRACT_PERIOD.start },
+        Конец: { kind: "datetime", value: CONTRACT_PERIOD.end },
+      };
+      const positive = await rawTool(this.client, "run_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Т.Период, Т.Регистратор, Т.СчетДт, Т.СчетКт, Т.СубконтоДт1 `
+          + `ИЗ ${accountingRegister.fullName}.ДвиженияССубконто(&Начало, &Конец) КАК Т`,
+        parameters: params,
+        limit: 1,
+      });
+      const positiveCode = positive.error_code || positive.error?.error_code;
+      assert(positiveCode !== "validation_failed_before_run",
+        `real ДвиженияССубконто fields must pass pre-flight, rejected: ${positive.field || positive.error?.field}`);
+      if (positive.ok !== true) {
+        // Регистр без корреспонденции: полей СчетДт/СчетКт нет, схема не строится —
+        // это объявленная деградация, а не провал кейса.
+        return { skipped: true, reason: `engine rejected sided fields (non-correspondence register?): ${positiveCode}` };
+      }
+      const negative = await rawTool(this.client, "run_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Т.ЗаведомоНетТакогоПоляДвижений `
+          + `ИЗ ${accountingRegister.fullName}.ДвиженияССубконто(&Начало, &Конец) КАК Т`,
+        parameters: params,
+        limit: 1,
+      });
+      const negativeCode = negative.error_code || negative.error?.error_code;
+      assert(negative.ok === false, "non-existent field must fail");
+      assert(negativeCode === "validation_failed_before_run",
+        `expected pre-flight rejection for ДвиженияССубконто, got: ${negativeCode}`);
+      const availableFields = negative.available_fields || negative.error?.available_fields || [];
+      assert(availableFields.some((f) => f.toUpperCase() === "РЕГИСТРАТОР"),
+        "available_fields must include Регистратор — the reason this VT exists");
+      return { register: accountingRegister.fullName, availableFieldsCount: availableFields.length };
     });
 
     await this.test("invariant.pre_flight_rejection_never_suggests_rejected_field", async () => {
@@ -2993,6 +3224,7 @@ class ContractRunner {
   summary() {
     const passed = this.tests.filter((test) => test.status === "PASS").length;
     const failed = this.tests.filter((test) => test.status === "FAIL").length;
+    const byClass = (name) => this.tests.filter((test) => test.status === "FAIL" && test.failure_class === name).length;
     const summary = {
       target: this.client.url,
       responseMode: this.options.responseMode || "server_default",
@@ -3001,14 +3233,32 @@ class ContractRunner {
       total: this.tests.length,
       passed,
       failed,
+      // Раздельные счётчики: только assertion_failures означают дефект контракта.
+      // Прогон с транспортными отказами недостоверен, но регрессом не является.
+      assertion_failures: byClass("assertion"),
+      transport_failures: byClass("transport"),
+      fixture_missing_failures: byClass("fixture_missing"),
+      transport_retries_recovered: this.client.recovered.length,
+      transport_retries_attempted: this.client.transportRetries,
+      recovered_calls: this.client.recovered,
       tests: this.tests,
     };
     console.log("");
     console.log(`Summary: ${passed} passed, ${failed} failed, ${this.tests.length} total`);
+    console.log(`Failures by class: assertion ${summary.assertion_failures}`
+      + `, transport ${summary.transport_failures}`
+      + `, fixture_missing ${summary.fixture_missing_failures}`);
+    if (summary.transport_retries_recovered > 0) {
+      console.log(`Transport retries recovered: ${summary.transport_retries_recovered}`
+        + ` (attempted ${summary.transport_retries_attempted})`);
+    }
+    if (summary.transport_failures + summary.fixture_missing_failures > 0 && summary.assertion_failures === 0) {
+      console.log("ВНИМАНИЕ: провалы только транспортные — прогон недостоверен, но регресса контракта не показал.");
+    }
     if (failed > 0) {
       console.log("Failures:");
       for (const test of this.tests.filter((item) => item.status === "FAIL")) {
-        console.log(`- ${test.name}: ${test.error.message}`);
+        console.log(`- [${test.failure_class || "assertion"}] ${test.name}: ${test.error.message}`);
       }
     }
     return summary;
@@ -3257,16 +3507,47 @@ function formatError(error) {
     message: error?.message || String(error),
     rpcError: error?.rpcError,
     stack: error?.stack,
+    // Цепочка cause обязательна в отчёте: у транспортных отказов сообщение верхнего
+    // уровня всегда «fetch failed», а настоящая причина лежит в cause. Без неё
+    // UND_ERR_CONNECT_TIMEOUT неотличим от ECONNRESET, и класс отказа приходится
+    // угадывать — именно из-за этого пробела причину искали три прогона подряд.
+    cause: causeChain(error),
+    httpStatus: error?.httpStatus,
   };
+}
+
+// Плоская цепочка причин: код и сообщение каждого звена. Глубина ограничена —
+// защита от циклических ссылок в cause.
+function causeChain(error) {
+  const chain = [];
+  for (let current = error?.cause, depth = 0; current && depth < 5; current = current.cause, depth += 1) {
+    chain.push({ code: current.code, message: String(current.message || "").slice(0, 200) });
+  }
+  return chain.length > 0 ? chain : undefined;
+}
+
+// Класс отказа. Три класса, и смешивать их нельзя: набор провалов сравнивается между
+// прогонами, а транспортные отказы меняются от прогона к прогону и делают сравнение
+// бессмысленным, если считать их вместе с ассертными.
+//
+// fixture_missing — следствие транспортного обрыва на discovery: кейс не смог получить
+// фикстуру и упал с текстом «fixture ... is missing». По сообщению такой провал не
+// отличить от настоящего дефекта, поэтому класс выделен отдельно.
+function classifyFailure(error) {
+  if (McpHttpClient.isTransportFailure(error)) return "transport";
+  if (/fixture .* is missing|no .* fixture/i.test(String(error?.message || ""))) return "fixture_missing";
+  return "assertion";
 }
 
 function printRow(row) {
   const status = row.status.padEnd(4);
   const elapsed = `${row.elapsedMs}ms`.padStart(7);
   if (row.status === "PASS") {
-    console.log(`[${status}] ${elapsed} ${row.name}`);
+    const retry = row.transport_retry ? " <восстановлен после транспортного обрыва>" : "";
+    console.log(`[${status}] ${elapsed} ${row.name}${retry}`);
   } else {
-    console.log(`[${status}] ${elapsed} ${row.name} :: ${row.error.message}`);
+    const cls = row.failure_class && row.failure_class !== "assertion" ? ` <${row.failure_class}>` : "";
+    console.log(`[${status}] ${elapsed} ${row.name}${cls} :: ${row.error.message}`);
   }
 }
 
@@ -3291,16 +3572,32 @@ async function main() {
       total: summaries.reduce((sum, item) => sum + item.total, 0),
       passed: summaries.reduce((sum, item) => sum + item.passed, 0),
       failed: summaries.reduce((sum, item) => sum + item.failed, 0),
+      assertion_failures: summaries.reduce((sum, item) => sum + (item.assertion_failures || 0), 0),
+      transport_failures: summaries.reduce((sum, item) => sum + (item.transport_failures || 0), 0),
+      fixture_missing_failures: summaries.reduce((sum, item) => sum + (item.fixture_missing_failures || 0), 0),
+      transport_retries_recovered: summaries.reduce((sum, item) => sum + (item.transport_retries_recovered || 0), 0),
       summaries,
     };
     if (options.out) {
       await writeReport(options.out, aggregate);
     }
-    process.exitCode = aggregate.failed > 0 ? 1 : 0;
+    process.exitCode = exitCodeFor(aggregate);
     return;
   }
   const summary = await runContract(options);
-  process.exitCode = summary.failed > 0 ? 1 : 0;
+  process.exitCode = exitCodeFor(summary);
+}
+
+// Код возврата различает дефект и недостоверный прогон:
+//   0 — провалов нет;
+//   1 — есть ассертные провалы, то есть дефект контракта;
+//   3 — провалы только транспортные (и производные от них) — прогон недостоверен и
+//       подлежит повтору, но регресса не показал. Отдельный код нужен, чтобы CI не
+//       записывал нестабильность контура в дефекты кода.
+function exitCodeFor(summary) {
+  if ((summary.assertion_failures || 0) > 0) return 1;
+  if ((summary.failed || 0) > 0) return 3;
+  return 0;
 }
 
 async function runContract(options) {
