@@ -1,0 +1,13 @@
+# Артефакты прогонов: воспроизводятся запуском скриптов и в git не хранятся.
+# Сервер их не читает — расширение исполняется внутри 1С и файлов репозитория
+# не открывает вообще. Комплект публикации в 1С описан в
+# scripts/required_modules.manifest.json и состоит только из src/.
+reports/mcp_contract_report*.json
+reports/mcp_contract_*.json
+reports/post_deploy_verify*.json
+reports/spec_autosync*.json
+reports/**/*.log
+
+# Служебное
+node_modules/
+__pycache__/
