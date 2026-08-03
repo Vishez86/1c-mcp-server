@@ -20,6 +20,9 @@
 //   node scripts/mcp_deploy_smoke.mjs [--url URL] [--basic user:pass] [--timeout-ms N] [--verbose]
 // Переменные окружения: MCP_URL, MCP_BASIC, MCP_TIMEOUT_MS.
 
+import { request as httpsRequest } from "node:https";
+import { URL } from "node:url";
+
 const DEFAULT_URL = "https://laba-1c.astondevs.ru/BUH_KORP/hs/mcp/rpc";
 const SMOKE_QUERY = "ВЫБРАТЬ ПЕРВЫЕ 1 Счет.Код ИЗ ПланСчетов.Хозрасчетный КАК Счет";
 
@@ -55,39 +58,79 @@ function parseArgs(argv) {
   return options;
 }
 
-async function rpc(options, method, params) {
+// Транспорт на node:https, а не fetch: undici рвёт connect по жёсткому
+// внутреннему таймауту около 10 с, и на нестабильном канале гейт падал
+// «fetch failed» при полностью живом контуре — то есть сообщал о неполной
+// публикации, которой не было. Здесь таймаут наш (--timeout-ms), плюс повтор
+// на транспортных обрывах: они на этом контуре штатное явление.
+function httpsRequestOnce(options, payload) {
+  const target = new URL(options.url);
   const headers = {
     "content-type": "application/json",
     accept: "application/json",
     "mcp-protocol-version": "2025-06-18",
+    "content-length": Buffer.byteLength(payload),
   };
   if (options.basic) {
     headers.authorization = `Basic ${Buffer.from(options.basic, "utf8").toString("base64")}`;
   }
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), options.timeoutMs);
-  try {
-    const response = await fetch(options.url, {
+  return new Promise((resolve, reject) => {
+    const req = httpsRequest({
+      hostname: target.hostname,
+      port: target.port || (target.protocol === "http:" ? 80 : 443),
+      path: target.pathname + target.search,
       method: "POST",
       headers,
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
-      signal: controller.signal,
+      // Сертификат контура самоподписанный.
+      rejectUnauthorized: false,
+      timeout: options.timeoutMs,
+    }, (res) => {
+      let text = "";
+      res.setEncoding("utf8");
+      res.on("data", (chunk) => (text += chunk));
+      res.on("end", () => resolve({ status: res.statusCode, text }));
     });
-    const text = await response.text();
+    req.on("timeout", () => req.destroy(new Error(`timeout ${options.timeoutMs} ms`)));
+    req.on("error", reject);
+    req.write(payload);
+    req.end();
+  });
+}
+
+async function rpc(options, method, params) {
+  const payload = JSON.stringify({ jsonrpc: "2.0", id: 1, method, params });
+  const попыток = 3;
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= попыток; attempt += 1) {
+    let response;
+    try {
+      response = await httpsRequestOnce(options, payload);
+    } catch (error) {
+      lastError = error;
+      if (attempt < попыток) {
+        if (options.verbose) console.log(`[smoke-gate] транспорт: ${error.message}, попытка ${attempt + 1}`);
+        await new Promise((s) => setTimeout(s, 5000));
+        continue;
+      }
+      throw new Error(`транспорт: ${error.message} (попыток: ${попыток})`);
+    }
+
+    const { status, text } = response;
     let json = null;
     if (text) {
       try {
         json = JSON.parse(text);
       } catch {
-        throw new Error(`HTTP ${response.status}, non-JSON response: ${text.slice(0, 500)}`);
+        throw new Error(`HTTP ${status}, non-JSON response: ${text.slice(0, 500)}`);
       }
     }
-    if (!response.ok) throw new Error(`HTTP ${response.status}: ${text.slice(0, 500)}`);
+    if (status < 200 || status >= 300) throw new Error(`HTTP ${status}: ${text.slice(0, 500)}`);
     if (json?.error) throw new Error(`JSON-RPC error ${json.error.code}: ${json.error.message}`);
     return json?.result;
-  } finally {
-    clearTimeout(timer);
   }
+
+  throw lastError ?? new Error("транспорт: неизвестный сбой");
 }
 
 // Разворачивает result tools/call: structuredContent либо JSON из content[0].text.
