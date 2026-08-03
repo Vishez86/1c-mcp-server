@@ -137,8 +137,8 @@ Dispatcher `Выполнить(ИмяТула, Аргументы, Контек�
 ### `MCP_Config`
 - Загрузка allowlist из константы / регистра / файла.
 - Лимиты по умолчанию (см. раздел 5 спецификации).
-- Runtime-настройки `MCP_ServerConfig`, включая `privacy.masked_fields`, `privacy.organization_aliases` и `privacy.person_aliases` для маскирования перед выдачей MCP-клиенту.
-- Публичная privacy-информация для LLM: активность маскирования, список полей, псевдонимы организаций/физлиц/сотрудников, маски и инструкция не пытаться обходить политику.
+- Runtime-настройки `MCP_ServerConfig`, включая `privacy.masked_fields`, `privacy.organization_aliases`, `privacy.person_aliases`, а также адресные `privacy.type_aliases` и `privacy.type_field_masks` (по конкретному полному имени типа, включая регистры) для маскирования перед выдачей MCP-клиенту.
+- Публичная privacy-информация для LLM: активность маскирования, список полей, псевдонимы организаций/физлиц/сотрудников и настроенных типов, маски полей по типам, `config_warnings` о непринятых записях и инструкция не пытаться обходить политику.
 
 ## Поток выполнения tools/call
 
@@ -154,8 +154,8 @@ Dispatcher `Выполнить(ИмяТула, Аргументы, Контек�
    4.5. Реализация делегирует в Metadata / Query / ... .
    4.6. Результат кодируется в JSON через MCP_Values.
    4.7. MCP_Tools добавляет `auth_context` с текущим пользователем 1С, базой, версией конфигурации, `identity_key` и `cache_policy.cacheable=false`.
-   4.8. MCP_Tools добавляет privacy-информацию, если маскирование или псевдонимы сущностей активны.
-   4.9. MCP_Security маскирует поля из privacy.masked_fields, заменяет названия организаций и ФИО физлиц/сотрудников стабильными псевдонимами, сохраняя UUID/type/navigation_url для открытия объекта в 1С.
+   4.8. MCP_Tools добавляет privacy-информацию, если маскирование или псевдонимы сущностей активны, а также при выключенном маскировании, когда есть `config_warnings` о непринятых privacy-записях.
+   4.9. MCP_Security маскирует поля из privacy.masked_fields, заменяет названия организаций и ФИО физлиц/сотрудников стабильными псевдонимами, а также применяет privacy.type_aliases и privacy.type_field_masks по типу текущего объекта (ссылка, вложенный `ref` или полное имя регистра), сохраняя UUID/type/navigation_url для открытия объекта в 1С.
    4.10. Audit запись по уже замаскированному результату.
    4.11. Унифицированный MCP tool result с учётом `response.tool_result_mode`: `text_only` отдаёт полный JSON только в `content[].text`; `structured_only` отдаёт JSON в `structuredContent`; `both` отдаёт оба канала.
 5. JSON-RPC dispatcher формирует response.
