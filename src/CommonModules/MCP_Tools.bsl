@@ -1172,8 +1172,8 @@
 	Props.Вставить("chart", _Схема("string", , "План счетов для pre-flight проверки subconto_kind по префиксам счетов, например ПланСчетов.Хозрасчетный. Если не указан, выбирается доступный или Хозрасчетный."));
 	Props.Вставить("period_from", _Схема("string", , "Начало периода ISO 8601."));
 	Props.Вставить("period_to", _Схема("string", , "Конец периода ISO 8601."));
-	Props.Вставить("debit_account_code_prefixes", _Схема("array", , "Префиксы кодов счетов Дт, например [\"20\", \"26\"]."));
-	Props.Вставить("credit_account_code_prefixes", _Схема("array", , "Префиксы кодов счетов Кт, например [\"02\"]."));
+	Props.Вставить("debit_account_code_prefixes", _Схема("array", , "Префиксы кодов счетов Дт, например [""20"", ""26""]."));
+	Props.Вставить("credit_account_code_prefixes", _Схема("array", , "Префиксы кодов счетов Кт, например [""02""]."));
 	Props.Вставить("subconto_side", _СхемаЕnum(СписокСтрок("debit,credit")));
 	Props.Вставить("subconto_kind", _СхемаОбъект("Вид субконто из get_accounting_accounts_map, например Контрагенты. Обязателен для группировки по debit_subconto/credit_subconto, если group_by не содержит subconto_kind."));
 	Props.Вставить("subconto_value", _СхемаОбъект());
