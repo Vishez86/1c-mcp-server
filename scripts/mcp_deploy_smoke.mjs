@@ -214,6 +214,41 @@ const MODULE_MARKERS = [
     },
   },
   {
+    module: "MCP_Config",
+    what: "privacy по типам опубликован: секции type_aliases/type_field_masks и config_warnings",
+    async run(options) {
+      // Ключи секций отдаёт MCP_Config через MCP_Tools, поэтому маркер ловит
+      // и старый MCP_Config, и старый MCP_Tools. Проверять их наличие, а не
+      // enabled: при пустой политике privacy штатно выключен.
+      const r = await callTool(options, "get_current_user_context", {});
+      const privacy = r?.privacy;
+      if (!privacy) return { status: "fail", note: "в ответе нет блока privacy — MCP_Tools старый" };
+      const missing = ["type_aliases", "type_field_masks", "config_warnings", "config_errors"].filter(
+        (key) => privacy[key] === undefined,
+      );
+      return missing.length === 0
+        ? { status: "pass", note: `enabled=${privacy.enabled}, предупреждений: ${(privacy.config_warnings ?? []).length}` }
+        : { status: "fail", note: `нет ключей: ${missing.join(", ")} — MCP_Config старее privacy по типам` };
+    },
+  },
+  {
+    module: "MCP_Security",
+    what: "privacy-gate инструментов вызывается (жёсткий режим доступен)",
+    async run(options) {
+      // MCP_Tools на каждом вызове спрашивает MCP_Security.ЗапретPrivacyДляИнструмента
+      // и MCP_Config.ОшибкиКонфигурацииPrivacy. Если любой из модулей старый,
+      // метод не найден и вызов падает internal_error — значит успешный ответ
+      // здесь и есть доказательство согласованной публикации комплекта.
+      const r = await callTool(options, "get_current_user_context", {});
+      if (r?.ok === true) return { status: "pass", note: "gate не ломает вызовы" };
+      const code = r?.error_code ?? r?.error?.error_code ?? "";
+      return {
+        status: "fail",
+        note: `вызов не прошёл (${code || "нет кода"}) — вероятен рассинхрон MCP_Security/MCP_Config/MCP_Tools`,
+      };
+    },
+  },
+  {
     module: "MCP_Examples",
     what: "get_query_examples зарегистрирован и отвечает",
     async run(options, fixtures) {
