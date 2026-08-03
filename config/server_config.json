@@ -29,7 +29,10 @@
       "employee_prefix": "Сотр-",
       "user_prefix": "Польз-",
       "include_navigation_url": true
-    }
+    },
+    "publish_details": true,
+    "type_aliases": [],
+    "type_field_masks": []
   },
 
   "limits": {
