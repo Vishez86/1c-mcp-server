@@ -438,7 +438,14 @@ class ContractRunner {
         clientInfo: { name: "mcp-contract-test", version: "1.0.0" },
       });
       assert(result?.serverInfo?.name, "initialize must return serverInfo.name");
-      return { server: result.serverInfo };
+      assert(String(result?.instructions || "").includes("ОБЯЗАТЕЛЬНАЯ ПОЛИТИКА"),
+        "initialize.instructions must mark legal-source policy as mandatory");
+      assert(String(result?.instructions || "").includes("list_legal_sources")
+        && String(result?.instructions || "").includes("get_legal_source_guide"),
+        "initialize.instructions must declare the mandatory legal-source workflow");
+      assert(String(result?.instructions || "").includes("fallback"),
+        "initialize.instructions must forbid web-search fallback");
+      return { server: result.serverInfo, instructionsLength: result.instructions.length };
     });
 
     await this.test("protocol.tools_list_has_expected_tools", async () => {
@@ -450,6 +457,9 @@ class ContractRunner {
       assert(missing.length === 0, `missing tools: ${missing.join(", ")}`);
       assert(names.length === EXPECTED_TOOLS.length, `expected ${EXPECTED_TOOLS.length}, got ${names.length}; extra=${extra.join(", ")}`);
       assert((result?.server_hints || []).some((hint) => String(hint).includes("access_denied")), "tools/list must warn about per-user access_denied retry policy");
+      assert((result?.server_hints || []).some((hint) =>
+        String(hint).includes("ОБЯЗАТЕЛЬНАЯ ПОЛИТИКА") && String(hint).includes("fallback")),
+        "tools/list must repeat mandatory no-web-fallback legal policy");
       assertToolsListMode(tools, this.options.responseMode);
       this.context.toolNames = names;
       return { count: names.length };
@@ -1447,6 +1457,16 @@ class ContractRunner {
       const actual = result.sources.find((s) => s.id === "pravo_gov_ru_actual");
       assert(actual, "embedded source pravo_gov_ru_actual must be present");
       assert(result.policy?.internet_search_forbidden === true, "policy.internet_search_forbidden must be true");
+      assert(result.policy?.web_search_fallback_forbidden === true, "policy.web_search_fallback_forbidden must be true");
+      assert(result.policy?.enforcement === "mandatory", "policy.enforcement must be mandatory");
+      assert(result.policy?.allowed_access_mode === "direct_to_registry_source_urls_only",
+        "policy.allowed_access_mode must allow only direct registry-source URLs");
+      assert(result.policy?.on_source_unavailable === "stop_and_report_unverified",
+        "policy.on_source_unavailable must be fail-closed");
+      assert(Array.isArray(result.policy?.required_workflow)
+        && result.policy.required_workflow.join(",") ===
+          "list_legal_sources,get_legal_source_guide,direct_request_to_guide_url,cite_source_document_and_card",
+        "policy.required_workflow must declare the complete legal-source route");
       const filtered = await okTool(this.client, "list_legal_sources", { area: "налог" });
       assert(filtered.sources.some((s) => s.id === "pravo_gov_ru"), "area filter 'налог' must keep pravo_gov_ru");
       return { total: result.total, filteredTotal: filtered.total };
@@ -1460,6 +1480,11 @@ class ContractRunner {
       assert(result.links?.document_card_template?.includes("{eoNumber}"), "links must include document card template");
       assert(result.links?.document_pdf_template?.includes("{eoNumber}"), "links must include pdf template");
       assert(result.policy?.internet_search_forbidden === true, "policy.internet_search_forbidden must be true");
+      assert(result.policy?.web_search_fallback_forbidden === true, "guide policy must forbid web-search fallback");
+      assert(result.policy?.on_source_unavailable === "stop_and_report_unverified",
+        "guide policy must be fail-closed when source is unavailable");
+      assert(result.guide.includes("обязательное ограничение") && result.guide.includes("как fallback"),
+        "guide must state that no-web-fallback policy is mandatory");
       return { guideLength: result.guide.length, storage: result.storage };
     });
 
