@@ -4926,7 +4926,9 @@ Discovery tool для паттерна statistics before data: компактн�
 
 ### Назначение
 
-Аннотированный реестр правовых источников, разрешённых для поиска законодательства: `id`, название, официальный статус, покрываемые области права (труд, налоги и т.д.), наличие API. Политика для LLM-агентов: поиск правовой информации в открытом интернете запрещён — только источники этого реестра, строго по инструкции `get_legal_source_guide`. Реестр зашит в модуль `MCP_LegalSources` (быстрый вариант; встроенные источники — `pravo_gov_ru` (лента официального опубликования) и `pravo_gov_ru_actual` (актуальные консолидированные редакции, actual.pravo.gov.ru)); при наличии в конфигурации регистра сведений `MCP_ПравовыеИсточники` его записи дополняют и переопределяют встроенные.
+Аннотированный реестр правовых источников, разрешённых для поиска законодательства: `id`, название, официальный статус, покрываемые области права (труд, налоги и т.д.), наличие API. Обязательная политика для LLM-агентов: общий веб-поиск правовой информации, поисковые сниппеты, не включённые в реестр правовые сайты и fallback на них запрещены. Разрешён только маршрут `list_legal_sources` → `get_legal_source_guide` → прямой запрос к URL инструкции. Если источник недоступен, документ не найден или вопрос не покрыт, агент обязан остановиться и сообщить, что норма не проверена. Реестр зашит в модуль `MCP_LegalSources` (быстрый вариант; встроенные источники — `pravo_gov_ru` (лента официального опубликования) и `pravo_gov_ru_actual` (актуальные консолидированные редакции, actual.pravo.gov.ru)); при наличии в конфигурации регистра сведений `MCP_ПравовыеИсточники` его записи дополняют и переопределяют встроенные.
+
+Политика доставляется модели несколькими runtime-каналами: стандартным полем `initialize.instructions`, `tools/list.server_hints`, описаниями обоих tools, объектом `policy` каждого успешного результата и текстом инструкции источника. Клиент, которому нужна техническая, а не инструктивная гарантия, должен дополнительно отключить общий web-tool для правового маршрута или ограничить сеть allowlist URL из инструкции.
 
 ### Input Schema
 
@@ -4962,7 +4964,25 @@ Discovery tool для паттерна statistics before data: компактн�
   "total": 1,
   "policy": {
     "internet_search_forbidden": true,
-    "statement": "Поиск правовой информации в открытом интернете ... запрещен. ..."
+    "web_search_fallback_forbidden": true,
+    "enforcement": "mandatory",
+    "allowed_access_mode": "direct_to_registry_source_urls_only",
+    "on_source_unavailable": "stop_and_report_unverified",
+    "forbidden_channels": [
+      "general_web_search",
+      "search_engines",
+      "search_snippets",
+      "unregistered_third_party_legal_sites",
+      "consulting_portals",
+      "unregistered_sources"
+    ],
+    "required_workflow": [
+      "list_legal_sources",
+      "get_legal_source_guide",
+      "direct_request_to_guide_url",
+      "cite_source_document_and_card"
+    ],
+    "statement": "ОБЯЗАТЕЛЬНАЯ ПОЛИТИКА ... web search ... и как fallback запрещены. ..."
   }
 }
 ```
@@ -4972,6 +4992,7 @@ Discovery tool для паттерна statistics before data: компактн�
 - Пагинации нет: реестр компактный, возвращается целиком.
 - `storage`: `embedded` — источник зашит в модуль; `register` — прочитан из регистра сведений `MCP_ПравовыеИсточники`.
 - Ошибки чтения регистра не фатальны — сервер молча работает со встроенным реестром.
+- `policy.enforcement=mandatory`; `on_source_unavailable=stop_and_report_unverified` запрещает клиенту автоматически переключаться на общий web search.
 
 ---
 
@@ -5019,7 +5040,16 @@ Discovery tool для паттерна statistics before data: компактн�
     "document_pdf_template": "http://publication.pravo.gov.ru/file/pdf?eoNumber={eoNumber}"
   },
   "storage": "embedded",
-  "policy": { "internet_search_forbidden": true, "statement": "..." }
+  "policy": {
+    "internet_search_forbidden": true,
+    "web_search_fallback_forbidden": true,
+    "enforcement": "mandatory",
+    "allowed_access_mode": "direct_to_registry_source_urls_only",
+    "on_source_unavailable": "stop_and_report_unverified",
+    "forbidden_channels": ["general_web_search", "search_engines", "..."],
+    "required_workflow": ["list_legal_sources", "get_legal_source_guide", "direct_request_to_guide_url", "cite_source_document_and_card"],
+    "statement": "ОБЯЗАТЕЛЬНАЯ ПОЛИТИКА ..."
+  }
 }
 ```
 
@@ -5027,6 +5057,7 @@ Discovery tool для паттерна statistics before data: компактн�
 
 - Пустой `source_id` — `invalid_arguments`; неизвестный — `invalid_arguments` с подсказкой вызвать `list_legal_sources`.
 - Мастер-копия инструкций ведётся вне 1С (Google Docs); текст в модуле/регистре — рабочая копия для рантайма. При переопределении встроенного источника записью регистра пустая `Инструкция` не затирает встроенный текст.
+- Текст инструкции обязан повторять запрет общего web search и fallback, а также fail-closed действие при недоступности источника.
 
 ---
 

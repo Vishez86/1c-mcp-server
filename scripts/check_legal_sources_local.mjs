@@ -88,6 +88,7 @@ function lintBsl(rel) {
 
 console.log("A. Структурный линт BSL");
 lintBsl("src/CommonModules/MCP_LegalSources.bsl");
+lintBsl("src/CommonModules/MCP_JSONRPC.bsl");
 lintBsl("src/CommonModules/MCP_Tools.bsl");
 lintBsl("src/CommonModules/MCP_Tools_Impl.bsl");
 
@@ -169,12 +170,29 @@ const mustContain = [
   "10, 30, 100 или 200",
   "NumberSearchType",
   "ноября 2011",
+  "обязательное ограничение",
+  "как fallback",
+  "Не переходи к веб-поиску",
 ];
 for (const s of mustContain) ok(guide.includes(s), `guide содержит «${s}»`);
 ok(!guide.includes("2026-01-01"), "в примере guide нет ISO-даты (ловушка формата устранена)");
 
 // политика
 ok(mod.includes('"internet_search_forbidden", Истина'), "policy: internet_search_forbidden=true");
+ok(mod.includes('"web_search_fallback_forbidden", Истина'), "policy: web_search_fallback_forbidden=true");
+ok(mod.includes('"enforcement", "mandatory"'), "policy: enforcement=mandatory");
+ok(mod.includes('"allowed_access_mode", "direct_to_registry_source_urls_only"'), "policy: только прямые URL реестра");
+ok(mod.includes('"on_source_unavailable", "stop_and_report_unverified"'), "policy: fail-closed при недоступности");
+ok(mod.includes('ЗапрещенныеКаналы.Добавить("unregistered_third_party_legal_sites")'),
+  "policy: запрещены сторонние сайты вне реестра");
+for (const step of [
+  "list_legal_sources",
+  "get_legal_source_guide",
+  "direct_request_to_guide_url",
+  "cite_source_document_and_card",
+]) {
+  ok(mod.includes(`ОбязательныйМаршрут.Добавить("${step}")`), `policy workflow содержит ${step}`);
+}
 
 // links в модуле = шаблоны в guide
 for (const tpl of ["document/{eoNumber}", "file/pdf?eoNumber={eoNumber}"]) {
@@ -184,14 +202,22 @@ for (const tpl of ["document/{eoNumber}", "file/pdf?eoNumber={eoNumber}"]) {
 // мастер-копия синхронна по смысловым строкам
 const master = read("doc/legal_sources/pravo_gov_ru_guide.md");
 const keyLines = guide.split("\n").map((l) => l.trim()).filter((l) =>
-  l.startsWith("Пример:") || l.includes("ДД.ММ.ГГГГ") || l.startsWith("РАЗДЕЛЕНИЕ РОЛЕЙ") || l.includes("Базовый адрес"));
+  l.startsWith("Пример:") || l.includes("ДД.ММ.ГГГГ") || l.startsWith("РАЗДЕЛЕНИЕ РОЛЕЙ")
+  || l.includes("Базовый адрес") || l.startsWith("Это обязательное ограничение")
+  || l.includes("Не переходи к веб-поиску"));
 for (const l of keyLines) {
   ok(master.includes(l), `мастер-копия синхронна: «${l.slice(0, 60)}…»`);
 }
 
-// описания тулов несут запрет интернета
-ok(/list_legal_sources"[\s\S]{0,700}ЗАПРЕЩЕНО/.test(toolsBsl), "описание list_legal_sources содержит запрет");
-ok(/get_legal_source_guide"[\s\S]{0,700}не через открытый интернет/.test(toolsBsl), "описание get_legal_source_guide содержит запрет");
+// runtime-доставка политики: initialize -> tools/list -> descriptions -> result
+const jsonrpcBsl = read("src/CommonModules/MCP_JSONRPC.bsl");
+ok(jsonrpcBsl.includes('Результат.Вставить("instructions", MCP_LegalSources.ИнструкцияДляАгента())'),
+  "initialize.instructions содержит обязательную политику");
+ok(jsonrpcBsl.includes("Подсказки.Добавить(MCP_LegalSources.ИнструкцияДляАгента())"),
+  "tools/list.server_hints повторяет обязательную политику");
+const toolPolicyRefs = toolsBsl.match(/MCP_LegalSources\.ИнструкцияДляАгента\(\)/g) || [];
+ok(toolPolicyRefs.length === 2, "описания обоих legal tools используют единую runtime-политику",
+  `ссылок ${toolPolicyRefs.length}`);
 
 console.log("D. Содержимое инструкции pravo_gov_ru_actual");
 
@@ -211,6 +237,9 @@ const mustContainActual = [
   "НЕ ДОКУМЕНТИРОВАН",
   "СНАЧАЛА РЕШИ, ПОТОМ ИЩИ",
   "01.07.2022",
+  "обязательное ограничение",
+  "как fallback",
+  "Не переходи к веб-поиску",
 ];
 for (const s of mustContainActual) ok(guideActual.includes(s), `actual-guide содержит «${s}»`);
 ok(mod.includes('"pravo_gov_ru_actual"'), "источник pravo_gov_ru_actual зарегистрирован");
@@ -218,7 +247,9 @@ ok(guide.includes("pravo_gov_ru_actual"), "guide pravo_gov_ru ссылается
 
 const masterActual = read("doc/legal_sources/pravo_gov_ru_actual_guide.md");
 const keyLinesActual = guideActual.split("\n").map((l) => l.trim()).filter((l) =>
-  l.startsWith("Пример (до URL-кодирования)") || l.includes("ПОСЛЕДНИЙ НОЛЬ") || l.startsWith("РАЗДЕЛЕНИЕ РОЛЕЙ") || l.includes("actual.pravo.gov.ru:8000"));
+  l.startsWith("Пример (до URL-кодирования)") || l.includes("ПОСЛЕДНИЙ НОЛЬ")
+  || l.startsWith("РАЗДЕЛЕНИЕ РОЛЕЙ") || l.includes("actual.pravo.gov.ru:8000")
+  || l.startsWith("Это обязательное ограничение") || l.includes("Не переходи к веб-поиску"));
 for (const l of keyLinesActual) {
   ok(masterActual.includes(l), `мастер-копия actual синхронна: «${l.slice(0, 60)}…»`);
 }
