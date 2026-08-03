@@ -93,7 +93,8 @@ const MASKED = (v) => v === "XXXXXXX" || v === null;
   for (const e of policy.masks) policy.maskFields.set(e.type, e.fields ?? []);
 
   console.log(`политика: псевдонимов ${policy.aliases.length}, масок ${policy.masks.length},`
-    + ` enabled=${p.enabled}, ошибок ${(p.config_errors ?? []).length}\n`);
+    + ` enabled=${p.enabled}, ошибок ${(p.config_errors ?? []).length},`
+    + ` engine_revision=${p.engine_revision ?? "до 2026-08-03.2 (фикса регистров НЕТ в сборке)"}\n`);
 
   // ===== A. Служебный блок и схема не портятся =====
   const A = "A. схема и служебное";

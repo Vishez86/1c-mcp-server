@@ -270,7 +270,8 @@ const MODULE_MARKERS = [
         (key) => privacy[key] === undefined,
       );
       return missing.length === 0
-        ? { status: "pass", note: `enabled=${privacy.enabled}, предупреждений: ${(privacy.config_warnings ?? []).length}` }
+        ? { status: "pass", note: `engine_revision=${privacy.engine_revision ?? "до 2026-08-03.2"},`
+            + ` enabled=${privacy.enabled}, предупреждений: ${(privacy.config_warnings ?? []).length}` }
         : { status: "fail", note: `нет ключей: ${missing.join(", ")} — MCP_Config старее privacy по типам` };
     },
   },
