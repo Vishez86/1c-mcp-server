@@ -11,3 +11,15 @@ reports/**/*.log
 # Служебное
 node_modules/
 __pycache__/
+
+# Артефакты privacy-прогонов содержат ДАННЫЕ КОНТУРА (наименования закрытых
+# типов, uuid, эталонные выборки). В git они не попадают: воспроизводятся
+# запуском скриптов, а выводы переносятся в ТЗ обезличенными подстановками.
+reports/journal_privacy_rerun_*
+reports/journal_rerun_*
+reports/privacy_bypass_probes_*/
+reports/privacy_live_probe*
+reports/privacy_acceptance*
+reports/privacy_gate_probe.json
+reports/*_live_check*.json
+reports/*_live_run*.json
