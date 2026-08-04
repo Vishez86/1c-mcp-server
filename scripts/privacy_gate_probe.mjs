@@ -1,5 +1,5 @@
 // Приёмка запрос-гейта privacy по матрицам §6 и §7 ТЗ
-// doc/TZ_dev_privacy_gate_type_resolution_fixes.md (issues #103–#111).
+// doc/TZ_dev_privacy_gate_type_resolution_fixes.md (issues #103–#112).
 //
 // §6 — пробы, которые ОБЯЗАНЫ стать отказом (каналы утечки наименований).
 // §7 — пробы, которые ОБЯЗАНЫ продолжать работать (защита от ложных отказов).
