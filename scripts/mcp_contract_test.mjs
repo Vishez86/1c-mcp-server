@@ -1739,15 +1739,24 @@ class ContractRunner {
       assert(!dtkt.includes("СуммаПРОборот"), "ОборотыДтКт must NOT include plain СуммаПРОборот");
 
       const balTurn = fieldsOf("ОстаткиИОбороты");
-      for (const f of [
-        "СуммаНачальныйОстаток", "СуммаОборот", "СуммаКонечныйОстаток",
-        // Развёрнутый остаток на начало/конец периода (Дт/Кт). Тот же генератор
-        // (ДобавитьСемействоОстаткаБухгалтерии), что и для Остатки; порядок сегментов —
-        // <Ресурс>Развернутый<Начальный|Конечный>Остаток<Дт|Кт> (report 2026-07-16).
-        "СуммаРазвернутыйНачальныйОстатокДт", "СуммаРазвернутыйНачальныйОстатокКт",
-        "СуммаРазвернутыйКонечныйОстатокДт", "СуммаРазвернутыйКонечныйОстатокКт",
-      ]) {
+      for (const f of ["СуммаНачальныйОстаток", "СуммаОборот", "СуммаКонечныйОстаток"]) {
         assert(balTurn.includes(f), `ОстаткиИОбороты superset must include ${f}`);
+      }
+      // Развёрнутый остаток на начало/конец периода (Дт/Кт). Порядок сегментов
+      // платформа задаёт сама, и он НЕ такой, как ждал прежний хардкод: контур
+      // публикует и исполняет СуммаКонечныйРазвернутыйОстатокДт, а тест требовал
+      // СуммаРазвернутыйКонечныйОстатокДт — отсюда «провал», который дефектом
+      // сервера не был (классифицировано живой пробой 05.08.2026). Проверяем
+      // наличие семейства по составу сегментов, а не по написанию: правило
+      // универсальности запрещает зашивать порядок слов конкретной платформы.
+      for (const edge of ["Начальный", "Конечный"]) {
+        for (const side of ["Дт", "Кт"]) {
+          const found = balTurn.find((f) =>
+            f.startsWith("Сумма") && f.includes("Развернутый") && f.includes(edge)
+            && f.includes("Остаток") && f.endsWith(side));
+          assert(found, `ОстаткиИОбороты superset must include развёрнутый ${edge} остаток ${side}`
+            + ` (в любом написании; получено: ${balTurn.filter((f) => f.includes("Развернутый")).join(", ") || "ничего"})`);
+        }
       }
       return { balance: balance.length, dtkt: dtkt.length, balTurn: balTurn.length };
     });
@@ -1777,8 +1786,24 @@ class ContractRunner {
       // (само-противоречие hint). Поле обязано проходить проверку — движок вызывается.
       const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
       if (!accountingRegister) return { skipped: true, reason: "no accounting register" };
+      // Имя поля берём из опубликованного available_fields, а не зашиваем: порядок
+      // сегментов задаёт платформа, и хардкод СуммаРазвернутыйКонечныйОстатокДт
+      // давал «провал» на конфигурации, где публикуется и исполняется
+      // СуммаКонечныйРазвернутыйОстатокДт. Проверяется pre-flight, а не написание.
+      const schema = await tool(this.client, "get_metadata_structure", {
+        type: accountingRegister.fullName,
+        include_virtual_tables: true,
+      });
+      const btFields = (schema.metadata?.register_schema?.virtual_tables || [])
+        .find((v) => v.name === "ОстаткиИОбороты")?.common_fields || [];
+      const developedField = btFields.find((f) =>
+        f.startsWith("Сумма") && f.includes("Развернутый") && f.includes("Конечный")
+        && f.includes("Остаток") && f.endsWith("Дт"));
+      if (!developedField) {
+        return { skipped: true, reason: "у ОстаткиИОбороты нет развёрнутого конечного остатка Дт" };
+      }
       const result = await rawTool(this.client, "run_1c_query", {
-        query: `ВЫБРАТЬ ПЕРВЫЕ 100 Ост.Период, Ост.СуммаРазвернутыйКонечныйОстатокДт `
+        query: `ВЫБРАТЬ ПЕРВЫЕ 100 Ост.Период, Ост.${developedField} `
           + `ИЗ ${accountingRegister.fullName}.ОстаткиИОбороты(&Начало, &Конец, Месяц, ДвиженияИГраницыПериода, , , ) КАК Ост`,
         parameters: {
           Начало: { kind: "datetime", value: CONTRACT_PERIOD.start },
