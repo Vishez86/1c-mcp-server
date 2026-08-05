@@ -277,14 +277,14 @@ const MODULE_MARKERS = [
   },
   {
     module: "MCP_Security",
-    what: "privacy-gate инструментов вызывается (жёсткий режим доступен)",
+    what: "privacy-подмена опубликована и вызовы не блокирует",
     async run(options) {
-      // MCP_Tools на каждом вызове спрашивает MCP_Security.ЗапретPrivacyДляИнструмента
-      // и MCP_Config.ОшибкиКонфигурацииPrivacy. Если любой из модулей старый,
-      // метод не найден и вызов падает internal_error — значит успешный ответ
-      // здесь и есть доказательство согласованной публикации комплекта.
+      // Отказов в контракте нет: MCP_Tools ничего не спрашивает у гейта, а
+      // MCP_Security решает закрытость при сборке ответа. Согласованность
+      // комплекта доказывает успешный вызов: рассинхрон модулей даёт
+      // internal_error на «метод не найден».
       const r = await callTool(options, "get_current_user_context", {});
-      if (r?.ok === true) return { status: "pass", note: "gate не ломает вызовы" };
+      if (r?.ok === true) return { status: "pass", note: "вызовы проходят, отказов нет" };
       const code = r?.error_code ?? r?.error?.error_code ?? "";
       return {
         status: "fail",
