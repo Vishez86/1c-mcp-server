@@ -142,6 +142,7 @@ const fixtures = {
   markers: [],          // префиксы псевдонимов, включая легаси
   closed: "",           // закрытый справочник с данными
   closedNameField: "",  // имя-подобное поле закрытого типа
+  nameFieldCandidates: [],
   refUuid: "",
   owned: "",            // подчинённый справочник закрытого типа
   openCatalog: "",      // справочник вне политики
@@ -310,6 +311,15 @@ async function discover() {
     fixtures.refUuid = uuid;
     const fields = (masks.find((m) => m.type === e.type)?.fields ?? []);
     fixtures.closedNameField = fields.find((f) => NAME_FIELDS.includes(f)) || "Наименование";
+    // Кандидаты имя-подобных полей по порядку предпочтения. Нужны там, где
+    // платформа требует поле ОГРАНИЧЕННОЙ длины: конкатенация, агрегат и
+    // группировка по строке неограниченной длины не выполняются вовсе, и на ЗУП
+    // из-за этого три формы уходили в SKIP. Длину метаданные не публикуют,
+    // поэтому подходящее поле выбирается пробой, а не задаётся руками.
+    fixtures.nameFieldCandidates = [
+      ...fields.filter((f) => NAME_FIELDS.includes(f)),
+      ...NAME_FIELDS.filter((f) => !fields.includes(f)),
+    ];
     // Числовое поле масок ищем среди перечисленных: тип берём из метаданных.
     const md = await callTool("get_metadata_structure", { type: e.type });
     const attrs = md.data?.metadata?.attributes ?? [];
@@ -423,22 +433,25 @@ async function sectionBypass() {
     `ВЫБРАТЬ ПЕРВЫЕ 5 ${NF} КАК П ИЗ ${closed}`);
   await acceptedAndMasked(S, "H2 ПОДСТРОКА(поле)", "П",
     `ВЫБРАТЬ ПЕРВЫЕ 5 ПОДСТРОКА(Т.${NF}, 1, 20) КАК П ИЗ ${closed} КАК Т`);
-  await acceptedAndMasked(S, "H3 конкатенация с пустой строкой", "П",
-    `ВЫБРАТЬ ПЕРВЫЕ 5 Т.${NF} + "" КАК П ИЗ ${closed} КАК Т`);
+  // Формы, требующие поля ОГРАНИЧЕННОЙ длины: перебираем кандидатов, пока
+  // платформа не примет запрос. Иначе на контуре с неограниченным наименованием
+  // три пробы уходят в SKIP и класс остаётся непроверенным.
+  await maskedWithSuitableField(S, "H3 конкатенация с пустой строкой",
+    (f) => `ВЫБРАТЬ ПЕРВЫЕ 5 Т.${f} + "" КАК П ИЗ ${closed} КАК Т`);
   await acceptedAndMasked(S, "H4 ЕСТЬNULL(поле, \"\")", "П",
     `ВЫБРАТЬ ПЕРВЫЕ 5 ЕСТЬNULL(Т.${NF}, "") КАК П ИЗ ${closed} КАК Т`);
   await acceptedAndMasked(S, "H5 ВЫБОР КОГДА … ТОГДА поле", "П",
     `ВЫБРАТЬ ПЕРВЫЕ 5 ВЫБОР КОГДА ИСТИНА ТОГДА Т.${NF} ИНАЧЕ "" КОНЕЦ КАК П ИЗ ${closed} КАК Т`);
-  await acceptedAndMasked(S, "H6 МАКСИМУМ(поле)", "П",
-    `ВЫБРАТЬ МАКСИМУМ(Т.${NF}) КАК П ИЗ ${closed} КАК Т`);
+  await maskedWithSuitableField(S, "H6 МАКСИМУМ(поле)",
+    (f) => `ВЫБРАТЬ МАКСИМУМ(Т.${f}) КАК П ИЗ ${closed} КАК Т`);
   await acceptedAndMasked(S, "H8 ПОМЕСТИТЬ без псевдонима, затем выбор из ВТ", "П",
     `ВЫБРАТЬ ПЕРВЫЕ 5 ${NF} КАК Н ПОМЕСТИТЬ ВТОбход ИЗ ${closed}`
     + `\n;\nВЫБРАТЬ ПЕРВЫЕ 5 ВТ.Н КАК П ИЗ ВТОбход КАК ВТ`);
   await acceptedAndMasked(S, "H8' ПОМЕСТИТЬ и выбор оба без псевдонима", "П",
     `ВЫБРАТЬ ПЕРВЫЕ 5 ${NF} КАК Н ПОМЕСТИТЬ ВТОбход2 ИЗ ${closed}`
     + `\n;\nВЫБРАТЬ ПЕРВЫЕ 5 Н КАК П ИЗ ВТОбход2`);
-  await acceptedAndMasked(S, "H9 СГРУППИРОВАТЬ ПО закрытому полю", "П",
-    `ВЫБРАТЬ ПЕРВЫЕ 5 Т.${NF} КАК П ИЗ ${closed} КАК Т СГРУППИРОВАТЬ ПО Т.${NF}`);
+  await maskedWithSuitableField(S, "H9 СГРУППИРОВАТЬ ПО закрытому полю",
+    (f) => `ВЫБРАТЬ ПЕРВЫЕ 5 Т.${f} КАК П ИЗ ${closed} КАК Т СГРУППИРОВАТЬ ПО Т.${f}`);
   // Комбинации: выражение над голым именем и представление без квалификатора.
   await acceptedAndMasked(S, "H13 ПОДСТРОКА(голое имя)", "П",
     `ВЫБРАТЬ ПЕРВЫЕ 5 ПОДСТРОКА(${NF}, 1, 20) КАК П ИЗ ${closed}`);
@@ -466,6 +479,33 @@ async function sectionBypass() {
 
 // Префиксы псевдонимов из политики — для отличения кода от маски.
 const policyPrefixes = () => fixtures.markers.filter(Boolean);
+
+// Проба, которой нужно поле ограниченной длины. Кандидаты перебираются, пока
+// платформа не выполнит запрос; отчёт называет сработавшее поле, чтобы вердикт
+// был воспроизводим. Ни один кандидат не подошёл — SKIP с перечнем попыток, а не
+// молчаливый пропуск: непокрытая форма обязана быть видна.
+async function maskedWithSuitableField(section, name, buildQuery) {
+  const кандидаты = fixtures.nameFieldCandidates.length
+    ? fixtures.nameFieldCandidates
+    : [fixtures.closedNameField];
+  const отказы = [];
+  for (const поле of кандидаты) {
+    const run = await runQuery(buildQuery(поле), null, 10);
+    if (!run.ok) { отказы.push(`${поле}: транспорт`); continue; }
+    if (refused(run)) {
+      return record(section, `${name} (${поле})`, "FAIL", `ОТКАЗ: ${textOf(run)}`);
+    }
+    if (run.isError) { отказы.push(`${поле}: ${textOf(run).slice(0, 80)}`); continue; }
+    const rows = run.data?.rows ?? [];
+    if (!rows.length) { отказы.push(`${поле}: ноль строк`); continue; }
+    const значения = rows.map((r) => r.П).filter((v) => v !== null && v !== undefined && v !== "");
+    if (!значения.length) { отказы.push(`${поле}: все значения пусты`); continue; }
+    const подменённых = значения.filter(looksMasked).length;
+    return check(section, `${name} (${поле})`, подменённых === значения.length,
+      `строк ${rows.length}, заполненных ${значения.length}, подменённых ${подменённых}`);
+  }
+  record(section, name, "SKIP", `ни одно имя-подобное поле не подошло — ${отказы.join("; ")}`);
+}
 
 // ------------------------- И: инструменты кроме run_1c_query
 
