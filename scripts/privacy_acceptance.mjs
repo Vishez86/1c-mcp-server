@@ -1,5 +1,10 @@
 // Приёмка privacy-политики по типам (задача 597, ТЗ v1.3.0 §11.2 и §11.3).
 //
+// Контракт с 05.08.2026 — ТОЛЬКО ПОДМЕНА: отказов нет ни в одной форме. Запрос
+// к закрытому полю выполняется, строки возвращаются, значение подменяется.
+// Поэтому матрица проверяет ровно обратное прежнему: запрос обязан быть принят,
+// а значение в ответе — не быть исходным названием.
+//
 // Два режима, оба обязательны для закрытия фазы E:
 //
 //   node scripts/privacy_acceptance.mjs
@@ -10,7 +15,7 @@
 //   node scripts/privacy_acceptance.mjs --enforced
 //       Прогон с ЗАПОЛНЕННОЙ политикой. Закрытый тип и его поля скрипт узнаёт
 //       из живого ответа get_current_user_context (privacy.type_aliases /
-//       type_field_masks с mode: deny) — имена метаданных не захардкожены.
+//       type_field_masks) — имена метаданных не захардкожены.
 //
 //   --json reports/privacy_acceptance.latest.json   выгрузить результат
 //   MCP_URL=https://host/BASE/hs/mcp/rpc            другой контур
@@ -118,8 +123,9 @@ const policy = {
   enabled: false,
   warnings: [],
   errors: [],
-  denyAliasTypes: [],
-  denyMaskTypes: [],
+  aliasTypes: [],
+  maskTypes: [],
+  prefixByType: new Map(),
   maskFieldsByType: new Map(),
 };
 
@@ -135,14 +141,29 @@ async function loadPolicy() {
   policy.errors = p.config_errors ?? [];
   policy.hasTypeSections = p.type_aliases !== undefined && p.type_field_masks !== undefined;
 
+  // mode из контракта убран: любая запись политики закрывает тип подменой.
   for (const entry of p.type_aliases?.entries ?? []) {
-    if (entry.mode === "deny") policy.denyAliasTypes.push(entry.type);
+    policy.aliasTypes.push(entry.type);
+    if (entry.prefix) policy.prefixByType.set(entry.type, entry.prefix);
   }
   for (const entry of p.type_field_masks?.entries ?? []) {
-    if (entry.mode === "deny") policy.denyMaskTypes.push(entry.type);
+    policy.maskTypes.push(entry.type);
     policy.maskFieldsByType.set(entry.type, entry.fields ?? []);
   }
   return {};
+}
+
+// Значение считается подменённым, если это строковая маска, скрытый псевдоним
+// или код псевдонима с префиксом типа. Сравнивать с исходным названием нельзя:
+// живых данных контура у скрипта нет и быть не должно.
+function looksMasked(value, type) {
+  if (value === null || value === undefined) return false;
+  const text = String(value);
+  if (text === "XXXXXXX" || text === "1900-01-01T00:00:00") return true;
+  const prefix = policy.prefixByType.get(type);
+  if (prefix && text.startsWith(prefix)) return true;
+  // Легаси-псевдонимы персон и организаций: префикс задан не в type_aliases.
+  return /^(Орг|ФЛ|Сотр|Польз)-/.test(text);
 }
 
 // ------------------------------------------------------- базовый прогон
@@ -159,10 +180,11 @@ async function runBaseline() {
   );
   check(S, "config_warnings пуст", (policy.warnings ?? []).length === 0,
     (policy.warnings ?? []).join(" | "));
-  check(S, "config_errors пуст (политика не в config_error)", (policy.errors ?? []).length === 0,
+  check(S, "config_errors пуст (аварийного режима нет)", (policy.errors ?? []).length === 0,
     (policy.errors ?? []).join(" | "));
 
-  // Контроль отсутствия ложных отказов при пустой политике.
+  // Контроль отсутствия отказов при пустой политике. Коды privacy_denied_field и
+  // privacy_config_error из контракта убраны — их появление означает старую сборку.
   const catalogs = await callTool("list_metadata_objects", { kinds: ["Справочник"], limit: 5 });
   const anyCatalog = (catalogs.data?.objects ?? []).find((o) => o.full_name)?.full_name;
   if (!anyCatalog) {
@@ -173,6 +195,10 @@ async function runBaseline() {
     check(S, "контроль: search_objects по имени не отклонён",
       code !== "privacy_denied_field" && code !== "privacy_config_error",
       code ? `код: ${code}` : "");
+    check(S, "кодов отказа privacy в сборке нет",
+      code !== "privacy_denied_field" && code !== "privacy_denied_autoorder"
+        && code !== "privacy_config_error",
+      code ? `код: ${code} — задеплоена сборка с отказами` : "");
 
     const query = await callTool("validate_1c_query", {
       query: `ВЫБРАТЬ ПЕРВЫЕ 1 Т.Ссылка КАК Ссылка ИЗ ${anyCatalog} КАК Т`,
@@ -189,82 +215,104 @@ async function runBaseline() {
   );
 }
 
-// ------------------------------------------------------ жёсткий прогон
+// ------------------------------------------- прогон с заполненной политикой
 
 async function runEnforced() {
-  const S3 = "§11.3 жёсткий режим";
+  const S3 = "§11.3 заполненная политика";
   const S2 = "§11.2 второй эшелон";
 
-  const denyTypes = [...new Set([...policy.denyAliasTypes, ...policy.denyMaskTypes])];
-  if (!denyTypes.length) {
-    record(S3, "политика с mode: deny", "SKIP",
-      "в живой политике нет ни одной deny-записи — заполните privacy в MCP_ServerConfig");
+  const closedTypes = [...new Set([...policy.aliasTypes, ...policy.maskTypes])];
+  if (!closedTypes.length) {
+    record(S3, "закрытый тип в политике", "SKIP",
+      "в живой политике нет ни одной записи — заполните privacy в MCP_ServerConfig");
     return;
   }
-  const closed = denyTypes[0];
+  const closed = closedTypes[0];
   console.log(`\nЗакрытый тип для матрицы: ${closed}\n`);
 
-  // ---- группа «Прямой запрос»: выбор, отбор, сортировка, переименование.
   const nameField = (policy.maskFieldsByType.get(closed) ?? []).find((f) =>
     ["Наименование", "НаименованиеПолное", "Код", "Представление"].includes(f),
   ) || "Наименование";
 
-  const denialCases = [
+  // Формы, которые прежний контракт отклонял. Теперь каждая обязана выполниться,
+  // вернуть строки и отдать подменённое значение. Проверяются обе половины: и
+  // что запрос принят, и что значение не исходное — принятый запрос с открытым
+  // названием хуже отказа.
+  const substitutionCases = [
     ["выбор закрытого поля", `ВЫБРАТЬ ПЕРВЫЕ 1 Т.${nameField} КАК П ИЗ ${closed} КАК Т`],
     ["переименование КАК X", `ВЫБРАТЬ ПЕРВЫЕ 1 Т.${nameField} КАК X ИЗ ${closed} КАК Т`],
-    ["обращение без псевдонима", `ВЫБРАТЬ ПЕРВЫЕ 1 ${nameField} ИЗ ${closed}`],
-    ["отбор ПОДОБНО (оракул)",
-      `ВЫБРАТЬ ПЕРВЫЕ 1 Т.Ссылка КАК Ссылка ИЗ ${closed} КАК Т ГДЕ Т.${nameField} ПОДОБНО "А%"`],
+    ["обращение без псевдонима", `ВЫБРАТЬ ПЕРВЫЕ 1 ${nameField} КАК П ИЗ ${closed}`],
     ["сортировка по закрытому полю",
-      `ВЫБРАТЬ ПЕРВЫЕ 1 Т.Ссылка КАК Ссылка ИЗ ${closed} КАК Т УПОРЯДОЧИТЬ ПО Т.${nameField}`],
+      `ВЫБРАТЬ ПЕРВЫЕ 1 Т.${nameField} КАК П ИЗ ${closed} КАК Т УПОРЯДОЧИТЬ ПО Т.${nameField}`],
     ["ПРЕДСТАВЛЕНИЕ(Ссылка)",
       `ВЫБРАТЬ ПЕРВЫЕ 1 ПРЕДСТАВЛЕНИЕ(Т.Ссылка) КАК П ИЗ ${closed} КАК Т`],
     ["ПРЕДСТАВЛЕНИЕССЫЛКИ(Ссылка)",
       `ВЫБРАТЬ ПЕРВЫЕ 1 ПРЕДСТАВЛЕНИЕССЫЛКИ(Т.Ссылка) КАК П ИЗ ${closed} КАК Т`],
+    ["АВТОУПОРЯДОЧИВАНИЕ",
+      `ВЫБРАТЬ ПЕРВЫЕ 1 Т.${nameField} КАК П ИЗ ${closed} КАК Т АВТОУПОРЯДОЧИВАНИЕ`],
   ];
-  for (const [name, query] of denialCases) {
-    const res = await callTool("validate_1c_query", { query });
-    const codes = validationCodes(res.data);
-    check(S3, `отказ: ${name}`, codes.includes("privacy_denied_field"),
-      codes.length ? `коды: ${codes.join(", ")}` : "приняли запрос без отказа");
+
+  const denialCodes = ["privacy_denied_field", "privacy_denied_autoorder", "privacy_config_error"];
+  const columnOf = (name) => (name === "переименование КАК X" ? "X" : "П");
+
+  for (const [name, query] of substitutionCases) {
+    const validation = await callTool("validate_1c_query", { query });
+    const codes = validationCodes(validation.data);
+    check(S3, `принят: ${name}`, !codes.some((c) => denialCodes.includes(c)),
+      codes.length ? `коды: ${codes.join(", ")}` : "");
+
+    const run = await callTool("run_1c_query", { query, limit: 1 });
+    const rows = run.data?.rows ?? [];
+    if (!rows.length) {
+      record(S3, `подмена: ${name}`, "SKIP", "запрос вернул ноль строк — нет фикстуры");
+      continue;
+    }
+    const value = rows[0][columnOf(name)];
+    check(S3, `подмена: ${name}`, looksMasked(value, closed),
+      looksMasked(value, closed) ? "" : "значение не выглядит подменённым");
   }
 
-  // ---- контроль: работа по ссылке остаётся разрешённой.
+  // ---- контроль: работа по ссылке остаётся разрешённой и не искажается.
   const refOk = await callTool("validate_1c_query", {
     query: `ВЫБРАТЬ ПЕРВЫЕ 1 Т.Ссылка КАК Ссылка ИЗ ${closed} КАК Т УПОРЯДОЧИТЬ ПО Т.Ссылка`,
   });
   check(S3, "контроль: выбор и сортировка по Ссылке разрешены",
-    !validationCodes(refOk.data).includes("privacy_denied_field"),
+    !validationCodes(refOk.data).some((c) => denialCodes.includes(c)),
     validationCodes(refOk.data).join(", "));
 
-  // ---- группа «Несколько источников»: одноимённое поле чужого типа.
+  // ---- парная проба: одноимённое поле незакрытого источника обязано остаться
+  // ОТКРЫТЫМ. Половина «стало разрешено» ничего не доказывает без половины «не
+  // стало подменяться лишнее» — подмена наугад ломает аналитику молча.
   const others = await callTool("list_metadata_objects", { kinds: ["Справочник"], limit: 30 });
   const openCatalog = (others.data?.objects ?? [])
     .map((o) => o.full_name)
-    .find((fn) => fn && !denyTypes.some((t) => t.toLowerCase() === fn.toLowerCase()));
+    .find((fn) => fn && !closedTypes.some((t) => t.toLowerCase() === fn.toLowerCase()));
   if (!openCatalog) {
-    record(S3, "одноимённое поле незакрытого источника", "SKIP", "не нашли открытый справочник");
+    record(S3, "парная: одноимённое поле незакрытого источника открыто", "SKIP",
+      "не нашли открытый справочник");
   } else {
-    const mixed = await callTool("validate_1c_query", {
+    const mixed = await callTool("run_1c_query", {
       query:
-        `ВЫБРАТЬ ПЕРВЫЕ 1 О.${nameField} КАК П ИЗ ${openCatalog} КАК О` +
+        `ВЫБРАТЬ ПЕРВЫЕ 1 О.Наименование КАК П ИЗ ${openCatalog} КАК О` +
         ` ЛЕВОЕ СОЕДИНЕНИЕ ${closed} КАК З ПО ЛОЖЬ`,
+      limit: 1,
     });
-    check(S3, "контроль: одноимённое поле незакрытого источника разрешено",
-      !validationCodes(mixed.data).includes("privacy_denied_field"),
-      validationCodes(mixed.data).join(", "));
+    const mixedRows = mixed.data?.rows ?? [];
+    if (!mixedRows.length) {
+      record(S3, "парная: одноимённое поле незакрытого источника открыто", "SKIP",
+        "нет строк для фикстуры");
+    } else {
+      check(S3, "парная: одноимённое поле незакрытого источника открыто",
+        !looksMasked(mixedRows[0].П, closed),
+        "значение открытого типа подменено — ложное срабатывание");
+    }
   }
 
-  // ---- группа «Остальные tools»: поиск по имени.
+  // ---- остальные инструменты: поиск по имени в закрытом типе работает.
   const search = await callTool("search_objects", { query: "а", types: [closed], limit: 1 });
-  check(S3, "отказ: search_objects по имени в закрытом типе",
-    errorCodeOf(search) === "privacy_denied_field" || search.isError === true,
+  check(S3, "search_objects по имени в закрытом типе не отклонён",
+    !denialCodes.includes(errorCodeOf(search)) && search.isError !== true,
     `код: ${errorCodeOf(search) || "нет"}`);
-
-  const searchAll = await callTool("search_objects", { query: "а", limit: 1 });
-  check(S3, "отказ: search_objects без types (закрытые типы в области поиска)",
-    errorCodeOf(searchAll) === "privacy_denied_field" || searchAll.isError === true,
-    `код: ${errorCodeOf(searchAll) || "нет"}`);
 
   // ---- второй эшелон: ответ по ссылке закрытого типа маскируется.
   const sample = await callTool("run_1c_query", {
@@ -275,24 +323,12 @@ async function runEnforced() {
   if (!row) {
     record(S2, "псевдоним в presentation ссылки", "SKIP", "нет строк для фикстуры");
   } else {
-    const aliasEntry = (policy.denyAliasTypes.includes(closed) || policy.denyMaskTypes.includes(closed));
     check(S2, "uuid и navigation_url сохранены", Boolean(row.uuid),
       `uuid: ${row.uuid ? "есть" : "нет"}, navigation_url: ${row.navigation_url ? "есть" : "нет"}`);
     check(S2, "presentation не отдаёт исходное название",
-      aliasEntry ? typeof row.presentation === "string" : true,
+      looksMasked(row.presentation, closed),
       `presentation: ${row.presentation}`);
   }
-
-  // ---- наблюдаемость: диагностика отказа не содержит закрываемых значений.
-  const diag = await callTool("validate_1c_query", {
-    query: `ВЫБРАТЬ ПЕРВЫЕ 1 Т.${nameField} КАК П ИЗ ${closed} КАК Т`,
-  });
-  const messages = (diag.data?.validation?.errors ?? diag.data?.errors ?? [])
-    .map((e) => e.message)
-    .join(" ");
-  check(S3, "диагностика называет тип и поле",
-    messages.includes(closed.split(".").pop()) || messages.includes(nameField),
-    messages.slice(0, 200));
 }
 
 // ------------------------------------------------------------------ main
@@ -321,8 +357,8 @@ async function runEnforced() {
         { url: URL_MCP, mode: ENFORCED ? "enforced" : "baseline", policy: {
           enabled: policy.enabled,
           hasTypeSections: policy.hasTypeSections === true,
-          denyAliasTypes: policy.denyAliasTypes,
-          denyMaskTypes: policy.denyMaskTypes,
+          aliasTypes: policy.aliasTypes,
+          maskTypes: policy.maskTypes,
           warnings: policy.warnings,
           errors: policy.errors,
         }, passed, failed, skipped, results },
