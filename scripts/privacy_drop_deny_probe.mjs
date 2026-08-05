@@ -142,6 +142,7 @@ const fixtures = {
   markers: [],          // префиксы псевдонимов, включая легаси
   closed: "",           // закрытый справочник с данными
   closedNameField: "",  // имя-подобное поле закрытого типа
+  nameFieldCandidates: [],
   refUuid: "",
   owned: "",            // подчинённый справочник закрытого типа
   openCatalog: "",      // справочник вне политики
@@ -310,6 +311,15 @@ async function discover() {
     fixtures.refUuid = uuid;
     const fields = (masks.find((m) => m.type === e.type)?.fields ?? []);
     fixtures.closedNameField = fields.find((f) => NAME_FIELDS.includes(f)) || "Наименование";
+    // Кандидаты имя-подобных полей по порядку предпочтения. Нужны там, где
+    // платформа требует поле ОГРАНИЧЕННОЙ длины: конкатенация, агрегат и
+    // группировка по строке неограниченной длины не выполняются вовсе, и на ЗУП
+    // из-за этого три формы уходили в SKIP. Длину метаданные не публикуют,
+    // поэтому подходящее поле выбирается пробой, а не задаётся руками.
+    fixtures.nameFieldCandidates = [
+      ...fields.filter((f) => NAME_FIELDS.includes(f)),
+      ...NAME_FIELDS.filter((f) => !fields.includes(f)),
+    ];
     // Числовое поле масок ищем среди перечисленных: тип берём из метаданных.
     const md = await callTool("get_metadata_structure", { type: e.type });
     const attrs = md.data?.metadata?.attributes ?? [];
@@ -407,6 +417,94 @@ async function sectionCodes() {
     record(S, "К12/К13 разыменование владельца", "SKIP",
       "не нашли подчинённый справочник закрытого типа с данными");
   }
+}
+
+// ------------------------- H: класс обходов формой записи (ТЗ column_resolution)
+
+async function sectionBypass() {
+  const S = "H обходы формой записи";
+  const { closed, closedNameField: NF, refUuid } = fixtures;
+  if (!closed) return record(S, "матрица H", "SKIP", "нет закрытого справочника с данными");
+  const реф = { Реф: { kind: "ref", type: closed, uuid: refUuid } };
+
+  // Формы, которые живой прогон 05.08.2026 показал ОТКРЫТЫМИ на всех трёх
+  // контурах: обращение без псевдонима и любое выражение над закрытым полем.
+  await acceptedAndMasked(S, "H1 обращение без псевдонима", "П",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 ${NF} КАК П ИЗ ${closed}`);
+  await acceptedAndMasked(S, "H2 ПОДСТРОКА(поле)", "П",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 ПОДСТРОКА(Т.${NF}, 1, 20) КАК П ИЗ ${closed} КАК Т`);
+  // Формы, требующие поля ОГРАНИЧЕННОЙ длины: перебираем кандидатов, пока
+  // платформа не примет запрос. Иначе на контуре с неограниченным наименованием
+  // три пробы уходят в SKIP и класс остаётся непроверенным.
+  await maskedWithSuitableField(S, "H3 конкатенация с пустой строкой",
+    (f) => `ВЫБРАТЬ ПЕРВЫЕ 5 Т.${f} + "" КАК П ИЗ ${closed} КАК Т`);
+  await acceptedAndMasked(S, "H4 ЕСТЬNULL(поле, \"\")", "П",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 ЕСТЬNULL(Т.${NF}, "") КАК П ИЗ ${closed} КАК Т`);
+  await acceptedAndMasked(S, "H5 ВЫБОР КОГДА … ТОГДА поле", "П",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 ВЫБОР КОГДА ИСТИНА ТОГДА Т.${NF} ИНАЧЕ "" КОНЕЦ КАК П ИЗ ${closed} КАК Т`);
+  await maskedWithSuitableField(S, "H6 МАКСИМУМ(поле)",
+    (f) => `ВЫБРАТЬ МАКСИМУМ(Т.${f}) КАК П ИЗ ${closed} КАК Т`);
+  await acceptedAndMasked(S, "H8 ПОМЕСТИТЬ без псевдонима, затем выбор из ВТ", "П",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 ${NF} КАК Н ПОМЕСТИТЬ ВТОбход ИЗ ${closed}`
+    + `\n;\nВЫБРАТЬ ПЕРВЫЕ 5 ВТ.Н КАК П ИЗ ВТОбход КАК ВТ`);
+  await acceptedAndMasked(S, "H8' ПОМЕСТИТЬ и выбор оба без псевдонима", "П",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 ${NF} КАК Н ПОМЕСТИТЬ ВТОбход2 ИЗ ${closed}`
+    + `\n;\nВЫБРАТЬ ПЕРВЫЕ 5 Н КАК П ИЗ ВТОбход2`);
+  await maskedWithSuitableField(S, "H9 СГРУППИРОВАТЬ ПО закрытому полю",
+    (f) => `ВЫБРАТЬ ПЕРВЫЕ 5 Т.${f} КАК П ИЗ ${closed} КАК Т СГРУППИРОВАТЬ ПО Т.${f}`);
+  // Комбинации: выражение над голым именем и представление без квалификатора.
+  await acceptedAndMasked(S, "H13 ПОДСТРОКА(голое имя)", "П",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 ПОДСТРОКА(${NF}, 1, 20) КАК П ИЗ ${closed}`);
+  await acceptedAndMasked(S, "H14 ПРЕДСТАВЛЕНИЕ(Ссылка) без псевдонима", "П",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 ПРЕДСТАВЛЕНИЕ(Ссылка) КАК П ИЗ ${closed}`);
+  await acceptedAndMasked(S, "H15 ПОДСТРОКА(&Реф.имя) без ИЗ", "П",
+    `ВЫБРАТЬ ПОДСТРОКА(&Реф.${NF}, 1, 20) КАК П`, реф);
+
+  // R-3: производное значение обязано получить МАСКУ, а не код псевдонима — код
+  // означает «это тот самый объект», и одинаковые обрезки склеили бы строки,
+  // которых в данных нет. Проверяется формой значения, а не фактом закрытия.
+  const derived = await runQuery(
+    `ВЫБРАТЬ ПЕРВЫЕ 5 ПОДСТРОКА(Т.${NF}, 1, 20) КАК П ИЗ ${closed} КАК Т`, null, 5);
+  const derivedRows = derived.data?.rows ?? [];
+  if (!derivedRows.length) record(S, "R-3 производное значение получает маску", "SKIP", "ноль строк");
+  else {
+    const значения = derivedRows.map((r) => r.П).filter((v) => v !== null && v !== undefined && v !== "");
+    const масок = значения.filter((v) => String(v) === STRING_MASK).length;
+    const кодов = значения.filter((v) => policyPrefixes().some((p) => String(v).startsWith(p))).length;
+    check(S, "R-3 производное значение получает маску, а не код псевдонима",
+      значения.length > 0 && масок === значения.length,
+      `значений ${значения.length}, масок ${масок}, кодов псевдонима ${кодов}`);
+  }
+}
+
+// Префиксы псевдонимов из политики — для отличения кода от маски.
+const policyPrefixes = () => fixtures.markers.filter(Boolean);
+
+// Проба, которой нужно поле ограниченной длины. Кандидаты перебираются, пока
+// платформа не выполнит запрос; отчёт называет сработавшее поле, чтобы вердикт
+// был воспроизводим. Ни один кандидат не подошёл — SKIP с перечнем попыток, а не
+// молчаливый пропуск: непокрытая форма обязана быть видна.
+async function maskedWithSuitableField(section, name, buildQuery) {
+  const кандидаты = fixtures.nameFieldCandidates.length
+    ? fixtures.nameFieldCandidates
+    : [fixtures.closedNameField];
+  const отказы = [];
+  for (const поле of кандидаты) {
+    const run = await runQuery(buildQuery(поле), null, 10);
+    if (!run.ok) { отказы.push(`${поле}: транспорт`); continue; }
+    if (refused(run)) {
+      return record(section, `${name} (${поле})`, "FAIL", `ОТКАЗ: ${textOf(run)}`);
+    }
+    if (run.isError) { отказы.push(`${поле}: ${textOf(run).slice(0, 80)}`); continue; }
+    const rows = run.data?.rows ?? [];
+    if (!rows.length) { отказы.push(`${поле}: ноль строк`); continue; }
+    const значения = rows.map((r) => r.П).filter((v) => v !== null && v !== undefined && v !== "");
+    if (!значения.length) { отказы.push(`${поле}: все значения пусты`); continue; }
+    const подменённых = значения.filter(looksMasked).length;
+    return check(section, `${name} (${поле})`, подменённых === значения.length,
+      `строк ${rows.length}, заполненных ${значения.length}, подменённых ${подменённых}`);
+  }
+  record(section, name, "SKIP", `ни одно имя-подобное поле не подошло — ${отказы.join("; ")}`);
 }
 
 // ------------------------- И: инструменты кроме run_1c_query
@@ -535,6 +633,16 @@ async function sectionPaired() {
     await acceptedAndOpen(S, "П3 одноимённое поле открытого источника рядом с закрытым", "П",
       `ВЫБРАТЬ ПЕРВЫЕ 5 О.Наименование КАК П ИЗ ${openCatalog} КАК О`
       + ` ЛЕВОЕ СОЕДИНЕНИЕ ${closed} КАК З ПО ЛОЖЬ ГДЕ О.Наименование <> ""`);
+
+    // R-6, ограничитель R-4 п. 1: правило «нераспознанное закрываем» не должно
+    // накрывать открытые типы только потому, что рядом в запросе есть закрытый.
+    // Без этой пробы R-4 повторил бы класс Д-3 — молча испорченную аналитику.
+    await acceptedAndOpen(S, "П5 выражение над открытым полем при закрытом соседе", "П",
+      `ВЫБРАТЬ ПЕРВЫЕ 5 ПОДСТРОКА(О.Наименование, 1, 20) КАК П`
+      + ` ИЗ ${openCatalog} КАК О, ${closed} КАК З ГДЕ О.Наименование <> ""`);
+    await acceptedAndOpen(S, "П6 голое имя открытого типа при закрытом соседе", "П",
+      `ВЫБРАТЬ ПЕРВЫЕ 5 О.Наименование КАК П`
+      + ` ИЗ ${openCatalog} КАК О, ${closed} КАК З ГДЕ О.Наименование <> ""`);
     // П4 — самая сильная проба: закрытое и открытое имя в ОДНОЙ строке. Обе
     // половины сразу: одно значение обязано быть подменено, другое обязано
     // остаться открытым. Соединение по запятой, а не ЛЕВОЕ ПО ЛОЖЬ: при ПО ЛОЖЬ
@@ -570,6 +678,7 @@ async function runContour(name, url) {
   const ready = await discover();
   if (!ready) return;
   await sectionCodes();
+  await sectionBypass();
   await sectionTools();
   await sectionNumbers();
   await sectionPaired();
