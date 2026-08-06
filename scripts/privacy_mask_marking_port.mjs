@@ -43,32 +43,35 @@ const META = {
   "Справочник.Подчиненный": { Наименование: null, Ссылка: "Справочник.Подчиненный", Владелец: CLOSED },
   [MASKED_REG]: { Серия: null, Номер: null, КемВыдан: null, ДатаВыдачи: null, Физлицо: CLOSED },
   [MASKED_CAT]: { Наименование: null, Код: null, Комментарий: null, Ссылка: MASKED_CAT },
+  // У регистра Наименование нет — это и есть признак «представление собирается».
 };
 
 const normField = (s) => String(s).toUpperCase().replace(/[\s_\-.]/g, "");
 
-// Есть ли Представление у типа как РЕАЛЬНОЕ поле метаданных (реквизит/ресурс).
-// У регистра сведений — да; у справочника представление это платформенное имя
-// объекта, и наследовать закрытость от масок полей ему не от чего.
-const hasPresentationField = (type) => String(type).startsWith("РегистрСведений.");
+// R-9: наследование включается у типов БЕЗ собственного Наименование.
+// Проверять наличие `Представление` в метаданных нельзя — замерено на BUH и ZUP:
+// его нет ни у одного типа политики, включая паспортный регистр (вычисляемое
+// поле). С таким условием признак всегда Ложь и весь фикс Д-4 выключается.
+const hasOwnName = (type) => Boolean(META[type] && Object.keys(META[type])
+  .some((f) => f.toUpperCase() === "НАИМЕНОВАНИЕ"));
 
 // MCP_Security.ПолеЗакрытоPrivacy + R-9: Представление наследует закрытость,
-// когда у типа закрыт хотя бы один реквизит И Представление у него существует
-// как поле метаданных. Без второго условия признак был бы константой «любой тип
-// из type_field_masks закрывает своё представление» — найдено ревью.
+// когда у типа закрыт хотя бы один реквизит И у типа НЕТ своего Наименование.
+// Без второго условия признак был бы константой «любой тип из type_field_masks
+// закрывает своё представление» — найдено ревью.
 const fieldClosed = (type, field) => {
   const p = POLICY[type];
   if (!p) return false;
   if (p.fields.some((f) => normField(f) === normField(field))) return true;
   return ["ПРЕДСТАВЛЕНИЕ", "PRESENTATION"].includes(normField(field))
-    && p.fields.length > 0 && hasPresentationField(type);
+    && p.fields.length > 0 && !hasOwnName(type);
 };
 // MCP_Security.ПредставлениеЗакрытоPrivacy: псевдоним типа, имя-подобное поле в
-// масках либо наследование R-9 (только там, где Представление — реквизит).
+// масках либо наследование R-9 (только у типов без собственного Наименование).
 const presentationClosed = (type) => {
   const p = POLICY[type];
   if (!p) return false;
-  return Boolean(p.alias) || (p.fields.length > 0 && hasPresentationField(type));
+  return Boolean(p.alias) || (p.fields.length > 0 && !hasOwnName(type));
 };
 // MCP_Query.ПолеЕстьУИсточникаPrivacy
 const fieldExists = (type, field) => {
