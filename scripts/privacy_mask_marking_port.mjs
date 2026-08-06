@@ -41,22 +41,24 @@ const META = {
   [CLOSED]: { Наименование: null, Код: null, Ссылка: CLOSED, Владелец: null, Сумма: null },
   [OPEN]: { Наименование: null, Код: null, Ссылка: OPEN, Сумма: null },
   "Справочник.Подчиненный": { Наименование: null, Ссылка: "Справочник.Подчиненный", Владелец: CLOSED },
-  [MASKED_REG]: { Серия: null, Номер: null, КемВыдан: null, ДатаВыдачи: null, Физлицо: CLOSED },
+  // Представление — РЕСУРС регистра (замер BUH/ZUP/ERP), Наименования у него нет.
+  [MASKED_REG]: { Серия: null, Номер: null, КемВыдан: null, ДатаВыдачи: null, Физлицо: CLOSED, Представление: null },
   [MASKED_CAT]: { Наименование: null, Код: null, Комментарий: null, Ссылка: MASKED_CAT },
-  // У регистра Наименование нет — это и есть признак «представление собирается».
 };
 
 const normField = (s) => String(s).toUpperCase().replace(/[\s_\-.]/g, "");
 
-// R-9: наследование включается у типов БЕЗ собственного Наименование.
-// Проверять наличие `Представление` в метаданных нельзя — замерено на BUH и ZUP:
-// его нет ни у одного типа политики, включая паспортный регистр (вычисляемое
-// поле). С таким условием признак всегда Ложь и весь фикс Д-4 выключается.
-const hasOwnName = (type) => Boolean(META[type] && Object.keys(META[type])
-  .some((f) => f.toUpperCase() === "НАИМЕНОВАНИЕ"));
+// R-9: наследование включается у типов, где `Представление` ОБЪЯВЛЕНО полем.
+// Заглушка сверена с живыми метаданными 06.08.2026 ТЕМ ЖЕ набором коллекций,
+// каким читает движок (реквизиты + измерения + ресурсы + стандартные реквизиты):
+// у паспортного регистра Представление есть ресурсом, у справочников нет.
+// Сверка «по attributes» неэквивалентна и дважды дала зелёный порт при неверной
+// посылке — в обе стороны.
+const hasPresentationField = (type) => Boolean(META[type] && Object.keys(META[type])
+  .some((f) => f.toUpperCase() === "ПРЕДСТАВЛЕНИЕ"));
 
 // MCP_Security.ПолеЗакрытоPrivacy + R-9: Представление наследует закрытость,
-// когда у типа закрыт хотя бы один реквизит И у типа НЕТ своего Наименование.
+// когда у типа закрыт хотя бы один реквизит И `Представление` объявлено полем.
 // Без второго условия признак был бы константой «любой тип из type_field_masks
 // закрывает своё представление» — найдено ревью.
 const fieldClosed = (type, field) => {
@@ -64,14 +66,14 @@ const fieldClosed = (type, field) => {
   if (!p) return false;
   if (p.fields.some((f) => normField(f) === normField(field))) return true;
   return ["ПРЕДСТАВЛЕНИЕ", "PRESENTATION"].includes(normField(field))
-    && p.fields.length > 0 && !hasOwnName(type);
+    && p.fields.length > 0 && hasPresentationField(type);
 };
 // MCP_Security.ПредставлениеЗакрытоPrivacy: псевдоним типа, имя-подобное поле в
-// масках либо наследование R-9 (только у типов без собственного Наименование).
+// масках либо наследование R-9 (только там, где Представление — объявленное поле).
 const presentationClosed = (type) => {
   const p = POLICY[type];
   if (!p) return false;
-  return Boolean(p.alias) || (p.fields.length > 0 && !hasOwnName(type));
+  return Boolean(p.alias) || (p.fields.length > 0 && hasPresentationField(type));
 };
 // MCP_Query.ПолеЕстьУИсточникаPrivacy
 const fieldExists = (type, field) => {
