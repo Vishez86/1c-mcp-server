@@ -26,17 +26,34 @@ const CLOSED = "Справочник.ЗакрытыйТип";
 const OPEN = "Справочник.ОткрытыйТип";
 const MASKED_REG = "РегистрСведений.ЗакрытыйРегистр";
 const MASKED_CAT = "Справочник.СМаскойКомментария";
+// R-12/R-15: тип персон, подчинённый ему справочник (своей записи в политике
+// НЕТ — её вводит правило подчинённости) и подчинённый НЕ-персоне, который
+// закрываться не должен (парная проба G3‴).
+const PERSON = "Справочник.ФизическиеЛица";
+const PERSON_SUB = "Справочник.РодственникиФизическихЛиц";
+const CLOSED_SUB = "Справочник.НоменклатураКонтрагентов";
+// R-11/R-16: табличные части в форме А — так их строит ПолноеИмяТабличнойЧастиPrivacy.
+const TP_CLOSED = `${CLOSED}.ТабличнаяЧасть.КонтактнаяИнформация`;
+const TP_OPEN = `${OPEN}.ТабличнаяЧасть.КонтактнаяИнформация`;
 
 // alias — у типа есть псевдоним (type_aliases): имя-подобные поля получают код.
 // fields — маски полей (type_field_masks): строковая маска.
+// person — тип закрыт легаси-механизмом персон (person_aliases включены).
 const POLICY = {
   [CLOSED]: { alias: true, fields: ["Наименование", "НаименованиеПолное", "Код", "Представление"] },
   [MASKED_REG]: { alias: false, fields: ["Серия", "Номер", "КемВыдан"] },
   [MASKED_CAT]: { alias: false, fields: ["Комментарий"] },
+  [PERSON]: { alias: false, person: true, fields: ["НаименованиеСлужебное", "ИНН"] },
 };
 
 // Метаданные: состав полей и ссылочность. Для порта достаточно знать, есть ли
 // поле у типа и ведёт ли оно на другой тип.
+//
+// ТЧ здесь — ОТДЕЛЬНЫЕ типы, и в их составе НЕТ поля «Ссылка»: замер 07.08.2026
+// на трёх конфигурациях показал, что СтандартныеРеквизиты всех 34 ТЧ содержат
+// одно имя — НомерСтроки. Прежняя заглушка «у ТЧ есть Ссылка» брала это из
+// документации платформы и давала порту ложную зелень там, где контур отдавал
+// 0/5. Возврат к владельцу обеспечивает структурный вывод (R-16, часть 2).
 const META = {
   [CLOSED]: { Наименование: null, Код: null, Ссылка: CLOSED, Владелец: null, Сумма: null },
   [OPEN]: { Наименование: null, Код: null, Ссылка: OPEN, Сумма: null },
@@ -44,6 +61,37 @@ const META = {
   // Представление — РЕСУРС регистра (замер BUH/ZUP/ERP), Наименования у него нет.
   [MASKED_REG]: { Серия: null, Номер: null, КемВыдан: null, ДатаВыдачи: null, Физлицо: CLOSED, Представление: null },
   [MASKED_CAT]: { Наименование: null, Код: null, Комментарий: null, Ссылка: MASKED_CAT },
+  [PERSON]: { Наименование: null, Фамилия: null, Имя: null, Отчество: null, ИНН: null,
+    НаименованиеСлужебное: null, МестоРождения: null, Ссылка: PERSON },
+  [PERSON_SUB]: { Наименование: null, Фамилия: null, Имя: null, Отчество: null,
+    НаименованиеСлужебное: null, СтепеньРодства: null, Владелец: PERSON, Ссылка: PERSON_SUB },
+  [CLOSED_SUB]: { Наименование: null, Код: null, Владелец: CLOSED, Ссылка: CLOSED_SUB },
+  [TP_CLOSED]: { Представление: null, Значение: null, ЗначенияПолей: null, НомерТелефона: null,
+    Тип: null, Вид: null, ВидДляСписка: null, НомерСтроки: null },
+  [TP_OPEN]: { Представление: null, Значение: null, Тип: null, Вид: null, НомерСтроки: null },
+};
+
+// Владельцы подчинённых справочников — источник правила R-12.
+const OWNERS = {
+  [PERSON_SUB]: [PERSON],
+  [CLOSED_SUB]: [CLOSED],
+  "Справочник.Подчиненный": [CLOSED],
+};
+// MCP_Security.ЭтоТипПерсоныLLM — сверка по префиксу нормализованного имени.
+const isPersonType = (t) => String(t).toUpperCase().replace(/[\s_\-.]/g, "")
+  .startsWith("СПРАВОЧНИКФИЗИЧЕСКИЕЛИЦА");
+// MCP_Security.ЭтоПодчиненныйТипуПерсонPrivacy (R-12): подчинён ТИПУ ПЕРСОН.
+// Подчинённые контрагентов правилом не закрываются — решение заказчика 06.08.
+const isPersonSubordinate = (t) => !isPersonType(t)
+  && (OWNERS[t] ?? []).some(isPersonType);
+// MCP_Security.ЭтоТипПерсональногоНабораLLM
+const isPersonSet = (t) => isPersonType(t) || isPersonSubordinate(t);
+// MCP_Security.ЭтоТабличнаяЧастьПоИмениPrivacy
+const isTabularPart = (t) => String(t).toUpperCase().includes(".ТАБЛИЧНАЯЧАСТЬ.");
+// MCP_Security.ВладелецТабличнойЧастиПоИмениPrivacy — отсечение суффикса.
+const tabularOwner = (t) => {
+  const at = String(t).toUpperCase().lastIndexOf(".ТАБЛИЧНАЯЧАСТЬ.");
+  return at < 0 ? "" : String(t).slice(0, at);
 };
 
 const normField = (s) => String(s).toUpperCase().replace(/[\s_\-.]/g, "");
@@ -57,12 +105,59 @@ const normField = (s) => String(s).toUpperCase().replace(/[\s_\-.]/g, "");
 const hasPresentationField = (type) => Boolean(META[type] && Object.keys(META[type])
   .some((f) => f.toUpperCase() === "ПРЕДСТАВЛЕНИЕ"));
 
+// MCP_Security.ТипВЗакрытомНабореPrivacy: своя запись в политике либо
+// легаси-механизм персон, включая подчинённых им справочников (R-12).
+const typeInClosedSet = (type) => {
+  if (!type || isTabularPart(type)) return false;
+  if (POLICY[type]) return true;
+  return isPersonSet(type) && Object.values(POLICY).some((p) => p.person);
+};
+// MCP_Security.ПолеИзНабораФИОPrivacy (R-15). МестоРождения НЕ входит — §6.6.
+const FIO_SET = new Set(["ФАМИЛИЯ", "ИМЯ", "ОТЧЕСТВО", "ФИО", "ИНИЦИАЛЫ",
+  "НАИМЕНОВАНИЕСЛУЖЕБНОЕ", "УТОЧНЕНИЕНАИМЕНОВАНИЯ"].map(normField));
+// MCP_Security.ПолеВБеломСпискеЯдраPrivacy — ограничитель 4 (классы 4a…4d).
+const CORE_WHITELIST = new Set(["КОД", "ТИП", "ВИД", "ВИДДЛЯСПИСКА", "НОМЕРСТРОКИ",
+  "ПОМЕТКАУДАЛЕНИЯ", "ЭТОГРУППА", "ПРЕДОПРЕДЕЛЕННЫЙ", "ИМЯПРЕДОПРЕДЕЛЕННЫХДАННЫХ",
+  "НАИМЕНОВАНИЕБАНКА", "НАИМЕНОВАНИЕОПЕРАТОРАПЕРЕВОДА", "НАИМЕНОВАНИЕНАЛОГОВОГООРГАНА",
+  "НАИМЕНОВАНИЕОКВЭД", "НАИМЕНОВАНИЕОКОПФ", "НАИМЕНОВАНИЕОКФС",
+  "МЕСТОРОЖДЕНИЯПРЕДСТАВЛЕНИЕ"].map(normField));
+// MCP_Security.ПолеВЯдреИдентификацииPrivacy (R-13). Точное «Представление»
+// решает ПредставлениеЗакрытоPrivacy, поэтому ядром оно не берётся. «Номер» в
+// ядро НЕ входит — решение 07.08.2026.
+const inIdentityCore = (type, field) => {
+  const f = normField(field);
+  if (!f || f === normField("Представление")) return false;
+  if (!f.includes(normField("Наименование")) && !f.includes(normField("Представление"))) return false;
+  if (CORE_WHITELIST.has(f)) return false;
+  return typeInClosedSet(type);
+};
+// MCP_Security.КлассификаторСтрокиТЧPrivacy — ограничитель цены R-11.
+const TP_CLASSIFIERS = new Set(["ТИП", "ВИД", "ВИДДЛЯСПИСКА", "НОМЕРСТРОКИ"].map(normField));
+
 // MCP_Security.ПолеЗакрытоPrivacy + R-9: Представление наследует закрытость,
 // когда у типа закрыт хотя бы один реквизит И `Представление` объявлено полем.
 // Без второго условия признак был бы константой «любой тип из type_field_masks
 // закрывает своё представление» — найдено ревью.
 const fieldClosed = (type, field) => {
+  // R-11: поля строки табличной части закрытого типа. Классификаторы открыты —
+  // иначе телефон не отличить от адреса.
+  if (isTabularPart(type)) {
+    if (TP_CLASSIFIERS.has(normField(field))) return false;
+    return typeInClosedSet(tabularOwner(type));
+  }
   const p = POLICY[type];
+  // R-12 + R-15: подчинённый типу персон закрыт по подчинённости — набор ФИО
+  // правилом, набор масок унаследован от владельца.
+  if (isPersonSet(type)) {
+    if (FIO_SET.has(normField(field))) return true;
+    if (["НАИМЕНОВАНИЕ", "ПРЕДСТАВЛЕНИЕ"].includes(normField(field))) return true;
+    for (const owner of [type, ...(OWNERS[type] ?? [])]) {
+      const op = POLICY[owner];
+      if (op && op.fields.some((f) => normField(f) === normField(field))) return true;
+    }
+  }
+  // R-13: ядро идентифицирующих полей — без записи в политике.
+  if (inIdentityCore(type, field)) return true;
   if (!p) return false;
   if (p.fields.some((f) => normField(f) === normField(field))) return true;
   return ["ПРЕДСТАВЛЕНИЕ", "PRESENTATION"].includes(normField(field))
@@ -71,6 +166,9 @@ const fieldClosed = (type, field) => {
 // MCP_Security.ПредставлениеЗакрытоPrivacy: псевдоним типа, имя-подобное поле в
 // масках либо наследование R-9 (только там, где Представление — объявленное поле).
 const presentationClosed = (type) => {
+  // R-11: представление строки ТЧ несёт её содержимое целиком (адрес одной строкой).
+  if (isTabularPart(type)) return typeInClosedSet(tabularOwner(type));
+  if (isPersonSet(type)) return Object.values(POLICY).some((x) => x.person);
   const p = POLICY[type];
   if (!p) return false;
   return Boolean(p.alias) || (p.fields.length > 0 && hasPresentationField(type));
@@ -83,12 +181,55 @@ const fieldExists = (type, field) => {
   return Object.keys(fields).some((f) => norm(f) === norm(field))
     || ["НАИМЕНОВАНИЕ", "КОД", "ПРЕДСТАВЛЕНИЕ"].includes(norm(field));
 };
-// MCP_Query.СсылочныеТипыПоляPrivacy
+// MCP_Query.СсылочныеТипыПоляPrivacy. Честная модель: у табличных частей поля
+// «Ссылка» НЕТ (см. комментарий к META), поэтому здесь она не разрешается.
 const refTypesOf = (type, field) => {
   const fields = META[type] ?? {};
   const key = Object.keys(fields).find((f) => f.toUpperCase() === String(field).toUpperCase());
   const target = key ? fields[key] : undefined;
   return target ? [target] : [];
+};
+// MCP_Query.ПолноеИмяТабличнойЧастиPrivacy — форма А, если сегмент называет ТЧ типа.
+const tabularPartFullName = (type, segment) => {
+  const candidate = `${type}.ТабличнаяЧасть.${segment}`;
+  const key = Object.keys(META).find((t) => t.toUpperCase() === candidate.toUpperCase());
+  return key ?? "";
+};
+// MCP_Query.ВладелецТабличнойЧастиСтруктурноPrivacy (R-16, часть 2): запасное
+// правило — метаданные спрашиваются первыми, и только если «Ссылку» они не
+// дали, владелец выводится отсечением суффикса и проверяется по метаданным.
+const tabularOwnerStructural = (type) => {
+  const owner = tabularOwner(type);
+  if (!owner) return [];
+  const key = Object.keys(META).find((t) => t.toUpperCase() === owner.toUpperCase());
+  return key ? [key] : [];
+};
+// MCP_Query.ТипыСегментаPrivacy — единственный разрешатель сегментов пути.
+// Через него теперь идут ОБА обходчика: и пометка колонок, и операнды (R-16,
+// часть 1 — делегирование :7111).
+function segmentTypes(currentTypes, segment) {
+  const out = [];
+  const push = (t) => { if (t && !out.includes(t)) out.push(t); };
+  const ref = isRefSegment(segment);
+  for (const type of currentTypes) {
+    if (ref) {
+      if (isTabularPart(type)) {
+        const byMeta = refTypesOf(type, segment);
+        (byMeta.length ? byMeta : tabularOwnerStructural(type)).forEach(push);
+      } else push(type);
+      continue;
+    }
+    const tp = tabularPartFullName(type, segment);
+    if (tp) { push(tp); continue; }
+    refTypesOf(type, segment).forEach(push);
+  }
+  return out;
+}
+// MCP_Query.ИмяИсточникаДляPrivacy: источник-табличная часть разрешается от
+// самой ТЧ (её поля принадлежат строке, а не владельцу), а не от владельца.
+const sourceTypeFor = (binding) => {
+  if (!binding.full_name || !binding.third_segment) return binding.full_name;
+  return tabularPartFullName(binding.full_name, binding.third_segment) || binding.full_name;
 };
 
 // -------------------------------------------------------------- лексика
@@ -161,8 +302,12 @@ function sourceMap(command) {
     if (!m) continue;
     const raw = m[1];
     const alias = m[2] ?? "";
-    const full = META[raw] ? raw : (raw.includes(".") ? raw : "");
-    const binding = { raw, alias, full_name: full };
+    // Источник из трёх сегментов — табличная часть: Справочник.X.КонтактнаяИнформация.
+    const parts = raw.split(".");
+    const head = parts.length >= 3 ? parts.slice(0, 2).join(".") : raw;
+    const third = parts.length >= 3 ? parts[2] : "";
+    const full = META[head] ? head : (head.includes(".") ? head : "");
+    const binding = { raw, alias, full_name: full, third_segment: third };
     sources.push(binding);
     bindings.set((alias || raw).toUpperCase(), binding);
   }
@@ -276,8 +421,7 @@ function markPathFromType(type, path) {
   if (fieldIndex < 0) return null;
   let current = [type];
   for (let i = 0; i < fieldIndex; i++) {
-    const next = [];
-    for (const t of current) for (const r of refTypesOf(t, path[i])) if (!next.includes(r)) next.push(r);
+    const next = segmentTypes(current, path[i]);
     if (!next.length) return null;
     current = next;
   }
@@ -303,8 +447,9 @@ function markBareIdentifier(name, map, ctx) {
 // Порт ПодменаИсточникаПоПолюPrivacy
 function markSourceByField(binding, field, path, ctx, checkExists) {
   if (binding.full_name) {
-    if (checkExists && !fieldExists(binding.full_name, field)) return null;
-    return markPathFromType(binding.full_name, path);
+    const sourceType = sourceTypeFor(binding);
+    if (checkExists && !fieldExists(sourceType, field)) return null;
+    return markPathFromType(sourceType, path);
   }
   const cols = ctx.marked.get(binding.raw.toUpperCase());
   if (cols) {
@@ -328,7 +473,7 @@ function markChain(chain, map, ctx) {
   }
   const binding = map.bindings.get(seg[0].toUpperCase());
   if (!binding) return null;
-  if (binding.full_name) return markPathFromType(binding.full_name, path);
+  if (binding.full_name) return markPathFromType(sourceTypeFor(binding), path);
   const cols = ctx.marked.get(binding.raw.toUpperCase());
   if (cols && path.length === 1) {
     const inherited = cols.get(path[0].toUpperCase());
@@ -365,13 +510,10 @@ function presentationArgTypes(chain, map, ctx) {
   if (seg.length < 2) return bareIdentifierTypes(seg[0], map);
   const binding = map.bindings.get(seg[0].toUpperCase());
   if (!binding || !binding.full_name) return [];
-  let current = [binding.full_name];
+  let current = [sourceTypeFor(binding)];
   for (const s of seg.slice(1)) {
-    if (isRefSegment(s)) continue;
-    const next = [];
-    for (const t of current) for (const r of refTypesOf(t, s)) if (!next.includes(r)) next.push(r);
-    if (!next.length) return [];
-    current = next;
+    current = segmentTypes(current, s);
+    if (!current.length) return [];
   }
   return current;
 }
@@ -381,11 +523,10 @@ function bareIdentifierTypes(name, map) {
   const out = [];
   const field = String(name).trim();
   if (!field || field.startsWith("&")) return out;
-  const fulls = map.sources.map((s) => s.full_name).filter(Boolean);
+  const fulls = map.sources.filter((s) => s.full_name).map(sourceTypeFor);
   for (const full of fulls) {
     if (fulls.length > 1 && !fieldExists(full, field)) continue;
-    if (isRefSegment(field)) { if (!out.includes(full)) out.push(full); continue; }
-    for (const r of refTypesOf(full, field)) if (!out.includes(r)) out.push(r);
+    for (const r of segmentTypes([full], field)) if (!out.includes(r)) out.push(r);
   }
   return out;
 }
@@ -397,7 +538,7 @@ function markOperands(expr, map, ctx) {
   for (const s of map.sources) {
     if (!s.full_name || !s.alias) continue;
     for (const path of pathsForAlias(fragment, s.alias)) {
-      const hit = markPathFromType(s.full_name, path);
+      const hit = markPathFromType(sourceTypeFor(s), path);
       if (hit) { hit.derived = true; return hit; }
     }
   }
@@ -477,7 +618,7 @@ function identifierBound(field, map, ctx) {
   if (!sources.length) return true;
   if (sources.length === 1 && sources[0].full_name) return true;
   for (const s of sources) {
-    if (s.full_name) { if (fieldExists(s.full_name, field)) return true; continue; }
+    if (s.full_name) { if (fieldExists(sourceTypeFor(s), field)) return true; continue; }
     const cols = ctx.marked.get(s.raw.toUpperCase());
     if (cols && cols.has(field.toUpperCase())) return true;
   }
@@ -509,8 +650,9 @@ function hasClosedSource(map, ctx) {
       if (cols && cols.size) return true;
       continue;
     }
-    if (presentationClosed(s.full_name)) return true;
+    if (presentationClosed(sourceTypeFor(s))) return true;
     if ((POLICY[s.full_name]?.fields ?? []).length) return true;
+    if (isPersonSet(s.full_name)) return true;
   }
   return false;
 }
@@ -635,14 +777,95 @@ const CASES = [
   // представление закрывалось (признак был константой «есть маски»), и это
   // ломало группировку по представлению, не добавляя защиты: имя достаётся
   // напрямую. Различитель — существует ли Представление как реквизит типа.
-  ["R9-4 имя типа с одной маской Комментарий — открыто",
-    `ВЫБРАТЬ Т.Наименование КАК П ИЗ ${MASKED_CAT} КАК Т`, "П", "открыто"],
+  // R9-4 ПЕРЕРАЗБИТ 07.08.2026 вместе с R-13, и вердикт изменён осознанно.
+  // Прежнее ожидание «Наименование открыто» держалось на доводе «закрывать
+  // представление бессмысленно, имя достаётся напрямую». R-13 закрывает само
+  // имя у ЛЮБОГО типа закрытого набора, и довод больше не применим к имени.
+  // Цель R9-4 при этом НЕ откатывается и проверяется соседними половинами:
+  // признак наследования Представления не стал константой «есть маски» —
+  // R9-5 и R9-6 обязаны остаться открытыми. Оснастка замера цены считает так
+  // же (privacy_r13_cost.mjs: ИМЯ_ПОДОБНЫЕ добавляются в «закрыто» только при
+  // имя-подобном поле в записи), поэтому +3/+1/+3 этим не сдвигается.
+  ["R9-4 имя типа с одной маской Комментарий — закрыто ЯДРОМ R-13",
+    `ВЫБРАТЬ Т.Наименование КАК П ИЗ ${MASKED_CAT} КАК Т`, "П", "маска"],
   ["R9-5 код того же типа — открыт",
     `ВЫБРАТЬ Т.Код КАК П ИЗ ${MASKED_CAT} КАК Т`, "П", "открыто"],
   ["R9-6 ПРЕДСТАВЛЕНИЕ ссылки того же типа — тоже открыто",
     `ВЫБРАТЬ ПРЕДСТАВЛЕНИЕ(Т.Ссылка) КАК П ИЗ ${MASKED_CAT} КАК Т`, "П", "открыто"],
   ["R9-7 сама маска при этом работает",
     `ВЫБРАТЬ Т.Комментарий КАК П ИЗ ${MASKED_CAT} КАК Т`, "П", "маска"],
+
+  // ---- R-16: разыменование сквозь табличную часть от шапки (§4.18) ----
+  // Живьём на `.3`: G11 открыт 0/5 на BUH и ERP, т5 закрыт 5/5. Порт до правки
+  // показывал на этих формах зелень, потому что его заглушка давала ТЧ поле
+  // «Ссылка», которого у табличных частей нет ни на одной конфигурации.
+  ["G11 путь от шапки сквозь ТЧ: <шапка>.<ТЧ>.Ссылка.Наименование",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 К.КонтактнаяИнформация.Ссылка.Наименование КАК П ИЗ ${CLOSED} КАК К`,
+    "П", "код псевдонима"],
+  ["G11-2 то же на НаименованиеПолное",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 К.КонтактнаяИнформация.Ссылка.НаименованиеПолное КАК П ИЗ ${CLOSED} КАК К`,
+    "П", "код псевдонима"],
+  ["G11' парная: тот же путь от ОТКРЫТОГО типа — открыт",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 О.КонтактнаяИнформация.Ссылка.Наименование КАК П ИЗ ${OPEN} КАК О`,
+    "П", "открыто"],
+  ["G11'' т5: Т.Ссылка.Наименование из ТЧ-ИСТОЧНИКА — работающий путь не смещён",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 Т.Ссылка.Наименование КАК П ИЗ ${TP_CLOSED.replace(".ТабличнаяЧасть.", ".")} КАК Т`,
+    "П", "код псевдонима"],
+  ["G11''' НомерСтроки после структурного разрешения — остаётся открытым",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 Т.НомерСтроки КАК П ИЗ ${TP_CLOSED.replace(".ТабличнаяЧасть.", ".")} КАК Т`,
+    "П", "открыто"],
+  // ---- R-11: собственные поля строки табличной части (§4.13) ----
+  // Адрес уходит пятью полями сразу; закрыть одно Представление недостаточно.
+  ["G2 поле ТЧ закрытого типа от шапки: Значение",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 К.КонтактнаяИнформация.Значение КАК П ИЗ ${CLOSED} КАК К`, "П", "маска"],
+  ["G2-2 поле ТЧ от ТЧ-источника: ЗначенияПолей",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 Т.ЗначенияПолей КАК П ИЗ ${TP_CLOSED.replace(".ТабличнаяЧасть.", ".")} КАК Т`,
+    "П", "маска"],
+  ["G2-3 телефон в той же ТЧ",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 Т.НомерТелефона КАК П ИЗ ${TP_CLOSED.replace(".ТабличнаяЧасть.", ".")} КАК Т`,
+    "П", "маска"],
+  ["G2' парная: та же ТЧ у ОТКРЫТОГО типа — значения как есть",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 О.КонтактнаяИнформация.Значение КАК П ИЗ ${OPEN} КАК О`, "П", "открыто"],
+  ["G2'' классификаторы закрытой ТЧ остаются открытыми: Вид",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 К.КонтактнаяИнформация.Вид КАК П ИЗ ${CLOSED} КАК К`, "П", "открыто"],
+  ["G2''' классификатор Тип — тоже открыт",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 К.КонтактнаяИнформация.Тип КАК П ИЗ ${CLOSED} КАК К`, "П", "открыто"],
+  // ---- R-12/R-15: подчинённые справочники персон (§4.14, §4.17) ----
+  ["G3 подчинённый персоне: Фамилия закрыта правилом, записи в политике нет",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 Т.Фамилия КАК П ИЗ ${PERSON_SUB} КАК Т`, "П", "маска"],
+  ["G14' подчинённый персоне: Наименование — ядро R-13",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 Т.Наименование КАК П ИЗ ${PERSON_SUB} КАК Т`, "П", "маска"],
+  ["G14'-2 подчинённый персоне: НаименованиеСлужебное — подстрока ядра",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 Т.НаименованиеСлужебное КАК П ИЗ ${PERSON_SUB} КАК Т`, "П", "маска"],
+  ["G14'' подчинённый персоне: Имя — держится ТОЛЬКО на R-15",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 Т.Имя КАК П ИЗ ${PERSON_SUB} КАК Т`, "П", "маска"],
+  ["G3' классификатор подчинённого: СтепеньРодства — открыт",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 Т.СтепеньРодства КАК П ИЗ ${PERSON_SUB} КАК Т`, "П", "открыто"],
+  ["G3''' подчинённый НЕ персоне (номенклатура контрагентов) — открыт",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 Т.Наименование КАК П ИЗ ${CLOSED_SUB} КАК Т`, "П", "открыто"],
+  ["G10 набор ФИО у самого типа персон: Отчество",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 Т.Отчество КАК П ИЗ ${PERSON} КАК Т`, "П", "маска"],
+  ["G10' §6.6: МестоРождения остаётся ОТКРЫТЫМ по решению заказчика",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 Т.МестоРождения КАК П ИЗ ${PERSON} КАК Т`, "П", "открыто"],
+  // ---- R-13: ядро и его ограничители (§4.15) ----
+  // Подстановка — МАСКА, а не код псевдонима, и это не недоработка: по M-03.3
+  // вид подстановки решает поле, а не наличие псевдонима у типа. Код означает
+  // «это тот самый объект» и служит для соединения строк; РасширенноеПредставлениеИНН
+  // именем объекта не является, и код в такой колонке склеивал бы строки.
+  ["G4-син подстрока ядра: РасширенноеПредставлениеИНН закрывается маской",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 Т.РасширенноеПредставлениеИНН КАК П ИЗ ${CLOSED} КАК Т`, "П", "маска"],
+  ["G5 белый список 4a: Код остаётся открытым у типа БЕЗ псевдонима",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 Т.Код КАК П ИЗ ${MASKED_CAT} КАК Т`, "П", "открыто"],
+  ["G5' 4b чужой субъект: НаименованиеБанка — открыт",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 Т.НаименованиеБанка КАК П ИЗ ${CLOSED} КАК Т`, "П", "открыто"],
+  ["G5'-2 4c классификатор: НаименованиеОКВЭД — открыт",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 Т.НаименованиеОКВЭД КАК П ИЗ ${CLOSED} КАК Т`, "П", "открыто"],
+  ["G5'-3 4d §6.6: МестоРожденияПредставление — открыто",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 Т.МестоРожденияПредставление КАК П ИЗ ${PERSON} КАК Т`, "П", "открыто"],
+  ["G4-номер ядро НЕ содержит Номер: поля с ним не закрываются правилом",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 Т.НомерДоговора КАК П ИЗ ${MASKED_CAT} КАК Т`, "П", "открыто"],
+  ["G4' ограничитель 2: ядро не трогает тип вне закрытого набора",
+    `ВЫБРАТЬ ПЕРВЫЕ 5 О.НаименованиеПолное КАК П ИЗ ${OPEN} КАК О`, "П", "открыто"],
 ];
 
 // Кейс с параметром задаётся отдельно: у него свой набор типов параметров.
