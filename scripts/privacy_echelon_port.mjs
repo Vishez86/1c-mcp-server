@@ -156,10 +156,19 @@ function rowAlias(value, parentAlias, parentType, gated, insideTabular = false) 
 // R-10: вердикт первого эшелона применяется ПО КОЛОНКЕ, а не по имени ключа.
 // Подавляет только маскировщики по имени и только на плоских значениях: ссылку
 // первый эшелон намеренно не метит (M-03.1), её закрывает псевдонимизация.
-function openedByFirstEchelon(value, key, decisions) {
+//
+// path — ПОЛНЫЙ путь до поля, как в BSL (`НовыйПуть`), и проверка пути здесь
+// обязательна. Прежняя редакция порта искала вердикт по одному имени ключа и
+// путь не моделировала вовсе: кейс E11′ был зелёным при мёртвом коде — в BSL
+// сравнивался контейнерный путь «rows» с «rows.<ключ>», и подавление не
+// срабатывало ни разу (ревью PR #121). Тот же класс, о котором §4.18
+// предупреждал для refTypesOf: заглушка подтверждает заложенное в неё.
+function openedByFirstEchelon(value, key, path, decisions) {
   if (!decisions) return false;
   if (value && typeof value === "object") return false;
-  const verdict = decisions[String(key).toUpperCase()];
+  const rowsKey = decisions.rows_key ?? "rows";
+  if (norm(path) !== norm(`${rowsKey}.${key}`)) return false;
+  const verdict = (decisions.columns ?? {})[String(key).toUpperCase()];
   return verdict === false;
 }
 function maskRow(row, parentType, gated, opts = {}) {
@@ -175,7 +184,9 @@ function maskRow(row, parentType, gated, opts = {}) {
         : v;
       continue;
     }
-    if (openedByFirstEchelon(v, k, opts.decisions)) { out[k] = v; continue; }
+    // Путь строится ровно как в BSL: контейнерный путь + «.» + ключ.
+    const fieldPath = opts.path ? `${opts.path}.${k}` : k;
+    if (openedByFirstEchelon(v, k, fieldPath, opts.decisions)) { out[k] = v; continue; }
     if (!fieldClosed(t, k, insideTabular)) { out[k] = v; continue; }
     // Имя-подобное поле получает псевдоним строки, если он есть, иначе маску
     // (МаскаПоляТипаДляLLM). Прочие поля — всегда маска.
@@ -259,19 +270,30 @@ const кейсы = [
   // Замер A/B 06.08.2026: на одном поле «КАК З» давало открыто, а «КАК <имя
   // поля>» — закрыто. Решение принимает первый эшелон, второй его применяет.
   ["E11 R-10: первый эшелон закрыл — имя колонки «З» этого не снимает",
-    { З: "XXXXXXX" }, PERSON_SUB, { decisions: { "З": true } },
+    { З: "XXXXXXX" }, PERSON_SUB,
+    { path: "rows", decisions: { rows_key: "rows", columns: { "З": true } } },
     (r) => r.строка["З"] === "XXXXXXX"],
   ["E11' R-10: первый эшелон признал колонку ОТКРЫТОЙ — второй не закрывает её"
     + " по имя-подобности ключа",
-    { Наименование: "Ромашка ООО" }, PERSON_SUB, { decisions: { "НАИМЕНОВАНИЕ": false } },
+    { Наименование: "Ромашка ООО" }, PERSON_SUB,
+    { path: "rows", decisions: { rows_key: "rows", columns: { "НАИМЕНОВАНИЕ": false } } },
     (r) => r.строка.Наименование === "Ромашка ООО"],
   ["E11'' R-10: вердикта по колонке нет (разбор неполон) — страховка по имени работает",
-    { Наименование: "Иванов" }, PERSON_SUB, { decisions: { "ДРУГАЯ": false } },
+    { Наименование: "Иванов" }, PERSON_SUB,
+    { path: "rows", decisions: { rows_key: "rows", columns: { "ДРУГАЯ": false } } },
     (r) => r.строка.Наименование === "XXXXXXX"],
   ["E11''' R-10 ограничитель: вердикт «открыто» НЕ отключает псевдоним ссылки",
     { Ссылка: { type: CLOSED, uuid: "u", presentation: "имя" } }, "",
-    { decisions: { "ССЫЛКА": false } },
+    { path: "rows", decisions: { rows_key: "rows", columns: { "ССЫЛКА": false } } },
     (r) => String(r.строка.Ссылка.presentation).startsWith("Зкр-")],
+  // Регрессионный кейс на сам дефект PR #121: вердикт объявлен под ДРУГИМ
+  // ключом-контейнером, чем тот, в котором лежит поле. Подавлять нельзя —
+  // карта относится к другому месту ответа. Кейс красный, если проверка пути
+  // потеряется снова (тогда подавление сработает по одному имени ключа).
+  ["E11'''' R-10: rows_key не совпадает с контейнером поля — подавления нет",
+    { Наименование: "Иванов" }, PERSON_SUB,
+    { path: "items", decisions: { rows_key: "rows", columns: { "НАИМЕНОВАНИЕ": false } } },
+    (r) => r.строка.Наименование === "XXXXXXX"],
 ];
 let провалов = 0;
 for (const режим of [false, true]) {
