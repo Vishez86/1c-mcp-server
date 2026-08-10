@@ -56,7 +56,10 @@ const revFlag = process.argv.indexOf("--revision");
 const EXPECTED_REVISION =
   (revFlag > -1 ? process.argv[revFlag + 1] : "") ||
   process.env.MCP_EXPECTED_REVISION ||
-  "2026-08-10.1";
+  // Дефолт равен ревизии САМОЙ СВЕЖЕЙ сборки: после волны 2 это .2. Прогон
+  // приёмки P-0 на .2 — регресс волны 1, и он обязан идти без флагов. Для
+  // повторного прогона на .1 передать --revision 2026-08-10.1.
+  "2026-08-10.2";
 
 const ALL = process.argv.includes("--all");
 const jsonFlag = process.argv.indexOf("--json");
