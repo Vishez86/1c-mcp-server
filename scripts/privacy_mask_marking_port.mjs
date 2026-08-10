@@ -15,6 +15,11 @@
 // хуже отсутствия порта, потому что даёт ложную уверенность.
 
 const VERBOSE = process.argv.includes("--verbose");
+// --legacy восстанавливает поведение ДО правки P-0 (карта решений по всем колонкам
+// результата и запрет звёздочки буквальными подстроками). Прогон с этим флагом
+// ОБЯЗАН давать FAIL на группе P0: порт, который зелен в обоих режимах, ничего не
+// проверяет. Требование §11 ТЗ — порт должен быть различимым.
+const LEGACY = process.argv.includes("--legacy");
 
 // ---------------------------------------------------------------- заглушки
 
@@ -274,6 +279,49 @@ const EXPR_KEYWORDS = new Set(("ВЫБОР,КОГДА,ТОГДА,ИНАЧЕ,КО
 // Упрощённый порт КартаАлиасовЗапроса: разбирает ИЗ/СОЕДИНЕНИЕ вида
 // «<ПолноеИмя|ВТ> [КАК <алиас>]». Для кейсов порта этого достаточно; в модуле
 // разбор устойчивее (вложенность, пакеты, подзапросы).
+// Маркер источника-подзапроса — MCP_Query.МаркерИсточникаПодзапроса.
+const SUBQUERY = "<подзапрос>";
+
+// Вырезает встроенные подзапросы источника и регистрирует их привязки так же, как
+// КартаАлиасовЗапроса: псевдоним подзапроса ЕСТЬ в карте, а full_name у него
+// пустой, и источники самого подзапроса тоже попадают в карту (#108).
+//
+// Порт обязан это повторять: без регистрации псевдонима порт считал бы Т.Поле
+// неразрешённым операндом и был бы «зелёным» по другой причине, чем модуль, —
+// расхождение хуже отсутствия порта.
+function extractSubquerySources(section, sources, bindings) {
+  let rest = "";
+  let i = 0;
+  while (i < section.length) {
+    if (section[i] !== "(") { rest += section[i]; i++; continue; }
+    let depth = 0, j = i;
+    for (; j < section.length; j++) {
+      if (section[j] === "(") depth++;
+      else if (section[j] === ")") { depth--; if (!depth) break; }
+    }
+    const inner = section.slice(i + 1, j);
+    i = j + 1;
+    if (!word("(?:ВЫБРАТЬ|SELECT)").test(inner)) { rest += `(${inner})`; continue; }
+    const tail = section.slice(i);
+    const alias = tail.match(new RegExp(`^\\s*(?:${B}(?:КАК|AS)${A}\\s+)?([A-Za-zА-Яа-яЁё_][0-9A-Za-zА-Яа-яЁё_]*)`, "i"));
+    if (alias) {
+      const binding = { raw: SUBQUERY, alias: alias[1], full_name: "", third_segment: "" };
+      sources.push(binding);
+      bindings.set(alias[1].toUpperCase(), binding);
+      i += alias[0].length;
+    }
+    // Источники самого подзапроса — в ту же карту.
+    const innerMap = sourceMap(inner);
+    for (const s of innerMap.sources) {
+      sources.push(s);
+      if (!bindings.has((s.alias || s.raw).toUpperCase())) {
+        bindings.set((s.alias || s.raw).toUpperCase(), s);
+      }
+    }
+  }
+  return rest;
+}
+
 function sourceMap(command) {
   const sources = [];
   const bindings = new Map();
@@ -285,6 +333,10 @@ function sourceMap(command) {
   const fromAt = command.search(word("(?:ИЗ|FROM)"));
   if (fromAt < 0) return { sources, bindings, gave_up: false, reason: "no_sources_detected" };
   let section = command.slice(fromAt).replace(/^\s*(ИЗ|FROM)\s*/i, "");
+  // Подзапросы вырезаются ДО поиска терминатора: ГДЕ и УПОРЯДОЧИТЬ внутри
+  // подзапроса обрезали бы раздел на его середине, и псевдоним подзапроса,
+  // стоящий за скобкой, в карту не попал бы.
+  section = extractSubquerySources(section, sources, bindings);
   const stop = section.search(word("(?:ГДЕ|WHERE|СГРУППИРОВАТЬ|GROUP|УПОРЯДОЧИТЬ|ORDER|ИМЕЮЩИЕ|HAVING"
     + "|ОБЪЕДИНИТЬ|UNION|ИТОГИ|TOTALS|ИНДЕКСИРОВАТЬ|INDEX|ПОМЕСТИТЬ|INTO|УНИЧТОЖИТЬ|DROP)"));
   if (stop >= 0) section = section.slice(0, stop);
@@ -657,34 +709,152 @@ function hasClosedSource(map, ctx) {
   return false;
 }
 
-// Порт ЗакрытыеКолонкиКомандыPrivacy (одна ветка, без ОБЪЕДИНИТЬ) + R-4
+// Порт ЭтоЗвездочкаПроекцииPrivacy
+const isProjectionStar = (expr) => {
+  const f = stripWs(expr);
+  return f === "*" || (f.length > 1 && f.endsWith(".*"));
+};
+
+// Порт КолонкаВременнойТаблицыИзвестнаPrivacy. Схемы колонок ВТ у порта нет
+// (СхемаКолонокВременныхТаблицPrivacy опирается на метаданные контура), поэтому
+// здесь остаются два источника знания из трёх: пометка и осмотр. Для кейсов порта
+// этого достаточно — третий источник знание только РАСШИРЯЕТ.
+function vtColumnKnown(raw, column, ctx) {
+  const key = raw.toUpperCase();
+  const marks = ctx.marked.get(key);
+  if (marks && marks.has(column.toUpperCase())) return true;
+  const examined = ctx.examinedTables.get(key);
+  return Boolean(examined && examined.get(column.toUpperCase())?.examined);
+}
+
+// Порт ЕстьОперандБезСоставаПолейPrivacy (P-0 п. 4a)
+function hasOperandWithoutFieldSet(expr, map, ctx) {
+  const fragment = String(expr).trim();
+  if (!fragment) return false;
+  for (const s of map.sources) {
+    if (s.full_name || !s.alias) continue;
+    for (const path of pathsForAlias(fragment, s.alias)) {
+      if (s.raw === SUBQUERY) return true;
+      if (path.length === 1) {
+        if (!vtColumnKnown(s.raw, path[0], ctx)) return true;
+        continue;
+      }
+      // Разыменование колонки ВТ: без схемы ВТ порт про такой путь ничего не знает.
+      if (!vtColumnKnown(s.raw, path[0], ctx)) return true;
+    }
+  }
+  return false;
+}
+
+// Порт ВыражениеОсмотреноPrivacy
+function expressionExamined(expr, map, ctx) {
+  const fragment = String(expr).trim();
+  if (!fragment) return false;
+  if (isProjectionStar(fragment)) return false;
+  return !hasOperandWithoutFieldSet(fragment, map, ctx);
+}
+
+// Порт ЗакрытыеКолонкиКомандыPrivacy (одна ветка, без ОБЪЕДИНИТЬ) + R-4 + P-0
 function markCommand(command, ctx) {
   const map = sourceMap(command);
   const closedSource = hasClosedSource(map, ctx);
   const result = new Map();
-  for (const item of projectionItems(command)) {
+  const examined = new Map();
+  const items = projectionItems(command);
+  // Порт ПроверитьПолнотуПроекцииPrivacy
+  if (word("(?:ВЫБРАТЬ|SELECT)").test(command)
+    && (!items.length || items.some((i) => isProjectionStar(i.expression)))) {
+    ctx.parseComplete = false;
+  }
+  for (let index = 0; index < items.length; index++) {
+    const item = items[index];
     if (!item.column) continue;
     let m = markExpression(item.expression, map, ctx);
+    let unresolved = false;
+    let isExamined = true;
+    if (!m) {
+      unresolved = hasUnresolvedOperand(item.expression, map, ctx);
+      isExamined = !unresolved && expressionExamined(item.expression, map, ctx);
+    }
     // R-4 — только при НЕразрешённом операнде. «Разобрали и вышло, что открыто»
     // закрывать нельзя: это класс Д-3, молча испорченная аналитика.
-    if (!m && closedSource && hasUnresolvedOperand(item.expression, map, ctx)) m = mark("", "", true);
-    if (m) result.set(item.column.toUpperCase(), m);
+    if (!m && closedSource && unresolved) { m = mark("", "", true); isExamined = true; }
+    // Порт ОтметитьОсмотрКолонкиPrivacy: у ветки ОБЪЕДИНИТЬ решает конъюнкция.
+    const key = item.column.toUpperCase();
+    const prev = examined.get(key);
+    if (prev) prev.examined = prev.examined && isExamined;
+    else examined.set(key, { examined: isExamined, index, projection_count: items.length });
+    if (m) result.set(key, m);
   }
-  return result;
+  return { marks: result, examined };
 }
 
-// Порт КолонкиДляПодменыPrivacy: пакет команд, пометки ВТ переносятся дальше.
+// Порт КолонкиДляПодменыPrivacy: пакет команд, пометки и осмотр ВТ переносятся дальше.
 function markQuery(query, parameters = new Map()) {
-  const ctx = { marked: new Map(), parameters };
-  let last = new Map();
+  const ctx = { marked: new Map(), examinedTables: new Map(), parameters, parseComplete: true };
+  let last = { marks: new Map(), examined: new Map() };
   for (const command of query.split(";")) {
     if (!command.trim()) continue;
-    const marks = markCommand(command, ctx);
-    last = marks;
+    last = markCommand(command, ctx);
     const into = command.match(new RegExp(`${B}(?:ПОМЕСТИТЬ|INTO)${A}\\s+([A-Za-zА-Яа-яЁё_][0-9A-Za-zА-Яа-яЁё_]*)`, "i"));
-    if (into) ctx.marked.set(into[1].toUpperCase(), marks);
+    if (into) {
+      ctx.marked.set(into[1].toUpperCase(), last.marks);
+      ctx.examinedTables.set(into[1].toUpperCase(), last.examined);
+    }
   }
-  return last;
+  return { marks: last.marks, examined: last.examined, parseComplete: ctx.parseComplete };
+}
+
+// Порт вердикта первого эшелона (privacy_column_decisions в
+// ВыполнитьЗапросСОграничениями + КолонкаОткрытаПервымЭшелономLLM).
+//   «закрыто»      — пометка есть, значение подменяется в запросном пути;
+//   «открыто»      — вердикт выдан и он «открыто»: второй эшелон подавлен;
+//   «вердикта нет» — карта не выдана либо колонки в ней нет: работает второй эшелон.
+// ЛЕГАСИ (--legacy) воспроизводит поведение до P-0: карта по всем колонкам
+// результата, вердикт из наличия пометки. Порт ОБЯЗАН различать эти два режима —
+// зелёный порт при мёртвом коде на этом проекте уже случался.
+function verdict(query, column, parameters) {
+  const { marks, examined, parseComplete } = markQuery(query, parameters ?? new Map());
+  const key = column.toUpperCase();
+  if (marks.has(key)) return "закрыто";
+  if (LEGACY) return "открыто";
+  if (!parseComplete) return "вердикта нет";
+  return examined.get(key)?.examined ? "открыто" : "вердикта нет";
+}
+
+// Порт СодержитWildcardSelect (второй рубеж). ЛЕГАСИ — шесть буквальных подстрок
+// и `.*`, ровно как до правки.
+function wildcardForbidden(query) {
+  if (LEGACY) {
+    const norm = ` ${query.replace(/\s+/g, " ").toUpperCase()} `;
+    return [" ВЫБРАТЬ * ", " ВЫБРАТЬ РАЗРЕШЕННЫЕ * ", " ВЫБРАТЬ РАЗЛИЧНЫЕ * ",
+      " SELECT * ", " SELECT ALLOWED * ", " SELECT DISTINCT * "].some((s) => norm.includes(s))
+      || query.includes(".*");
+  }
+  const MODS = ["ВЫБРАТЬ", "SELECT", "РАЗЛИЧНЫЕ", "DISTINCT", "РАЗРЕШЕННЫЕ", "ALLOWED"];
+  for (let at = query.indexOf("*"); at >= 0; at = query.indexOf("*", at + 1)) {
+    let i = at - 1;
+    while (i >= 0 && /\s/.test(query[i])) i--;
+    if (i < 0) continue;
+    const ch = query[i];
+    if (ch === "." || ch === ",") return true;
+    if (!isIdentChar(ch)) continue;
+    const wordBefore = wordEndingAt(query, i);
+    if (MODS.includes(wordBefore.toUpperCase())) return true;
+    if (!isDigits(wordBefore)) continue;
+    let j = i - wordBefore.length;
+    while (j >= 0 && /\s/.test(query[j])) j--;
+    if (j < 0) continue;
+    if (["ПЕРВЫЕ", "TOP"].includes(wordEndingAt(query, j).toUpperCase())) return true;
+  }
+  return false;
+}
+
+// Порт СловоДоПозиции: слово, кончающееся в 0-based позиции i включительно.
+function wordEndingAt(text, i) {
+  let start = i;
+  while (start >= 0 && isIdentChar(text[start])) start--;
+  return text.slice(start + 1, i + 1);
 }
 
 // Порт МаскаПоляДляLLM + ПодменаЗначенияPrivacy для строкового значения:
@@ -874,9 +1044,86 @@ const PARAM_CASES = [
   ["P2 ПОДСТРОКА(&Реф.Наименование)", "ВЫБРАТЬ ПОДСТРОКА(&Реф.Наименование, 1, 5) КАК П", "П", "маска"],
 ];
 
+// ------------------------------------------------- P-0: вердикт и второй рубеж
+//
+// Таблица форм из §2.7 ТЗ, замеренная живьём 10.08.2026 на BUH. Порт проверяет два
+// независимых рубежа по каждой форме: выдан ли вердикт «открыто» (звено 3 — сам
+// дефект) и отклоняет ли форму предвалидатор (звено 1 — второй рубеж).
+//
+// Ключевое: «вердикта нет» — это НЕ «закрыто». Значение закрывает второй эшелон,
+// и порт про него ничего сказать не может: у него нет ни ответа, ни политики
+// маскировщика. Порт отвечает ровно за то, что первый эшелон больше не глушит
+// второй там, где сам ничего не видел.
+const SUB = `(ВЫБРАТЬ Т0.НаименованиеПолное КАК НаименованиеПолное, Т0.Ссылка КАК Ссылка`
+  + ` ИЗ ${CLOSED} КАК Т0)`;
+
+const VERDICT_CASES = [
+  // ---- формы, которые текли: вердикт «открыто» обязан исчезнуть ----
+  ["P0-1 звёздочка ПЕРВЫЕ N", `ВЫБРАТЬ ПЕРВЫЕ 3 * ИЗ ${CLOSED} КАК Т`, "НАИМЕНОВАНИЕ", "вердикта нет"],
+  ["P0-2 SELECT TOP N *", `SELECT TOP 3 * FROM ${CLOSED} КАК Т`, "НАИМЕНОВАНИЕ", "вердикта нет"],
+  ["P0-3 ПЕРВЫЕ N РАЗЛИЧНЫЕ *", `ВЫБРАТЬ ПЕРВЫЕ 3 РАЗЛИЧНЫЕ * ИЗ ${CLOSED} КАК Т`,
+    "НАИМЕНОВАНИЕ", "вердикта нет"],
+  ["P0-4 подзапрос в ИЗ, без звёздочки",
+    `ВЫБРАТЬ Т.НаименованиеПолное КАК П ИЗ ${SUB} КАК Т`, "П", "вердикта нет"],
+  ["P0-5 подзапрос + Ссылка рядом: поле политики",
+    `ВЫБРАТЬ Т.НаименованиеПолное КАК П, Т.Ссылка КАК Р ИЗ ${SUB} КАК Т`, "П", "вердикта нет"],
+  ["P0-5' та же форма: колонка ссылки",
+    `ВЫБРАТЬ Т.НаименованиеПолное КАК П, Т.Ссылка КАК Р ИЗ ${SUB} КАК Т`, "Р", "вердикта нет"],
+  ["P0-6 соединение с подзапросом",
+    `ВЫБРАТЬ П.НаименованиеПолное КАК П ИЗ ${OPEN} КАК О ЛЕВОЕ СОЕДИНЕНИЕ ${SUB} КАК П`
+    + ` ПО О.Ссылка = П.Ссылка`, "П", "вердикта нет"],
+  ["P0-7 подзапрос в подзапросе, два уровня",
+    `ВЫБРАТЬ Т.НаименованиеПолное КАК П ИЗ (ВЫБРАТЬ В.НаименованиеПолное КАК НаименованиеПолное`
+    + ` ИЗ ${SUB} КАК В) КАК Т`, "П", "вердикта нет"],
+  ["P0-8 неосмотренность переживает ПОМЕСТИТЬ",
+    `ВЫБРАТЬ Т.НаименованиеПолное КАК Н ПОМЕСТИТЬ ВТ ИЗ ${SUB} КАК Т;`
+    + ` ВЫБРАТЬ ВТ.Н КАК П ИЗ ВТ КАК ВТ`, "П", "вердикта нет"],
+  // ---- контроль «закрыто лишнее»: вердикт обязан ОСТАТЬСЯ ----
+  ["P0-9 контроль: прямое поле закрытого типа — закрыто",
+    `ВЫБРАТЬ Т.НаименованиеПолное КАК П ИЗ ${CLOSED} КАК Т`, "П", "закрыто"],
+  ["P0-10 контроль: поле открытого типа — вердикт «открыто» на месте",
+    `ВЫБРАТЬ О.НаименованиеПолное КАК П ИЗ ${OPEN} КАК О`, "П", "открыто"],
+  ["P0-11 контроль: открытая колонка ВТ — вердикт «открыто» переживает ПОМЕСТИТЬ",
+    `ВЫБРАТЬ О.Сумма КАК С ПОМЕСТИТЬ ВТ ИЗ ${OPEN} КАК О; ВЫБРАТЬ ВТ.С КАК П ИЗ ВТ КАК ВТ`,
+    "П", "открыто"],
+  ["P0-12 регресс ОБЪЕДИНИТЬ: ветка с именованным источником закрывает колонку",
+    `ВЫБРАТЬ Т.НаименованиеПолное КАК П ИЗ ${CLOSED} КАК Т`
+    + ` ОБЪЕДИНИТЬ ВСЕ ВЫБРАТЬ В.НаименованиеПолное КАК П ИЗ ${SUB} КАК В`, "П", "закрыто"],
+  ["P0-13 регресс пакета: транзитивная пометка ВТ держится",
+    `ВЫБРАТЬ Т.НаименованиеПолное КАК Н ПОМЕСТИТЬ ВТ ИЗ ${CLOSED} КАК Т;`
+    + ` ВЫБРАТЬ ВТ.Н КАК П ИЗ ВТ КАК ВТ`, "П", "закрыто"],
+  ["P0-14 контроль: запрос без ИЗ решение принимает",
+    `ВЫБРАТЬ 1 КАК П`, "П", "открыто"],
+];
+
+// Второй рубеж: предвалидатор. «отклонена» — wildcard_select_forbidden.
+const BAN_CASES = [
+  ["B0-1 ВЫБРАТЬ *", `ВЫБРАТЬ * ИЗ ${CLOSED} КАК Т`, true],
+  ["B0-2 ВЫБРАТЬ ПЕРВЫЕ 3 РАЗЛИЧНЫЕ *", `ВЫБРАТЬ ПЕРВЫЕ 3 РАЗЛИЧНЫЕ * ИЗ ${CLOSED} КАК Т`, true],
+  ["B0-3 ВЫБРАТЬ ПЕРВЫЕ 3 К.*", `ВЫБРАТЬ ПЕРВЫЕ 3 К.* ИЗ ${CLOSED} КАК К`, true],
+  ["B0-4 пакет со звёздочкой",
+    `ВЫБРАТЬ * ПОМЕСТИТЬ ВТ ИЗ ${CLOSED} КАК Т; ВЫБРАТЬ * ИЗ ВТ КАК ВТ`, true],
+  ["B0-5 SELECT TOP 3 *", `SELECT TOP 3 * FROM ${CLOSED} КАК Т`, true],
+  ["B0-6 SELECT DISTINCT *", `SELECT DISTINCT * FROM ${CLOSED} КАК Т`, true],
+  ["B0-7 РАЗРЕШЕННЫЕ *", `ВЫБРАТЬ РАЗРЕШЕННЫЕ * ИЗ ${CLOSED} КАК Т`, true],
+  ["B0-8 звёздочка вторым элементом", `ВЫБРАТЬ Т.Код, * ИЗ ${CLOSED} КАК Т`, true],
+  ["B0-9 звёздочка в подзапросе списка выборки",
+    `ВЫБРАТЬ (ВЫБРАТЬ * ИЗ ${CLOSED} КАК В) КАК П ИЗ ${OPEN} КАК О`, true],
+  // Контроль ложных отказов: умножение и КОЛИЧЕСТВО(*) звёздочкой проекции не являются.
+  ["B0-10 контроль: умножение поля на число",
+    `ВЫБРАТЬ 3 * О.Сумма КАК П ИЗ ${OPEN} КАК О`, false],
+  ["B0-11 контроль: умножение двух полей",
+    `ВЫБРАТЬ О.Сумма * О.Сумма КАК П ИЗ ${OPEN} КАК О`, false],
+  ["B0-12 контроль: КОЛИЧЕСТВО(*)", `ВЫБРАТЬ КОЛИЧЕСТВО(*) КАК П ИЗ ${OPEN} КАК О`, false],
+  ["B0-13 контроль: ПЕРВЫЕ N без звёздочки",
+    `ВЫБРАТЬ ПЕРВЫЕ 3 О.Сумма КАК П ИЗ ${OPEN} КАК О`, false],
+  ["B0-14 контроль: умножение после закрывающей скобки",
+    `ВЫБРАТЬ (О.Сумма + 1) * 2 КАК П ИЗ ${OPEN} КАК О`, false],
+];
+
 let pass = 0, fail = 0;
 function run(name, query, column, expected, parameters) {
-  const marks = markQuery(query, parameters ?? new Map());
+  const marks = markQuery(query, parameters ?? new Map()).marks;
   const got = substitution(marks.get(column.toUpperCase()));
   const ok = got === expected;
   if (ok) pass++; else fail++;
@@ -884,10 +1131,35 @@ function run(name, query, column, expected, parameters) {
     + (VERBOSE ? `\n       ${query.replace(/\s+/g, " ")}` : ""));
 }
 
+function runVerdict(name, query, column, expected) {
+  const got = verdict(query, column);
+  const ok = got === expected;
+  if (ok) pass++; else fail++;
+  console.log(`${ok ? "OK  " : "FAIL"} | ${name}\n       ожидали «${expected}», получили «${got}»`
+    + (VERBOSE ? `\n       ${query.replace(/\s+/g, " ")}` : ""));
+}
+
+function runBan(name, query, expected) {
+  const got = wildcardForbidden(query);
+  const ok = got === expected;
+  if (ok) pass++; else fail++;
+  const текст = (v) => (v ? "отклонена" : "пропущена");
+  console.log(`${ok ? "OK  " : "FAIL"} | ${name}\n       ожидали «${текст(expected)}»,`
+    + ` получили «${текст(got)}»` + (VERBOSE ? `\n       ${query.replace(/\s+/g, " ")}` : ""));
+}
+
 for (const [name, query, column, expected] of CASES) run(name, query, column, expected);
 for (const [name, query, column, expected] of PARAM_CASES) run(name, query, column, expected, refParam);
+console.log("\n--- P-0: вердикт первого эшелона по формам §2.7 ---");
+for (const [name, query, column, expected] of VERDICT_CASES) runVerdict(name, query, column, expected);
+console.log("\n--- P-0: второй рубеж, запрет звёздочки ---");
+for (const [name, query, expected] of BAN_CASES) runBan(name, query, expected);
 
-console.log(`\nИтог порта: PASS ${pass}, FAIL ${fail}`);
+console.log(`\nИтог порта${LEGACY ? " (ЛЕГАСИ, поведение до P-0)" : ""}: PASS ${pass}, FAIL ${fail}`);
+if (LEGACY) {
+  console.log("Режим --legacy обязан давать FAIL: он воспроизводит дефект. Ноль FAIL здесь"
+    + " означает, что порт не проверяет правку.");
+}
 console.log("Порт проверяет ветвление решения, а не разрешение имён живого контура:"
   + " метаданные и политика здесь заглушки. Живая приёмка обязательна.");
 process.exitCode = fail > 0 ? 1 : 0;
