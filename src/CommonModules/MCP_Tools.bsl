@@ -1590,14 +1590,20 @@
 	Лимиты = MCP_Config.Лимиты();
 	Возврат _СхемаInt(1,
 		MCP_Config.ПотолокБюджетаВремени(Лимиты.query_timeout_max_seconds,
-			Лимиты.query_timeout_seconds, 180),
+			Лимиты.query_timeout_seconds, MCP_Config.ЖесткийПределБюджетаВремениСекунд()),
 		Лимиты.query_timeout_seconds);
 
 КонецФункции
 
 Функция _СхемаБюджетаВремениОтчета()
 
-	Возврат _СхемаInt(1, 180, MCP_Config.Лимиты().report_timeout_seconds);
+	// Та же формула, что у запроса: до этой правки потолок отчёта был литералом
+	// и конфига не читал вовсе — report_timeout_max_seconds не существовал.
+	Лимиты = MCP_Config.Лимиты();
+	Возврат _СхемаInt(1,
+		MCP_Config.ПотолокБюджетаВремени(Лимиты.report_timeout_max_seconds,
+			Лимиты.report_timeout_seconds, MCP_Config.ЖесткийПределБюджетаВремениСекунд()),
+		Лимиты.report_timeout_seconds);
 
 КонецФункции
 
