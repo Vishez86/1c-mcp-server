@@ -389,7 +389,7 @@
 	ЛимитыЗапроса = MCP_Config.Лимиты();
 	Timeout = ЦелоеИзАргумента(Аргументы, "timeout_seconds", ЛимитыЗапроса.query_timeout_seconds,
 		MCP_Config.ПотолокБюджетаВремени(ЛимитыЗапроса.query_timeout_max_seconds,
-			ЛимитыЗапроса.query_timeout_seconds, 180));
+			ЛимитыЗапроса.query_timeout_seconds, MCP_Config.ЖесткийПределБюджетаВремениСекунд()));
 	IncludeColumnTypes = Получить(Аргументы, "include_column_types", Ложь);
 	IncludeGuidance = Получить(Аргументы, "include_guidance", Ложь);
 	Если ТипЗнч(IncludeGuidance) <> Тип("Булево") Тогда
@@ -2454,8 +2454,11 @@
 	// report_timeout_seconds доезжало только до запасной ветки
 	// MCP_Reports.ВыполнитьОтчет (она срабатывает при Неопределено), а хендлер
 	// всегда передавал число — поэтому константа на отчёты не влияла вовсе.
+	ЛимитыОтчета = MCP_Config.Лимиты();
 	Timeout = ЦелоеИзАргумента(Аргументы, "timeout_seconds",
-		MCP_Config.Лимиты().report_timeout_seconds, 180);
+		ЛимитыОтчета.report_timeout_seconds,
+		MCP_Config.ПотолокБюджетаВремени(ЛимитыОтчета.report_timeout_max_seconds,
+			ЛимитыОтчета.report_timeout_seconds, MCP_Config.ЖесткийПределБюджетаВремениСекунд()));
 	// include_totals по умолчанию выключен: универсальный адаптер не извлекает итоги,
 	// и Истина по умолчанию приводила к шумному warning на каждый run_1c_report.
 	IncludeTotals = Получить(Аргументы, "include_totals", Ложь);
