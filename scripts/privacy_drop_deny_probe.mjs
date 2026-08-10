@@ -41,7 +41,11 @@ const revFlag = process.argv.indexOf("--revision");
 const EXPECTED_REVISION =
   (revFlag > -1 ? process.argv[revFlag + 1] : "") ||
   process.env.MCP_EXPECTED_REVISION ||
-  "2026-08-05.3";
+  // Дефолт равен ревизии самой свежей сборки. Пин на пятидневной давности делал
+  // ровно то, о чём предупреждает комментарий выше: раздел Р давал «ревизия не
+  // совпала», остальные разделы уходили в SKIP, и проба выглядела честной, пропуская
+  // при этом весь регресс. Волна 2 поднимает ревизию до .2 — поднимается и дефолт.
+  "2026-08-10.2";
 
 // Коды, которых в контракте больше нет. Появление любого — старая сборка.
 const REMOVED_CODES = ["privacy_denied_field", "privacy_denied_autoorder", "privacy_config_error"];
