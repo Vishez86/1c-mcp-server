@@ -45,9 +45,9 @@ function collectionsShownByForm(src) {
   return found;
 }
 
-// ---- Что проверяет читатель: имена коллекций в ПоляТипаДляМасокPrivacy -------
+// ---- Что проверяет читатель: имена коллекций в ПоляТипаPrivacy ---------------
 function collectionsCheckedByReader(src) {
-  const start = src.indexOf("Функция ПоляТипаДляМасокPrivacy");
+  const start = src.indexOf("Функция ПоляТипаPrivacy");
   if (start < 0) return null;
   const end = src.indexOf("КонецФункции", start);
   const body = src.slice(start, end);
@@ -78,7 +78,7 @@ const checked = collectionsCheckedByReader(configSrc);
 check(shown !== null && shown.size > 0, "таблица видов формы разобрана",
   shown ? `коллекций: ${[...shown].join(", ")}` : "ВидыМетаданныхДляМаскирования не найдена");
 check(checked !== null && checked.size > 0, "проверка читателя разобрана",
-  checked ? `коллекций: ${[...checked].join(", ")}` : "ПоляТипаДляМасокPrivacy не найдена");
+  checked ? `коллекций: ${[...checked].join(", ")}` : "ПоляТипаPrivacy не найдена");
 
 if (!shown || !checked || !shown.size || !checked.size) {
   console.log("");
