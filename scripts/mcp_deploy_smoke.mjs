@@ -155,12 +155,25 @@ const callTool = async (options, name, args) =>
 
 // Фикстуры для маркеров подбираются на живой базе: ни одного захардкоженного имени
 // метаданных, иначе гейт годился бы только для одной конфигурации.
+//
+// Служебные объекты самого MCP-сервера (MCP_Маскирование, MCP_ПравовыеИсточники и
+// т.п.) фикстурами быть НЕ МОГУТ. Их имена смешанного алфавита — латинское «MCP_»
+// плюс кириллица, — и правило антиомоглифа `temporary_table_identifier_mixed_script`
+// блокирует ЛЮБОЙ запрос к ним, ещё до проверки полей. Латиница сортируется раньше
+// кириллицы, поэтому такой объект оказывается первым в discovery и забирает
+// фикстуру: маркер предвалидации полей получал mixed_script вместо field_not_found
+// и гейт сообщал о неполной публикации, которой не было. (Само ложное срабатывание
+// правила на РАЗРЕШИВШЕМСЯ имени объекта конфигурации — отдельный дефект движка
+// запросов, вне рамок privacy-каталога.)
+const СЛУЖЕБНЫЙ_ПРЕФИКС = /(^|\.)MCP_/u;
+
 async function discoverFixtures(options) {
   const fixtures = { catalog: null, tabularOwner: null, tabularSection: null, register: null, chart: null };
 
   const catalogs = await callTool(options, "list_metadata_objects", { kinds: ["Справочник"], limit: 40 });
   for (const item of catalogs?.objects ?? []) {
     if (!item?.full_name) continue;
+    if (СЛУЖЕБНЫЙ_ПРЕФИКС.test(item.full_name)) continue;
     const structure = await callTool(options, "get_metadata_structure", {
       type: item.full_name,
       include_standard_attributes: true,
@@ -273,6 +286,39 @@ const MODULE_MARKERS = [
         ? { status: "pass", note: `engine_revision=${privacy.engine_revision ?? "до 2026-08-03.2"},`
             + ` enabled=${privacy.enabled}, предупреждений: ${(privacy.config_warnings ?? []).length}` }
         : { status: "fail", note: `нет ключей: ${missing.join(", ")} — MCP_Config старее privacy по типам` };
+    },
+  },
+  {
+    module: "MCP_Маскирование",
+    what: "каталог политики опубликован: легаси-ключей нет, справочник читается",
+    async run(options) {
+      // Парный маркер каталога политики (ревизия 2026-08-11.1, §7.2 п.5 ТЗ):
+      // ревизии недостаточно — она живёт в MCP_Config, а поведение в других
+      // модулях (#92). Проверяются оба признака переезда:
+      //   1) из privacy-блока УШЛИ ключи organization_aliases/person_aliases —
+      //      старый MCP_Config продолжал бы их отдавать;
+      //   2) политика справочника читается: config_errors не содержит отказа
+      //      «справочник MCP_Маскирование не найден» — новая сборка без
+      //      справочника уводит контур в аварийный режим (fail-closed), и
+      //      оставлять его так нельзя.
+      const r = await callTool(options, "get_current_user_context", {});
+      const privacy = r?.privacy;
+      if (!privacy) return { status: "fail", note: "в ответе нет блока privacy" };
+      const legacy = ["organization_aliases", "person_aliases"].filter(
+        (key) => privacy[key] !== undefined,
+      );
+      if (legacy.length > 0) {
+        return { status: "fail", note: `в privacy остались легаси-ключи: ${legacy.join(", ")}`
+          + " — MCP_Config старее каталога политики (2026-08-11.1)" };
+      }
+      const errors = (privacy.config_errors ?? []).map(String);
+      const noCatalog = errors.some((text) => text.includes("MCP_Маскирование"));
+      if (noCatalog) {
+        return { status: "fail", note: "аварийный режим: справочник MCP_Маскирование не опубликован"
+          + ` (${errors[0]?.slice(0, 120) ?? ""})` };
+      }
+      return { status: "pass", note: `engine_revision=${privacy.engine_revision}, легаси-ключей нет,`
+        + ` config_errors: ${errors.length}` };
     },
   },
   {
