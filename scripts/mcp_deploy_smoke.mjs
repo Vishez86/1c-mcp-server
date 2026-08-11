@@ -276,6 +276,39 @@ const MODULE_MARKERS = [
     },
   },
   {
+    module: "MCP_Маскирование",
+    what: "каталог политики опубликован: легаси-ключей нет, справочник читается",
+    async run(options) {
+      // Парный маркер каталога политики (ревизия 2026-08-11.1, §7.2 п.5 ТЗ):
+      // ревизии недостаточно — она живёт в MCP_Config, а поведение в других
+      // модулях (#92). Проверяются оба признака переезда:
+      //   1) из privacy-блока УШЛИ ключи organization_aliases/person_aliases —
+      //      старый MCP_Config продолжал бы их отдавать;
+      //   2) политика справочника читается: config_errors не содержит отказа
+      //      «справочник MCP_Маскирование не найден» — новая сборка без
+      //      справочника уводит контур в аварийный режим (fail-closed), и
+      //      оставлять его так нельзя.
+      const r = await callTool(options, "get_current_user_context", {});
+      const privacy = r?.privacy;
+      if (!privacy) return { status: "fail", note: "в ответе нет блока privacy" };
+      const legacy = ["organization_aliases", "person_aliases"].filter(
+        (key) => privacy[key] !== undefined,
+      );
+      if (legacy.length > 0) {
+        return { status: "fail", note: `в privacy остались легаси-ключи: ${legacy.join(", ")}`
+          + " — MCP_Config старее каталога политики (2026-08-11.1)" };
+      }
+      const errors = (privacy.config_errors ?? []).map(String);
+      const noCatalog = errors.some((text) => text.includes("MCP_Маскирование"));
+      if (noCatalog) {
+        return { status: "fail", note: "аварийный режим: справочник MCP_Маскирование не опубликован"
+          + ` (${errors[0]?.slice(0, 120) ?? ""})` };
+      }
+      return { status: "pass", note: `engine_revision=${privacy.engine_revision}, легаси-ключей нет,`
+        + ` config_errors: ${errors.length}` };
+    },
+  },
+  {
     module: "MCP_Security",
     what: "privacy-подмена опубликована и вызовы не блокирует",
     async run(options) {
