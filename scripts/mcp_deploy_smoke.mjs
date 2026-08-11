@@ -155,12 +155,25 @@ const callTool = async (options, name, args) =>
 
 // Фикстуры для маркеров подбираются на живой базе: ни одного захардкоженного имени
 // метаданных, иначе гейт годился бы только для одной конфигурации.
+//
+// Служебные объекты самого MCP-сервера (MCP_Маскирование, MCP_ПравовыеИсточники и
+// т.п.) фикстурами быть НЕ МОГУТ. Их имена смешанного алфавита — латинское «MCP_»
+// плюс кириллица, — и правило антиомоглифа `temporary_table_identifier_mixed_script`
+// блокирует ЛЮБОЙ запрос к ним, ещё до проверки полей. Латиница сортируется раньше
+// кириллицы, поэтому такой объект оказывается первым в discovery и забирает
+// фикстуру: маркер предвалидации полей получал mixed_script вместо field_not_found
+// и гейт сообщал о неполной публикации, которой не было. (Само ложное срабатывание
+// правила на РАЗРЕШИВШЕМСЯ имени объекта конфигурации — отдельный дефект движка
+// запросов, вне рамок privacy-каталога.)
+const СЛУЖЕБНЫЙ_ПРЕФИКС = /(^|\.)MCP_/u;
+
 async function discoverFixtures(options) {
   const fixtures = { catalog: null, tabularOwner: null, tabularSection: null, register: null, chart: null };
 
   const catalogs = await callTool(options, "list_metadata_objects", { kinds: ["Справочник"], limit: 40 });
   for (const item of catalogs?.objects ?? []) {
     if (!item?.full_name) continue;
+    if (СЛУЖЕБНЫЙ_ПРЕФИКС.test(item.full_name)) continue;
     const structure = await callTool(options, "get_metadata_structure", {
       type: item.full_name,
       include_standard_attributes: true,
