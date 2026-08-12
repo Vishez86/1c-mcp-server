@@ -23,3 +23,14 @@ reports/privacy_acceptance*
 reports/privacy_gate_probe.json
 reports/*_live_check*.json
 reports/*_live_run*.json
+
+# Локальные документы сессий: канон живёт на диске, в git не хранится
+# (правило проекта, зафиксировано в #119). Затянуло `git add -A doc` 12.08 —
+# файлы уехали в публичный форк одним коммитом и были убраны force-push'ем.
+doc/handoff_*.md
+reports/handoff_*.md
+doc/testplan_*.md
+doc/TZ_dev_*.md
+# ТЗ каталога политики — исключение: он документирует поставленную функциональность
+# и осознанно смержен в master (PR #138).
+!doc/TZ_dev_privacy_masking_catalog.md
