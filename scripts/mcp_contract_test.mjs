@@ -3124,7 +3124,12 @@ class ContractRunner {
     let correlation = "";
 
     await this.test("audit_log.shape_and_timings", async () => {
-      await okTool(this.client, "run_1c_query", { query: "ВЫБРАТЬ ПЕРВЫЕ 1 1 КАК Проба", limit: 1 });
+      const probe = await okTool(this.client, "run_1c_query",
+        { query: "ВЫБРАТЬ ПЕРВЫЕ 1 1 КАК Проба", limit: 1 });
+      // Успешный ответ обязан нести id своей записи аудита — иначе связка
+      // «ответ → запись журнала» работала бы только для упавших вызовов.
+      assert(typeof probe.correlation_id === "string" && probe.correlation_id.length > 0,
+        "successful tool result must carry correlation_id");
       const result = await okTool(this.client, "get_audit_log",
         { minutes_back: 5, tools: ["run_1c_query"], limit: 50 });
       assert(typeof result.source_available === "boolean", "source_available must be boolean");
@@ -3135,12 +3140,19 @@ class ContractRunner {
       }
       assert(Array.isArray(result.events), "events must be an array");
       assert(Array.isArray(result.by_tool), "by_tool must be an array");
-      const tool = result.events.find((e) => e.kind === "tool" && e.tool === "run_1c_query");
+      // Свою запись ищем по id из ответа; журнал не транзакционен, поэтому
+      // отсутствие записи — note с fallback на любую свежую, а не провал.
+      const tool = result.events.find((e) => e.kind === "tool" && e.correlation_id === probe.correlation_id)
+        ?? result.events.find((e) => e.kind === "tool" && e.tool === "run_1c_query");
       if (!tool) return { note: "own call not yet in event log", scanned: result.scanned_events };
       assert(typeof tool.duration_ms === "number", "tool event must carry numeric duration_ms");
       assert(typeof tool.correlation_id === "string", "tool event must carry correlation_id");
       correlation = tool.correlation_id;
-      return { duration_ms: tool.duration_ms, scanned: result.scanned_events };
+      return {
+        duration_ms: tool.duration_ms,
+        own_call_found: tool.correlation_id === probe.correlation_id,
+        scanned: result.scanned_events,
+      };
     });
 
     await this.test("audit_log.no_arguments_or_message_leak", async () => {
