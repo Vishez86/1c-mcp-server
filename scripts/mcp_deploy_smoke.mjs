@@ -415,7 +415,7 @@ const MODULE_MARKERS = [
   },
   {
     module: "MCP_Audit",
-    since: "a5b5a3b",
+    since: "ff68c4e",
     what: "duration_ms измеряется в миллисекундах, а не в секундах",
     async run(options, fixtures) {
       if (!fixtures.catalog) return { status: "skip", note: "нет справочника для замера" };
@@ -459,7 +459,7 @@ const MODULE_MARKERS = [
   },
   {
     module: "MCP_Audit",
-    since: "a5b5a3b",
+    since: "ff68c4e",
     what: "тайминги аудита читаются наружу: tool get_audit_log",
     async run(options) {
       // Маркер парный по конструкции: имя события собирается из реестра
