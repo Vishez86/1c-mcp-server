@@ -28,6 +28,15 @@ const DEFAULT_SPEC = resolve(HERE, "..", "doc", "mcp_1c_tools_spec.md");
 // per-tool arguments): протокольные параметры уровня JSON-RPC params.
 const PROTOCOL_PARAMS = new Set(["_response_mode", "response_mode", "_include_auth_context", "include_auth_context"]);
 
+// Параметры, чей `default` схема берёт из server-config контура, а не из кода
+// (MCP_Tools._СхемаБюджетаВремениЗапроса читает Лимиты().query_timeout_seconds).
+// Сравнивать такое значение со спекой бессмысленно: у двух контуров с разными
+// настройками правильные, но разные схемы. Замер 12.08: BUH отдаёт default=3600
+// при 15/60 в репозитории — это состояние настройки, а не расхождение контракта.
+// Объявленность default и его тип проверяются как обычно; потолок (`maximum`)
+// сверяется отдельной проверкой и остаётся значимым.
+const CONFIG_DRIVEN_DEFAULTS = new Set(["timeout_seconds"]);
+
 function parseArgs(argv) {
   const opts = { spec: DEFAULT_SPEC, json: "" };
   for (let i = 2; i < argv.length; i++) {
@@ -126,7 +135,8 @@ function compareSchemas(tool, liveSchema, specSchema, issues) {
     if (lHas !== sHas) {
       issues.push({ tool, kind: "default_declared_mismatch", param: name,
         detail: `live ${lHas ? "объявляет" : "не объявляет"} default, spec ${sHas ? "объявляет" : "не объявляет"}` });
-    } else if (lHas && sHas && JSON.stringify(lp.default) !== JSON.stringify(sp.default)) {
+    } else if (lHas && sHas && !CONFIG_DRIVEN_DEFAULTS.has(name)
+      && JSON.stringify(lp.default) !== JSON.stringify(sp.default)) {
       issues.push({ tool, kind: "default_value_mismatch", param: name,
         detail: `live=${JSON.stringify(lp.default)} spec=${JSON.stringify(sp.default)}` });
     }
