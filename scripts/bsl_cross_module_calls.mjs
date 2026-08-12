@@ -76,7 +76,7 @@ for (const [path, src] of sources) {
     // Вызов внутри своего модуля через собственное имя — законная форма.
     if (moduleName === caller) continue;
     // Модуля нет в репозитории: он может жить в основной конфигурации базы
-    // (например MCP_НастройкаМаскирования как обработка) — не наша забота.
+    // (например MCP_MaskingRule как обработка) — не наша забота.
     if (!exported.has(moduleName)) continue;
     callCount += 1;
     if (exported.get(moduleName).has(methodName.toUpperCase())) continue;

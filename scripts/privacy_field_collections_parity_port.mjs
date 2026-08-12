@@ -1,7 +1,7 @@
 // ПАРИТЕТ КОЛЛЕКЦИЙ ПОЛЕЙ: обработка настройки ↔ читатель политики (M-21).
 //
 // Закрывает класс дефектов «пометка в интерфейсе молча не применяется». Форма
-// MCP_НастройкаМаскирования выводит в правую панель поля тех коллекций, что
+// MCP_MaskingRule выводит в правую панель поля тех коллекций, что
 // перечислены в таблице видов модуля объекта (А.9 ТЗ каталога). Читатель
 // MCP_Config.МаскиПолейТиповLLM проверяет каждое имя из fields по метаданным и
 // ОТКЛОНЯЕТ незнакомое с предупреждением. Если форма показывает коллекцию,
@@ -16,7 +16,7 @@
 
 import { readFileSync } from "node:fs";
 
-const OBJECT_MODULE = "src/DataProcessors/MCP_НастройкаМаскирования/ObjectModule.bsl";
+const OBJECT_MODULE = "src/DataProcessors/MCP_MaskingRule/ObjectModule.bsl";
 const CONFIG_MODULE = "src/CommonModules/MCP_Config.bsl";
 
 const read = (path) => {
