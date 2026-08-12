@@ -1495,7 +1495,10 @@
 	СписокИсходов.Добавить("error");
 	Props.Вставить("outcome", _СхемаЕnum(СписокИсходов, "all"));
 	Props.Вставить("include_http", _СхемаBoolean(Истина,
-		"Добавить записи HTTP-слоя MCP.http_request: http_status, outcome, request_chars."));
+		"Добавить записи HTTP-слоя MCP.http_request: http_status, outcome, request_chars."
+		+ " Фильтр outcome действует и на них: штатным ответом считается уровень «Информация»"
+		+ " (включая 202, 204 и контрактный 405). correlation_id в HTTP-записи не пишется,"
+		+ " поэтому под фильтром correlation_id она не возвращается — сопоставляйте по времени."));
 	Props.Вставить("correlation_id", _Схема("string", ,
 		"Точечная выборка одного вызова по correlation_id из записи аудита."));
 	Props.Вставить("limit", _СхемаInt(1, 200, 50));

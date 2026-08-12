@@ -3181,6 +3181,39 @@ class ContractRunner {
       }
       return { events: (result.events || []).length };
     });
+
+    await this.test("audit_log.outcome_filters_http_layer", async () => {
+      // Исход HTTP-записи не закодирован в имени события, поэтому фильтр outcome
+      // применяется при чтении по уровню записи. Штатный ответ — «Информация»,
+      // включая 202, 204 и контрактный 405: их outcome в набор отклонений не входит.
+      const ОТКЛОНЕНИЯ = ["origin_rejected", "protocol_version_rejected", "empty_body", "internal_error"];
+      const ШТАТНЫЕ = ["success", "notification", "method_not_allowed"];
+
+      const успешные = await okTool(this.client, "get_audit_log",
+        { minutes_back: 5, outcome: "success", include_http: true, limit: 100 });
+      if (!успешные.source_available) return { skipped: "event log not available" };
+      for (const event of успешные.events || []) {
+        if (event.kind === "tool") {
+          assert(event.success === true, `outcome:success must not return failed tool call ${event.tool}`);
+        } else {
+          assert(!ОТКЛОНЕНИЯ.includes(event.outcome),
+            `outcome:success must not return rejected http record ${event.outcome}`);
+        }
+      }
+
+      const ошибочные = await okTool(this.client, "get_audit_log",
+        { minutes_back: 5, outcome: "error", include_http: true, limit: 100 });
+      for (const event of ошибочные.events || []) {
+        if (event.kind === "tool") {
+          assert(event.success === false, `outcome:error must not return successful tool call ${event.tool}`);
+        } else {
+          assert(!ШТАТНЫЕ.includes(event.outcome),
+            `outcome:error must not return normal http record ${event.outcome}`);
+        }
+      }
+
+      return { success: (успешные.events || []).length, error: (ошибочные.events || []).length };
+    });
   }
 
   async queryExamplesTests() {

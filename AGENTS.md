@@ -178,7 +178,8 @@ node scripts/query_style_check.mjs <файл-с-запросом.txt>
 - Обычный прогон: `node scripts\mcp_contract_test.mjs --out reports\mcp_contract_report.1c-korp.latest.json`.
 - После изменений формата tool result прогонять все три режима: `node scripts\mcp_contract_test.mjs --all-response-modes --out reports\mcp_contract_report.1c-korp.latest.json`. Скрипт создаст агрегатный отчет и отдельные `*.text_only.json`, `*.structured_only.json`, `*.both.json`.
 - Если менялись BSL-файлы расширения, полный прогон по живому `1c-korp` имеет смысл делать после деплоя обновленного расширения в 1С; до деплоя endpoint будет отвечать старым кодом.
-- Кейсы `query_examples.*` (сид + выборка + дедупликация) в контракт-тесте выполняются только при включённом на контуре `query_examples.enabled=true`; иначе они помечаются skipped (ветвление по полю `enabled` ответа `get_query_examples`). `EXPECTED_TOOLS` — 37 инструментов (добавлены `get_query_examples`, `list_legal_sources`, `get_legal_source_guide`).
+- Кейсы `query_examples.*` (сид + выборка + дедупликация) в контракт-тесте выполняются только при включённом на контуре `query_examples.enabled=true`; иначе они помечаются skipped (ветвление по полю `enabled` ответа `get_query_examples`). `EXPECTED_TOOLS` — 38 инструментов (добавлены `get_query_examples`, `list_legal_sources`, `get_legal_source_guide`, `get_audit_log`).
+- Кейсы `audit_log.*` читают журнал регистрации через `get_audit_log`. Журнал не транзакционен: запись собственного вызова может появиться позже ответа, поэтому кейсы, которым нужна конкретная запись, возвращают `note` вместо провала — отсутствие записи не дефект. Без права `ЖурналРегистрации` у читателя все четыре кейса помечаются skipped по полю `source_available`.
 
 ### Автосверка спеки и tools/list
 
