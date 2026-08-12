@@ -41,6 +41,7 @@ const EXPECTED_TOOLS = [
   "get_object_history",
   "get_current_user_context",
   "get_query_examples",
+  "get_audit_log",
   "list_legal_sources",
   "get_legal_source_guide",
 ];
@@ -369,6 +370,7 @@ class ContractRunner {
     await this.negativeTests();
     await this.crossChecks();
     await this.queryExamplesTests();
+    await this.auditLogTests();
 
     return this.summary();
   }
@@ -3111,6 +3113,73 @@ class ContractRunner {
       }
       assert(failures.length === 0, `metadata structure failures: ${JSON.stringify(failures)}`);
       return { checked };
+    });
+  }
+
+  async auditLogTests() {
+    // Тайминги аудита (#139) читаются наружу get_audit_log. Журнал регистрации не
+    // транзакционен, поэтому запись собственного вызова может появиться позже —
+    // кейсы, которым нужна конкретная запись, допускают её отсутствие и говорят об
+    // этом явно, а не притворяются пройденными.
+    let correlation = "";
+
+    await this.test("audit_log.shape_and_timings", async () => {
+      await okTool(this.client, "run_1c_query", { query: "ВЫБРАТЬ ПЕРВЫЕ 1 1 КАК Проба", limit: 1 });
+      const result = await okTool(this.client, "get_audit_log",
+        { minutes_back: 5, tools: ["run_1c_query"], limit: 50 });
+      assert(typeof result.source_available === "boolean", "source_available must be boolean");
+      if (!result.source_available) {
+        assert((result.warnings || []).some((w) => String(w).includes("event_log_not_available")),
+          "unavailable event log must warn event_log_not_available");
+        return { skipped: "event log not available" };
+      }
+      assert(Array.isArray(result.events), "events must be an array");
+      assert(Array.isArray(result.by_tool), "by_tool must be an array");
+      const tool = result.events.find((e) => e.kind === "tool" && e.tool === "run_1c_query");
+      if (!tool) return { note: "own call not yet in event log", scanned: result.scanned_events };
+      assert(typeof tool.duration_ms === "number", "tool event must carry numeric duration_ms");
+      assert(typeof tool.correlation_id === "string", "tool event must carry correlation_id");
+      correlation = tool.correlation_id;
+      return { duration_ms: tool.duration_ms, scanned: result.scanned_events };
+    });
+
+    await this.test("audit_log.no_arguments_or_message_leak", async () => {
+      const result = await okTool(this.client, "get_audit_log", { minutes_back: 5, limit: 100 });
+      if (!result.source_available) return { skipped: "event log not available" };
+      for (const event of result.events || []) {
+        for (const forbidden of ["arguments", "raw_json", "error_message", "message"]) {
+          assert(!Object.prototype.hasOwnProperty.call(event, forbidden),
+            `audit event must not expose ${forbidden}`);
+        }
+      }
+      return { events: (result.events || []).length };
+    });
+
+    await this.test("audit_log.http_layer_visible", async () => {
+      const withHttp = await okTool(this.client, "get_audit_log",
+        { minutes_back: 5, include_http: true, limit: 100 });
+      if (!withHttp.source_available) return { skipped: "event log not available" };
+      const http = (withHttp.events || []).find((e) => e.kind === "http_request");
+      const without = await okTool(this.client, "get_audit_log",
+        { minutes_back: 5, include_http: false, limit: 100 });
+      assert(!(without.events || []).some((e) => e.kind === "http_request"),
+        "include_http:false must not return http_request events");
+      if (!http) return { note: "no http_request record in window" };
+      assert(typeof http.http_status === "number", "http event must carry numeric http_status");
+      assert(typeof http.duration_ms === "number", "http event must carry numeric duration_ms");
+      return { http_status: http.http_status, duration_ms: http.duration_ms };
+    });
+
+    await this.test("audit_log.correlation_id_filter", async () => {
+      if (!correlation) return { skipped: "no correlation_id captured" };
+      const result = await okTool(this.client, "get_audit_log",
+        { minutes_back: 5, correlation_id: correlation, limit: 50 });
+      if (!result.source_available) return { skipped: "event log not available" };
+      for (const event of result.events || []) {
+        assert(event.correlation_id === correlation,
+          `filter must return only requested correlation_id, got ${event.correlation_id}`);
+      }
+      return { events: (result.events || []).length };
     });
   }
 

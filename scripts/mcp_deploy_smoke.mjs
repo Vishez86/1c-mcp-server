@@ -457,6 +457,34 @@ const MODULE_MARKERS = [
         + " миллисекундный ноль от секундного: повторить на прогретом контуре" };
     },
   },
+  {
+    module: "MCP_Audit",
+    since: "a5b5a3b",
+    what: "тайминги аудита читаются наружу: tool get_audit_log",
+    async run(options) {
+      // Маркер парный по конструкции: имя события собирается из реестра
+      // инструментов, поэтому старый MCP_Tools (без ИменаИнструментов) обвалит
+      // выборку до отказов, а старый MCP_Audit не знает самого метода чтения.
+      const r = await callTool(options, "get_audit_log", { minutes_back: 5, limit: 5 });
+      if (r?.ok !== true) {
+        return { status: "fail", note: `${r?.error_code ?? "нет ok"}: ${String(r?.message ?? "").slice(0, 100)}` };
+      }
+      if (r.source_available !== true) {
+        // Право просмотра журнала — свойство пользователя, а не свежести сборки.
+        return { status: "skip", note: "source_available=false: нет права просмотра журнала регистрации" };
+      }
+      if (!Array.isArray(r.events) || !Array.isArray(r.by_tool)) {
+        return { status: "fail", note: "ответ без массивов events/by_tool — опубликован неполный комплект" };
+      }
+      // Утечка аргументов — не косметика: журнал хранит текст запроса без маскирования.
+      const утечка = (r.events ?? []).find((e) => ["arguments", "raw_json", "message"]
+        .some((k) => Object.prototype.hasOwnProperty.call(e, k)));
+      if (утечка) {
+        return { status: "fail", note: "событие аудита отдаёт аргументы или текст ошибки — маска обойдена" };
+      }
+      return { status: "pass", note: `events=${r.events.length}, scanned=${r.scanned_events}` };
+    },
+  },
 ];
 
 // #92, часть 1: ЯВНАЯ сверка ревизии. Ожидаемое значение берётся не из константы
