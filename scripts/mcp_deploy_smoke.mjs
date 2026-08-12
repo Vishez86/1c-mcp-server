@@ -22,9 +22,14 @@
 
 import { request as httpsRequest } from "node:https";
 import { URL } from "node:url";
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const DEFAULT_URL = "https://laba-1c.astondevs.ru/BUH_KORP/hs/mcp/rpc";
 const SMOKE_QUERY = "ВЫБРАТЬ ПЕРВЫЕ 1 Счет.Код ИЗ ПланСчетов.Хозрасчетный КАК Счет";
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 function parseArgs(argv) {
   const options = {
@@ -33,6 +38,7 @@ function parseArgs(argv) {
     timeoutMs: Number(process.env.MCP_TIMEOUT_MS || 60000),
     verbose: false,
     baseOnly: false,
+    strictMarkers: false,
   };
   for (let i = 2; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -44,8 +50,9 @@ function parseArgs(argv) {
     else if (arg.startsWith("--timeout-ms=")) options.timeoutMs = Number(arg.slice("--timeout-ms=".length));
     else if (arg === "--verbose") options.verbose = true;
     else if (arg === "--base-only") options.baseOnly = true;
+    else if (arg === "--strict-markers") options.strictMarkers = true;
     else if (arg === "--help" || arg === "-h") {
-      console.log("Usage: node scripts/mcp_deploy_smoke.mjs [--url URL] [--basic user:pass] [--timeout-ms N] [--verbose] [--base-only]");
+      console.log("Usage: node scripts/mcp_deploy_smoke.mjs [--url URL] [--basic user:pass] [--timeout-ms N] [--verbose] [--base-only] [--strict-markers]");
       process.exit(0);
     } else {
       throw new Error(`Unknown argument: ${arg}`);
@@ -206,10 +213,17 @@ async function discoverFixtures(options) {
 //
 // Маркер — это ПОЛ ревизии, а не полный контракт: он подтверждает, что модуль не старше
 // того изменения, которым маркер введён. При добавлении фич маркеры обновляются.
+//
+// #92. У маркера есть ПОЛЕ `since` — коммит, в котором маркер введён или обновлён под
+// последнюю правку своего модуля. Аудит свежести (auditMarkerFreshness) сверяет его с
+// последним коммитом, тронувшим модуль: если модуль менялся ПОЗЖЕ маркера, маркер уже
+// не доказывает, что опубликована последняя правка. Раньше это было молчаливым
+// свойством («маркер — пол ревизии»), и частичная публикация #89 прошла все маркеры.
 const MODULE_MARKERS = [
   {
     module: "MCP_Metadata",
-    what: "предвалидация полей: несуществующее поле отклоняется как field_not_found",
+    since: "cf08b07",
+    what: "предвалидация полей (field_not_found) и машинные признаки типа (is_reference/ref_types, T-3)",
     async run(options, fixtures) {
       if (!fixtures.catalog) return { status: "skip", note: "нет справочника с поддержкой ссылок" };
       const r = await callTool(options, "run_1c_query", {
@@ -217,13 +231,30 @@ const MODULE_MARKERS = [
         limit: 1,
       });
       const code = r?.error_code ?? r?.error?.error_code;
-      return code === "field_not_found"
-        ? { status: "pass", note: `available_fields: ${(r?.available_fields ?? r?.error?.available_fields ?? []).length}` }
-        : { status: "fail", note: `ожидался field_not_found, получено: ${code ?? JSON.stringify(r).slice(0, 120)}` };
+      if (code !== "field_not_found") {
+        return { status: "fail", note: `ожидался field_not_found, получено: ${code ?? JSON.stringify(r).slice(0, 120)}` };
+      }
+      // Второй признак — из ПОСЛЕДНЕЙ правки модуля (cf08b07, T-3): рядом с
+      // представлением типа публикуются машинные ключи. Проверяется наличие ключа,
+      // а не значение: is_reference=false у строкового реквизита законно. Без этой
+      // половины маркер оставался «полом» августа и молча не доказывал свежесть (#92).
+      const structure = await callTool(options, "get_metadata_structure", {
+        type: fixtures.catalog, section: "attributes", limit: 20,
+      });
+      const attributes = structure?.metadata?.attributes ?? [];
+      if (attributes.length === 0) {
+        return { status: "pass", note: `field_not_found ок; у ${fixtures.catalog} нет реквизитов для проверки T-3` };
+      }
+      const без = attributes.filter((item) => item?.is_reference === undefined || item?.ref_types === undefined);
+      return без.length === 0
+        ? { status: "pass", note: `field_not_found ок; is_reference/ref_types есть у всех ${attributes.length} реквизитов` }
+        : { status: "fail", note: `нет ключей is_reference/ref_types у ${без.length} из ${attributes.length} реквизитов`
+            + " — MCP_Metadata старее T-3 (cf08b07)" };
     },
   },
   {
     module: "MCP_Tools",
+    since: "77d8754",
     what: "stage при отказе до выполнения виден клиенту",
     async run(options, fixtures) {
       if (!fixtures.tabularSection) return { status: "skip", note: "нет справочника с табличной частью" };
@@ -244,6 +275,7 @@ const MODULE_MARKERS = [
   },
   {
     module: "MCP_Query",
+    since: "d90c3b9",
     what: "объявленное исключение // СТАНДАРТ-ИСКЛЮЧЕНИЕ признаётся",
     async run(options, fixtures) {
       if (!fixtures.register) return { status: "skip", note: "в базе нет регистра бухгалтерии" };
@@ -260,6 +292,7 @@ const MODULE_MARKERS = [
   },
   {
     module: "MCP_Tools_Impl",
+    since: "77d8754",
     what: "карта счетов отвечает",
     async run(options, fixtures) {
       if (!fixtures.chart) return { status: "skip", note: "в базе нет плана счетов" };
@@ -271,6 +304,7 @@ const MODULE_MARKERS = [
   },
   {
     module: "MCP_Config",
+    since: "764a4c8",
     what: "privacy по типам опубликован: секции type_aliases/type_field_masks и config_warnings",
     async run(options) {
       // Ключи секций отдаёт MCP_Config через MCP_Tools, поэтому маркер ловит
@@ -290,6 +324,11 @@ const MODULE_MARKERS = [
   },
   {
     module: "MCP_Маскирование",
+    since: "764a4c8",
+    // Справочник — объект метаданных, файла модуля у него нет: поведение маркера
+    // (уход легаси-ключей, чтение политики) даёт MCP_Config, по нему и сверяется
+    // свежесть.
+    path: "src/CommonModules/MCP_Config.bsl",
     what: "каталог политики опубликован: легаси-ключей нет, справочник читается",
     async run(options) {
       // Парный маркер каталога политики (ревизия 2026-08-11.1, §7.2 п.5 ТЗ):
@@ -323,6 +362,7 @@ const MODULE_MARKERS = [
   },
   {
     module: "MCP_Security",
+    since: "764a4c8",
     what: "privacy-подмена опубликована и вызовы не блокирует",
     async run(options) {
       // Отказов в контракте нет: MCP_Tools ничего не спрашивает у гейта, а
@@ -340,6 +380,7 @@ const MODULE_MARKERS = [
   },
   {
     module: "MCP_Examples",
+    since: "7ff5d05",
     what: "get_query_examples зарегистрирован и отвечает",
     async run(options, fixtures) {
       const tools = await rpc(options, "tools/list", {});
@@ -360,7 +401,132 @@ const MODULE_MARKERS = [
   },
 ];
 
+// #92, часть 1: ЯВНАЯ сверка ревизии. Ожидаемое значение берётся не из константы
+// скрипта, а из рабочего дерева — `РевизияPrivacyДвижка` в MCP_Config.bsl. Тогда
+// гейт отвечает на вопрос «на контуре тот код, что лежит в этой ветке?», а не
+// «работает ли что-нибудь». Ревизию публикует только MCP_Config, поэтому проверка
+// доказывает свежесть ИМЕННО его — для остальных модулей служат маркеры и аудит
+// свежести (часть 2).
+function ожидаемаяРевизияИзКода() {
+  const path = resolve(REPO_ROOT, "src/CommonModules/MCP_Config.bsl");
+  let text;
+  try {
+    text = readFileSync(path, "utf8");
+  } catch (error) {
+    return { revision: null, note: `MCP_Config.bsl не прочитан (${error?.code || error?.message})` };
+  }
+  const block = text.split("Функция РевизияPrivacyДвижка()")[1];
+  if (!block) return { revision: null, note: "в MCP_Config.bsl нет функции РевизияPrivacyДвижка" };
+  const match = block.match(/Возврат\s+"([^"]+)"/u);
+  return match
+    ? { revision: match[1], note: "" }
+    : { revision: null, note: "не разобран литерал ревизии в РевизияPrivacyДвижка" };
+}
+
+async function проверитьРевизию(options) {
+  const ожидание = ожидаемаяРевизияИзКода();
+  const r = await callTool(options, "get_current_user_context", {});
+  const наКонтуре = r?.privacy?.engine_revision ?? null;
+
+  if (!ожидание.revision) {
+    return { status: "skip", note: `${ожидание.note}; ревизия контура: ${наКонтуре ?? "нет"}` };
+  }
+  if (!наКонтуре) {
+    return { status: "fail", note: `контур не отдаёт engine_revision, а код объявляет ${ожидание.revision}`
+      + " — MCP_Config старше ревизионного маркера либо MCP_Tools не публикует privacy-блок" };
+  }
+  if (наКонтуре !== ожидание.revision) {
+    return { status: "fail", note: `рассинхрон: код ${ожидание.revision}, контур ${наКонтуре}`
+      + " — опубликован не тот комплект, что в рабочем дереве" };
+  }
+  return { status: "pass", note: `код и контур на ${наКонтуре}` };
+}
+
+// #92, часть 2: аудит свежести маркеров. Маркер доказывает лишь то, что модуль не
+// старше СВОЕЙ возможности, и это молчаливо переставало работать, когда модуль
+// правили, а маркер — нет: частичная публикация #89 прошла все маркеры.
+// Здесь сверяется `since` маркера с последним коммитом, тронувшим файл модуля.
+// Аудит не про контур, а про честность гейта, поэтому по умолчанию он
+// предупреждает (и говорит об этом в итоге), а падает только по --strict-markers.
+function последнийКоммитМодуля(module, явныйПуть = "") {
+  const пути = явныйПуть ? [явныйПуть] : [
+    `src/CommonModules/${module}.bsl`,
+    `src/DataProcessors/${module}/ObjectModule.bsl`,
+  ];
+  for (const путь of пути) {
+    try {
+      const out = execFileSync("git", ["log", "-1", "--format=%h %ad", "--date=short", "--", путь], {
+        cwd: REPO_ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"],
+      }).trim();
+      if (out) {
+        const [sha, date] = out.split(" ");
+        return { sha, date, путь };
+      }
+    } catch {
+      // git недоступен или путь вне репозитория — трактуется как «нет данных».
+    }
+  }
+  return null;
+}
+
+function коммитСодержит(предок, потомок) {
+  try {
+    execFileSync("git", ["merge-base", "--is-ancestor", предок, потомок], {
+      cwd: REPO_ROOT, stdio: "ignore",
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function auditMarkerFreshness() {
+  const строки = [];
+  let устарело = 0;
+  let безДанных = 0;
+
+  for (const marker of MODULE_MARKERS) {
+    const последний = последнийКоммитМодуля(marker.module, marker.path ?? "");
+    if (!marker.since) {
+      строки.push({ module: marker.module, verdict: "нет since", note: "маркер не заявляет коммит — свежесть не доказывается" });
+      устарело += 1;
+      continue;
+    }
+    if (!последний) {
+      строки.push({ module: marker.module, verdict: "нет данных git", note: `since=${marker.since}` });
+      безДанных += 1;
+      continue;
+    }
+    // Маркер актуален, если последний коммит модуля ДОСТИЖИМ из since либо совпадает
+    // с ним: значит после введения маркера модуль не менялся.
+    const актуален = последний.sha === marker.since || коммитСодержит(последний.sha, marker.since);
+    if (актуален) {
+      строки.push({ module: marker.module, verdict: "актуален", note: `модуль ${последний.sha} (${последний.date}), since=${marker.since}` });
+    } else {
+      строки.push({
+        module: marker.module,
+        verdict: "УСТАРЕЛ",
+        note: `модуль правился в ${последний.sha} (${последний.date}) после маркера since=${marker.since}`
+          + " — маркер не доказывает публикацию последней правки",
+      });
+      устарело += 1;
+    }
+  }
+
+  return { строки, устарело, безДанных };
+}
+
 async function runMarkers(options) {
+  console.log("");
+  console.log("[smoke-gate] ревизия движка — сверка рабочего дерева и контура (#92)");
+  let ревизия;
+  try {
+    ревизия = await проверитьРевизию(options);
+  } catch (error) {
+    ревизия = { status: "fail", note: `исключение: ${error?.message || error}` };
+  }
+  console.log(`[smoke-gate] ${{ pass: "PASS", fail: "FAIL", skip: "SKIP" }[ревизия.status]} engine_revision   ${ревизия.note}`);
+
   console.log("");
   console.log("[smoke-gate] маркеры модулей — проверка полноты публикации");
   const fixtures = await discoverFixtures(options);
@@ -382,13 +548,34 @@ async function runMarkers(options) {
     if (outcome.status === "skip") skipped += 1;
   }
 
+  if (ревизия.status === "fail") failed += 1;
+
   if (failed > 0) {
-    console.error(`[smoke-gate] FAIL — маркеров не прошло: ${failed}`);
+    console.error(`[smoke-gate] FAIL — проверок не прошло: ${failed}`);
     console.error("[smoke-gate] HINT: публикация неполная. Модуль из строки FAIL старше остальных либо "
       + "не выложен. Опубликуйте весь обязательный комплект (scripts/required_modules.manifest.json) "
       + "одним согласованным набором и повторите гейт.");
   }
-  return { failed, skipped };
+
+  // Аудит свежести печатается ВСЕГДА, в том числе при зелёных маркерах: его смысл —
+  // сказать, чего маркеры НЕ доказывают. Молчание здесь и было дефектом #92.
+  console.log("");
+  console.log("[smoke-gate] аудит свежести маркеров (#92) — что маркеры доказывают");
+  const аудит = auditMarkerFreshness();
+  for (const строка of аудит.строки) {
+    console.log(`[smoke-gate] ${строка.verdict.padEnd(14)} ${строка.module.padEnd(18)} ${строка.note}`);
+  }
+  if (аудит.устарело > 0) {
+    console.log(`[smoke-gate] маркеров, не доказывающих последнюю правку модуля: ${аудит.устарело}`);
+    console.log("[smoke-gate] HINT: привяжите маркер к возможности из последней правки модуля и обновите"
+      + " его since на коммит этой правки. Пока since старше модуля, зелёный маркер не означает,"
+      + " что опубликован актуальный модуль.");
+  }
+  if (аудит.безДанных > 0) {
+    console.log(`[smoke-gate] модулей без данных git: ${аудит.безДанных} (запуск вне репозитория?)`);
+  }
+
+  return { failed, skipped, staleMarkers: аудит.устарело };
 }
 
 async function main() {
@@ -406,7 +593,16 @@ async function main() {
     || String(unwrapped?.error?.details?.raw_exception ?? "").includes("metadata_not_found");
   if (unwrapped?.ok !== true && notFound) {
     const catalogs = await callTool(options, "list_metadata_objects", { kinds: ["Справочник"], limit: 10 });
-    const fallback = (catalogs?.objects ?? []).find((item) => item?.full_name && item.supports_query !== false);
+    // Служебные объекты сервера (MCP_Маскирование и родня) исключаются той же
+    // причиной, что и в фикстурах маркеров: латиница «MCP_» внутри кириллического
+    // имени срабатывает антиомоглифом до проверки полей. Латиница сортируется раньше
+    // кириллицы, поэтому такой объект приходит из discovery ПЕРВЫМ и забирал запасной
+    // запрос — на ЗУП (нет плана счетов) гейт из-за этого падал с
+    // temporary_table_identifier_mixed_script и сообщал о частичной публикации,
+    // которой не было. Фильтр в discoverFixtures стоял, в запасном пути — нет.
+    const fallback = (catalogs?.objects ?? []).find((item) => item?.full_name
+      && item.supports_query !== false
+      && !СЛУЖЕБНЫЙ_ПРЕФИКС.test(item.full_name));
     if (fallback) {
       query = `ВЫБРАТЬ ПЕРВЫЕ 1 Т.Ссылка КАК Ссылка ИЗ ${fallback.full_name} КАК Т`;
       console.log(`[smoke-gate] план счетов недоступен, подобран объект: ${fallback.full_name}`);
@@ -427,12 +623,20 @@ async function main() {
       process.exitCode = 0;
       return;
     }
-    const { failed, skipped } = await runMarkers(options);
+    const { failed, skipped, staleMarkers } = await runMarkers(options);
     if (failed > 0) {
       process.exitCode = 1;
       return;
     }
-    console.log(`[smoke-gate] PASS — маркеры модулей пройдены${skipped ? ` (пропущено по отсутствию фикстур: ${skipped})` : ""}`);
+    if (staleMarkers > 0 && options.strictMarkers) {
+      console.error(`[smoke-gate] FAIL по --strict-markers: маркеров с недоказанной свежестью ${staleMarkers}`);
+      process.exitCode = 1;
+      return;
+    }
+    const оговорка = staleMarkers > 0
+      ? ` — но ${staleMarkers} маркер(ов) не доказывают последнюю правку своего модуля (см. аудит выше)`
+      : "";
+    console.log(`[smoke-gate] PASS — маркеры модулей пройдены${skipped ? ` (пропущено по отсутствию фикстур: ${skipped})` : ""}${оговорка}`);
     process.exitCode = 0;
     return;
   }
