@@ -257,7 +257,7 @@ const MODULE_MARKERS = [
     // 074c1e0 — correlation_id в успешном ответе: связка «ответ → запись аудита»
     // перестала быть привилегией упавших вызовов. Проверяется ниже вторым
     // условием этого же маркера, поэтому since двигается вместе с модулем (#92).
-    since: "074c1e0",
+    since: "c5f48ba",
     what: "stage при отказе виден клиенту; correlation_id есть в успешном ответе",
     async run(options, fixtures) {
       if (!fixtures.tabularSection) return { status: "skip", note: "нет справочника с табличной частью" };
@@ -290,7 +290,7 @@ const MODULE_MARKERS = [
     module: "MCP_Query",
     // 9d2a227 — таймер запроса переведён на миллисекунды; маркер миллисекунд
     // отдельный (MCP_Audit), здесь двигается только доказательство свежести файла.
-    since: "9d2a227",
+    since: "c5f48ba",
     what: "объявленное исключение // СТАНДАРТ-ИСКЛЮЧЕНИЕ признаётся",
     async run(options, fixtures) {
       if (!fixtures.register) return { status: "skip", note: "в базе нет регистра бухгалтерии" };
@@ -322,7 +322,7 @@ const MODULE_MARKERS = [
     // Свежесть ЭТОГО модуля доказывает не маркер, а явная сверка ревизии выше
     // (privacy.engine_revision == РевизияPrivacyДвижка рабочего дерева): ревизия
     // живёт именно здесь, поэтому проверка сильнее любого поведенческого признака.
-    since: "9d2a227",
+    since: "c5f48ba",
     what: "privacy по типам опубликован: секции type_aliases/type_field_masks и config_warnings",
     async run(options) {
       // Ключи секций отдаёт MCP_Config через MCP_Tools, поэтому маркер ловит
@@ -342,7 +342,7 @@ const MODULE_MARKERS = [
   },
   {
     module: "MCP_Маскирование",
-    since: "9d2a227",
+    since: "c5f48ba",
     // Справочник — объект метаданных, файла модуля у него нет: поведение маркера
     // (уход легаси-ключей, чтение политики) даёт MCP_Config, по нему и сверяется
     // свежесть.
@@ -424,7 +424,7 @@ const MODULE_MARKERS = [
   },
   {
     module: "MCP_Audit",
-    since: "2eea2fa",
+    since: "c5f48ba",
     what: "duration_ms измеряется в миллисекундах, а не в секундах",
     async run(options, fixtures) {
       if (!fixtures.catalog) return { status: "skip", note: "нет справочника для замера" };
@@ -468,7 +468,7 @@ const MODULE_MARKERS = [
   },
   {
     module: "MCP_Audit",
-    since: "2eea2fa",
+    since: "c5f48ba",
     what: "тайминги аудита читаются наружу: tool get_audit_log",
     async run(options) {
       // Маркер парный по конструкции: имя события собирается из реестра
@@ -505,6 +505,61 @@ const MODULE_MARKERS = [
         return { status: "fail", note: `outcome:"error" отдал ${штатные.length} штатных HTTP-записей — опубликован MCP_Audit до правки фильтра` };
       }
       return { status: "pass", note: `events=${r.events.length}, scanned=${r.scanned_events}, фильтр исхода на HTTP держит` };
+    },
+  },
+  {
+    module: "MCP_Audit",
+    since: "c5f48ba",
+    what: "профилирование стадий: событие вызова несёт stages/counters, ответ — нет ключа _perf",
+    async run(options, fixtures) {
+      // Маркер парный по конструкции (правило #92): stages пишет связка
+      // MCP_Tools+MCP_Query+MCP_Audit, читает наружу MCP_Audit, а q_* добавляет
+      // MCP_Query — старым может оказаться любой модуль комплекта, и разбивка
+      // просто исчезнет (все обёртки замера — no-op с фолбэком). Поэтому
+      // проверяется наблюдаемое поведение: запись СВОЕГО вызова содержит стадии
+      // обоих слоёв. Вторая половина маркера — контракт ответа (R-4): служебный
+      // ключ _perf в ответ клиенту не просачивается (новый MCP_Query со старым
+      // MCP_Tools отдал бы его).
+      if (!fixtures.catalog) return { status: "skip", note: "нет справочника для замера" };
+      const r = await callTool(options, "run_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 20 Т.Ссылка КАК Ссылка ИЗ ${fixtures.catalog} КАК Т`,
+        limit: 20,
+      });
+      if (r?.ok !== true) return { status: "fail", note: `run_1c_query не ответил ok=true (${r?.error_code ?? ""})` };
+      if (Object.prototype.hasOwnProperty.call(r, "_perf")) {
+        return { status: "fail", note: "в ответе клиенту остался служебный ключ _perf — опубликован новый MCP_Query со старым MCP_Tools" };
+      }
+      if (typeof r.correlation_id !== "string" || r.correlation_id.length === 0) {
+        return { status: "fail", note: "нет correlation_id — запись аудита не выбрать точечно" };
+      }
+      await new Promise((s) => setTimeout(s, 1500));
+      const audit = await callTool(options, "get_audit_log", {
+        minutes_back: 10, correlation_id: r.correlation_id, include_http: false, limit: 5,
+      });
+      if (audit?.ok !== true) return { status: "fail", note: `get_audit_log: ${audit?.error_code ?? "нет ok"}` };
+      if (audit.source_available !== true) {
+        return { status: "skip", note: "source_available=false: нет права просмотра журнала регистрации" };
+      }
+      const event = (audit.events ?? []).find((e) => e.kind === "tool");
+      if (!event) return { status: "fail", note: "запись своего вызова не найдена по correlation_id" };
+      const stages = event.stages;
+      if (!stages || typeof stages !== "object") {
+        return { status: "fail", note: "в событии аудита нет stages — опубликован старый комплект замера (MCP_Audit/MCP_Tools)" };
+      }
+      const toolMissing = ["access_check", "tool_impl", "masking", "serialize"].filter((k) => stages[k] === undefined);
+      if (toolMissing.length > 0) {
+        return { status: "fail", note: `stages без стадий слоя вызова: ${toolMissing.join(", ")} — MCP_Tools старый` };
+      }
+      if (stages.q_db_execute === undefined || stages.q_encode_rows === undefined) {
+        return { status: "fail", note: "stages без q_db_execute/q_encode_rows — MCP_Query старый" };
+      }
+      const counters = event.counters ?? {};
+      if (counters.q_ref_cells === undefined) {
+        return { status: "fail", note: "counters без q_ref_cells — MCP_Values или MCP_Query старый" };
+      }
+      return { status: "pass", note: `стадий: ${Object.keys(stages).length},`
+        + ` q_db_execute=${stages.q_db_execute} мс, q_encode_rows=${stages.q_encode_rows} мс,`
+        + ` q_ref_cells=${counters.q_ref_cells}` };
     },
   },
 ];
