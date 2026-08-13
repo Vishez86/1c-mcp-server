@@ -175,7 +175,8 @@ const callTool = async (options, name, args) =>
 // закрыта в одном месте и открыта в другом. Теперь источник один (ТЗ-2 R-1).
 
 async function discoverFixtures(options) {
-  const fixtures = { catalog: null, tabularOwner: null, tabularSection: null, register: null, chart: null };
+  const fixtures = { catalog: null, tabularOwner: null, tabularSection: null, register: null, chart: null,
+    informationRegister: null };
 
   const catalogs = await callTool(options, "list_metadata_objects", { kinds: ["Справочник"], limit: 40 });
   for (const item of catalogs?.objects ?? []) {
@@ -202,6 +203,16 @@ async function discoverFixtures(options) {
 
   const charts = await callTool(options, "list_metadata_objects", { kinds: ["ПланСчетов"], limit: 5 });
   fixtures.chart = (charts?.objects ?? [])[0]?.full_name ?? null;
+
+  // Регистр сведений нужен маркеру MCP_Query: текст правила основной таблицы
+  // обязан говорить на языке ЭТОГО вида регистра, а не бухгалтерии.
+  const infoRegisters = await callTool(options, "list_metadata_objects", { kinds: ["РегистрСведений"], limit: 20 });
+  for (const item of infoRegisters?.objects ?? []) {
+    if (!item?.full_name) continue;
+    if (СЛУЖЕБНЫЙ_ПРЕФИКС.test(item.full_name)) continue;
+    fixtures.informationRegister = item.full_name;
+    break;
+  }
 
   return fixtures;
 }
@@ -299,10 +310,10 @@ const MODULE_MARKERS = [
     // 9d2a227 — таймер запроса переведён на миллисекунды; маркер миллисекунд
     // отдельный (MCP_Audit), здесь двигается только доказательство свежести файла.
     //
-    // since=2e66706: правка сделала вставку служебного ключа _perf условной —
-    // ключ кладётся, только если снять его есть кому. На полном комплекте это
-    // ничего не меняет и потому не наблюдаемо; обоснование то же, что у MCP_Tools.
-    since: "2e66706",
+    // since=84152ff: текст правила основной таблицы разделён по виду регистра.
+    // В отличие от прошлой правки (условная вставка _perf, не наблюдаемая на полном
+    // комплекте) эта наблюдаема прямо — вторым условием маркера ниже.
+    since: "84152ff",
     what: "объявленное исключение // СТАНДАРТ-ИСКЛЮЧЕНИЕ признаётся",
     async run(options, fixtures) {
       if (!fixtures.register) return { status: "skip", note: "в базе нет регистра бухгалтерии" };
@@ -312,9 +323,35 @@ const MODULE_MARKERS = [
         + `ИЗ ${fixtures.register} КАК Рег`;
       const r = await callTool(options, "validate_1c_query", { query, strict: true, explain: true });
       const codes = (r?.errors ?? []).map((item) => item.code);
-      return r?.valid === true
-        ? { status: "pass", note: "исключение признано" }
-        : { status: "fail", note: `valid=${r?.valid}, codes: ${codes.join(", ") || "нет"}` };
+      if (r?.valid !== true) {
+        return { status: "fail", note: `valid=${r?.valid}, codes: ${codes.join(", ") || "нет"}` };
+      }
+
+      // Второе условие: текст правила обязан говорить на языке ТОГО ЖЕ вида
+      // регистра. Прежний текст был написан для бухгалтерии и приходил в том числе
+      // на регистр сведений, где нет ни Обороты, ни ДвиженияССубконто, ни субконто.
+      // Это и есть наблюдаемый признак публикации правки: сообщение адресное.
+      if (!fixtures.informationRegister) {
+        return { status: "pass", note: "исключение признано (регистра сведений нет — текст правила не проверен)" };
+      }
+      const свед = await callTool(options, "validate_1c_query", {
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Рег.Период КАК Период ИЗ ${fixtures.informationRegister} КАК Рег`,
+        strict: true,
+      });
+      const текст = (свед?.errors ?? [])
+        .filter((item) => item.code === "base_register_table_without_vt_check")
+        .map((item) => String(item.message ?? "")).join(" ");
+      if (!текст) {
+        return { status: "pass", note: "исключение признано (правило на регистре сведений не сработало)" };
+      }
+      if (/ДвиженияССубконто|субконто/i.test(текст)) {
+        return { status: "fail", note: "текст правила для регистра сведений говорит про субконто и"
+          + " ДвиженияССубконто — опубликован MCP_Query ДО разделения сообщения по виду регистра" };
+      }
+      if (!/СрезПоследних|СрезПервых/i.test(текст)) {
+        return { status: "fail", note: "текст правила для регистра сведений не называет СрезПоследних/СрезПервых" };
+      }
+      return { status: "pass", note: "исключение признано; текст правила адресован виду регистра" };
     },
   },
   {
@@ -324,7 +361,13 @@ const MODULE_MARKERS = [
     // get_audit_log проходит через MCP_Tools_Impl.GetAuditLog, со старым модулем
     // он падал бы unknown_tool. Здесь двигается только since (кейс R-8 ТЗ по #92:
     // возможность модуля проверяется маркером другого модуля).
-    since: "ff68c4e",
+    // since=84152ff: паспорт объявляет исключение в своих запросах и не вкладывает
+    // payload валидации в предупреждения. Своего дешёвого признака у правки нет —
+    // проверка стоит полного вызова паспорта (около минуты), для смоук-гейта это
+    // дорого. Публикацию волны доказывает маркер MCP_Query (текст правила по виду
+    // регистра), совместность комплекта — правило манифеста; сам паспорт проверяет
+    // кейс контракт-теста get_database_passport_no_self_rejection.
+    since: "84152ff",
     what: "карта счетов отвечает",
     async run(options, fixtures) {
       if (!fixtures.chart) return { status: "skip", note: "в базе нет плана счетов" };
@@ -359,7 +402,7 @@ const MODULE_MARKERS = [
   },
   {
     module: "MCP_Маскирование",
-    since: "2d7b8d3",
+    since: "fb3ca5c",
     // Справочник — объект метаданных, файла модуля у него нет: поведение маркера
     // (уход легаси-ключей, чтение политики) даёт MCP_Config, по нему и сверяется
     // свежесть.
