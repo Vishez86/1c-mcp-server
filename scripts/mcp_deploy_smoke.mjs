@@ -307,7 +307,12 @@ const MODULE_MARKERS = [
   },
   {
     module: "MCP_Tools_Impl",
-    since: "77d8754",
+    // ff68c4e добавил в модуль обёртку GetAuditLog — её публикацию доказывает не
+    // этот маркер, а маркер MCP_Audit «тайминги аудита читаются наружу»: вызов
+    // get_audit_log проходит через MCP_Tools_Impl.GetAuditLog, со старым модулем
+    // он падал бы unknown_tool. Здесь двигается только since (кейс R-8 ТЗ по #92:
+    // возможность модуля проверяется маркером другого модуля).
+    since: "ff68c4e",
     what: "карта счетов отвечает",
     async run(options, fixtures) {
       if (!fixtures.chart) return { status: "skip", note: "в базе нет плана счетов" };
