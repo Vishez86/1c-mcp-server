@@ -105,8 +105,14 @@ function httpsRequestOnce(options, payload) {
   });
 }
 
+// Длина тела последнего запроса в символах — тем же счётом, каким её пишет
+// сервер (СтрДлина по телу). Единственный ключ связывания записи MCP.http_request
+// со своим вызовом: correlation_id в HTTP-записи не пишется по конструкции.
+export let последнийРазмерТелаЗапроса = 0;
+
 async function rpc(options, method, params) {
   const payload = JSON.stringify({ jsonrpc: "2.0", id: 1, method, params });
+  последнийРазмерТелаЗапроса = payload.length;
   const попыток = 3;
   let lastError = null;
 
@@ -559,6 +565,61 @@ const MODULE_MARKERS = [
       return { status: "pass", note: `стадий: ${Object.keys(stages).length},`
         + ` q_db_execute=${stages.q_db_execute} мс, q_encode_rows=${stages.q_encode_rows} мс,`
         + ` q_ref_cells=${counters.q_ref_cells}` };
+    },
+  },
+  {
+    module: "MCP_HTTPService",
+    since: "HEAD",
+    what: "профилирование транспортного слоя: MCP.http_request несёт stages и response_chars",
+    async run(options) {
+      // Парный сосед маркера стадий: тот проверяет слой ВЫЗОВА и потому доказывает
+      // свежесть MCP_Audit/MCP_Tools/MCP_Query/MCP_Values, но про транспорт молчит.
+      // Старый MCP_HTTPService или MCP_JSONRPC в комплекте — и разбивка http_*/rpc_*
+      // молча исчезает при зелёном гейте: болезнь #92 в исходной формулировке.
+      // Цена не теоретическая — именно HTTP-слой ловит время, которого нет ни в
+      // одном вызове инструмента (разбор JSON-RPC, установка сеанса).
+      const probe = await callTool(options, "get_current_user_context", {});
+      const размерТела = последнийРазмерТелаЗапроса;
+      if (probe?.ok !== true) {
+        return { status: "fail", note: "get_current_user_context не ответил ok=true" };
+      }
+      await new Promise((s) => setTimeout(s, 1500));
+
+      const audit = await callTool(options, "get_audit_log",
+        { minutes_back: 10, include_http: true, limit: 200 });
+      if (audit?.ok !== true) return { status: "fail", note: `get_audit_log: ${audit?.error_code ?? "нет ok"}` };
+      if (audit.source_available !== true) {
+        return { status: "skip", note: "source_available=false: нет права просмотра журнала регистрации" };
+      }
+      // Связывание то же, что в mcp_perf_profile.mjs: по длине своего тела.
+      // events отсортированы по дате по убыванию — свежайшее совпадение и есть наше.
+      const свои = (audit.events ?? []).filter((e) => e.kind === "http_request"
+        && e.request_chars === размерТела);
+      if (свои.length === 0) {
+        return { status: "fail", note: `запись MCP.http_request с request_chars=${размерТела} не найдена —`
+          + " HTTP-аудит не пишется (проверьте MCP.http_audit.failed в журнале)" };
+      }
+      const запись = свои[0];
+      const stages = запись.stages;
+      if (!stages || typeof stages !== "object") {
+        return { status: "fail", note: "в записи MCP.http_request нет stages —"
+          + " опубликован старый MCP_HTTPService" };
+      }
+      if (stages.rpc_handle === undefined) {
+        return { status: "fail", note: "в stages нет rpc_handle — опубликован старый MCP_JSONRPC"
+          + ` (есть: ${Object.keys(stages).join(", ")})` };
+      }
+      if (stages.http_guard === undefined && stages.http_body_read === undefined) {
+        return { status: "fail", note: "в stages нет ни http_guard, ни http_body_read —"
+          + " опубликован старый MCP_HTTPService" };
+      }
+      if (запись.response_chars === undefined) {
+        return { status: "fail", note: "в записи нет response_chars — опубликован старый"
+          + " MCP_HTTPService либо MCP_Audit" };
+      }
+      return { status: "pass", note: `rpc_handle=${stages.rpc_handle} мс,`
+        + ` стадий транспорта: ${Object.keys(stages).length},`
+        + ` request/response chars: ${запись.request_chars}/${запись.response_chars}` };
     },
   },
 ];
