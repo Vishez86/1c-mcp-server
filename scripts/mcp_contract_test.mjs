@@ -2,6 +2,7 @@
 
 import { writeFile, mkdir } from "node:fs/promises";
 import { dirname, extname, resolve } from "node:path";
+import { служебныйОбъект, подобратьРегистрБухгалтерии, суффиксыСуммовыхРесурсов } from "./mcp_fixtures.mjs";
 
 const DEFAULT_URL = "https://laba-1c.astondevs.ru/BUH_KORP/hs/mcp/rpc";
 const CONTRACT_PERIOD = makeContractPeriod();
@@ -377,13 +378,25 @@ class ContractRunner {
 
   async fixtureDiscovery() {
     await this.test("fixtures.discover_generic_metadata", async () => {
+      // Фикстура обязана быть НЕПУСТОЙ (ТЗ-2 R-3): кейсы берут из неё образец ссылки
+      // (sampleRef/organizationRef), а пустой справочник даёт skipped на самой
+      // фикстуре и «fixture is missing» на пяти зависимых кейсах ниже. Наличие
+      // строк — такой же элемент состава, как наличие поля, и спрашивается так же.
+      const естьСтроки = async (fullName) => {
+        const проба = await rawTool(this.client, "run_1c_query", {
+          query: `ВЫБРАТЬ ПЕРВЫЕ 1 Ссылка ИЗ ${fullName}`,
+          limit: 1,
+        });
+        return проба?.ok === true && (проба.rows?.length ?? 0) > 0;
+      };
       this.context.genericCatalog = await findFirstMetadataObject(this.client, ["Справочник"], async (item) => {
         const structure = await rawTool(this.client, "get_metadata_structure", {
           type: item.full_name,
           include_standard_attributes: true,
           include_tabular_sections: false,
         });
-        return structure.ok === true && structure.metadata?.supports_ref === true;
+        if (structure.ok !== true || structure.metadata?.supports_ref !== true) return false;
+        return естьСтроки(item.full_name);
       });
       this.context.genericDocument = await findFirstMetadataObject(this.client, ["Документ"], async (item) => {
         const structure = await rawTool(this.client, "get_metadata_structure", {
@@ -400,10 +413,17 @@ class ContractRunner {
           include_tabular_sections: true,
         });
         const sections = structure.metadata?.tabular_sections || [];
-        if (structure.ok === true && sections.length > 0) {
-          item.structure = structure.metadata;
-          item.tabularSection = sections[0];
-          return true;
+        if (structure.ok !== true || sections.length === 0) return false;
+        // Табличная часть тоже обязана быть непустой: из её строки берётся владелец
+        // (counterpartyRef), а пустая ТЧ роняла пять зависимых кейсов на «fixture is
+        // missing». Проверяются все ТЧ объекта, а не только первая.
+        for (const section of sections) {
+          if (!section?.name) continue;
+          if (await естьСтроки(`${item.full_name}.${section.name}`)) {
+            item.structure = structure.metadata;
+            item.tabularSection = section;
+            return true;
+          }
         }
         return false;
       });
@@ -809,8 +829,21 @@ class ContractRunner {
       const debitCredit = virtualTables.find((item) => item.name === "ОборотыДтКт");
       assert((debitCredit.common_fields || []).includes("СубконтоДт1"), "ОборотыДтКт must advertise СубконтоДт1");
       assert((debitCredit.common_fields || []).includes("СубконтоКт1"), "ОборотыДтКт must advertise СубконтоКт1");
-      assert((debitCredit.common_fields || []).includes("СуммаПРОборотДт"), "ОборотыДтКт must advertise СуммаПРОборотДт");
-      assert((debitCredit.common_fields || []).includes("СуммаПРОборотКт"), "ОборотыДтКт must advertise СуммаПРОборотКт");
+      // Ожидания по суммовым ресурсам выводятся из состава ЖИВОГО регистра, а не
+      // зашиты именами (ТЗ-2 R-2): ПР — атрибут налогового учёта, а не регистра
+      // бухгалтерии вообще, и на ERP у «Международного» таких ресурсов нет и быть
+      // не должно. Проверяем парность Дт/Кт для КАЖДОГО суффикса, который регистр
+      // публикует, — это сильнее прежней проверки одного зашитого имени.
+      // Отсутствие парных суффиксов — НЕ провал: у регистра без налогового учёта и
+      // валютных ресурсов сумма корреспонденции одна (СуммаОборот), раздельных
+      // Дт/Кт нет по конструкции. Проверяется парность того, что регистр публикует.
+      const суффиксы = суффиксыСуммовыхРесурсов(virtualTables);
+      for (const суффикс of суффиксы) {
+        assert((debitCredit.common_fields || []).includes(`Сумма${суффикс}ОборотДт`),
+          `ОборотыДтКт must advertise Сумма${суффикс}ОборотДт`);
+        assert((debitCredit.common_fields || []).includes(`Сумма${суффикс}ОборотКт`),
+          `ОборотыДтКт must advertise Сумма${суффикс}ОборотКт`);
+      }
       assert(!(debitCredit.common_fields || []).includes("ВидСубконтоДт1"), "ОборотыДтКт must not advertise non-universal ВидСубконтоДт1 field");
       return { register: accountingRegister.fullName, virtualTables };
     });
@@ -1281,6 +1314,12 @@ class ContractRunner {
       }
       const result = await okTool(this.client, "get_accounting_entries", {
         accounting_register: accountingRegister.name,
+        // План счетов передаётся ТОТ ЖЕ, из которого взят счёт (ТЗ-2 R-4).
+        // Без него pre-flight уходит в план счетов по умолчанию: на ERP счёт брался
+        // из ПланСчетов.Международный, а искался в основном — и кейс падал, хотя с
+        // явным chart тот же вызов даёт ok=true (#146). Умолчание сервера фикстурой
+        // не подразумевается.
+        chart,
         credit_account_code_prefixes: [String(account.code)],
         subconto_side: "credit",
         subconto_kind: toQueryRef(subconto),
@@ -1595,14 +1634,31 @@ class ContractRunner {
 
     await this.test("negative.run_1c_query_vt_field_rejected_pre_flight", async () => {
       // ТЗ pre-flight: несуществующее поле ВТ отсекается ДО движка с детерминированным
-      // validation_failed_before_run (критерии приёмки 1 и 7). СуммаПРОборот в ОборотыДтКт
-      // не существует (есть только СуммаПРОборотДт/Кт), поэтому запрос блокируется заранее.
+      // validation_failed_before_run (критерии приёмки 1 и 7). Сумма<X>Оборот без Дт/Кт
+      // в ОборотыДтКт не существует (есть только парные Сумма<X>ОборотДт/Кт), поэтому
+      // запрос блокируется заранее.
+      //
+      // Суффикс X берётся из состава ЖИВОГО регистра, а не зашит как «ПР» (ТЗ-2 R-2):
+      // ПР — атрибут налогового учёта, на ERP регистра с ним может не быть вовсе.
       const accountingRegister = this.context.accountingRegister || await findAccountingRegister(this.client);
       if (!accountingRegister) {
         return { skipped: true, reason: "no accounting register in metadata" };
       }
+      const суффиксы = accountingRegister.суффиксы
+        ?? суффиксыСуммовыхРесурсов(accountingRegister.виртуальныеТаблицы ?? []);
+      // Пустой суффикс не годится: плоское «СуммаОборот» ОборотыДтКт как раз публикует,
+      // и запрос был бы корректным — кейс проверял бы не то.
+      const суффикс = [...суффиксы].find((s) => s !== "");
+      if (!суффикс) {
+        return {
+          skipped: true,
+          fixtureIssue: true,
+          reason: `register ${accountingRegister.fullName} has no paired Сумма<X>ОборотДт/Кт resource beyond the base one`,
+        };
+      }
+      const несуществующееПоле = `Сумма${суффикс}Оборот`;
       const result = await rawTool(this.client, "run_1c_query", {
-        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Обороты.СуммаПРОборот ИЗ ${accountingRegister.fullName}.ОборотыДтКт(&Начало, &Конец) КАК Обороты`,
+        query: `ВЫБРАТЬ ПЕРВЫЕ 1 Обороты.${несуществующееПоле} ИЗ ${accountingRegister.fullName}.ОборотыДтКт(&Начало, &Конец) КАК Обороты`,
         parameters: {
           Начало: { kind: "datetime", value: CONTRACT_PERIOD.start },
           Конец: { kind: "datetime", value: CONTRACT_PERIOD.end },
@@ -1622,19 +1678,19 @@ class ContractRunner {
       assert(result.ok === false, "invalid ОборотыДтКт field must fail");
       assert(errorCode === "validation_failed_before_run", `expected pre-flight rejection, got: ${errorCode}`);
       assert(topCode === "validation_failed_before_run", `error.code must be validation_failed_before_run, got: ${topCode}`);
-      assert(field === "СуммаПРОборот", `unexpected field: ${field}`);
+      assert(field === несуществующееПоле, `unexpected field: ${field}`);
       assert(object === accountingRegister.fullName, `unexpected object: ${object}`);
       assert(typeof correlationId === "string" && correlationId.length > 0, "correlation_id must be preserved");
       assert(sourceTable === `${accountingRegister.fullName}.ОборотыДтКт`, `unexpected source_table: ${sourceTable}`);
       assert(availableFieldsSource === "virtual_table", `available_fields_source must be virtual_table, got: ${availableFieldsSource}`);
-      assert(availableFields.includes("СуммаПРОборотДт"), "available_fields must include СуммаПРОборотДт");
-      assert(availableFields.includes("СуммаПРОборотКт"), "available_fields must include СуммаПРОборотКт");
-      assert(!availableFields.includes("СуммаПРОборот"), "ОборотыДтКт must not advertise plain СуммаПРОборот (Дт/Кт only)");
+      assert(availableFields.includes(`Сумма${суффикс}ОборотДт`), `available_fields must include Сумма${суффикс}ОборотДт`);
+      assert(availableFields.includes(`Сумма${суффикс}ОборотКт`), `available_fields must include Сумма${суффикс}ОборотКт`);
+      assert(!availableFields.includes(несуществующееПоле), `ОборотыДтКт must not advertise plain ${несуществующееПоле} (Дт/Кт only)`);
       assert(!availableFields.includes("Содержание"), "available_fields must not contain main register fields");
       assert(availableFieldsSample[0]?.type === sourceTable, "available_fields_sample type must point to the virtual table");
-      assert((availableFieldsSample[0]?.fields || []).includes("СуммаПРОборотДт"), "available_fields_sample must expose virtual-table fields");
+      assert((availableFieldsSample[0]?.fields || []).includes(`Сумма${суффикс}ОборотДт`), "available_fields_sample must expose virtual-table fields");
       assert(hint.includes("ОборотыДтКт"), "hint must mention ОборотыДтКт");
-      assert(hint.includes("СуммаПРОборотДт") && hint.includes("СуммаПРОборотКт"), "hint must suggest debit and credit replacements");
+      assert(hint.includes(`Сумма${суффикс}ОборотДт`) && hint.includes(`Сумма${суффикс}ОборотКт`), "hint must suggest debit and credit replacements");
       return { register: accountingRegister.fullName, errorCode, sourceTable, availableFieldsCount: availableFields.length, hint };
     });
 
@@ -1725,8 +1781,18 @@ class ContractRunner {
       }
 
       const dtkt = fieldsOf("ОборотыДтКт");
-      for (const f of ["СубконтоДт1", "СубконтоКт1", "СуммаОборот", "СуммаПРОборотДт", "СуммаПРОборотКт"]) {
+      for (const f of ["СубконтоДт1", "СубконтоКт1", "СуммаОборот"]) {
         assert(dtkt.includes(f), `ОборотыДтКт superset must include ${f}`);
+      }
+      // Парность Дт/Кт проверяется по КАЖДОМУ суффиксу, который регистр публикует,
+      // а не по зашитому «ПР» (ТЗ-2 R-2): на ERP регистра с ПР-ресурсами может не
+      // быть вовсе, а проверка парности при этом остаётся содержательной.
+      for (const суффикс of суффиксыСуммовыхРесурсов(vts)) {
+        if (суффикс === "") continue;
+        assert(dtkt.includes(`Сумма${суффикс}ОборотДт`) && dtkt.includes(`Сумма${суффикс}ОборотКт`),
+          `ОборотыДтКт must include both Сумма${суффикс}ОборотДт and Сумма${суффикс}ОборотКт`);
+        assert(!dtkt.includes(`Сумма${суффикс}Оборот`),
+          `ОборотыДтКт must NOT include plain Сумма${суффикс}Оборот`);
       }
       // СуммаОборотДт/СуммаОборотКт есть не на всех конфигурациях: у ОборотыДтКт
       // сумма корреспонденции одна (СуммаОборот), раздельные Дт/Кт остаются только
@@ -1738,7 +1804,6 @@ class ContractRunner {
         assert(!dtkt.includes("СуммаОборотКт"), "ОборотыДтКт must NOT include СуммаОборотКт");
       }
       assert(!dtkt.includes("Субконто1"), "ОборотыДтКт must NOT include bare Субконто1");
-      assert(!dtkt.includes("СуммаПРОборот"), "ОборотыДтКт must NOT include plain СуммаПРОборот");
 
       const balTurn = fieldsOf("ОстаткиИОбороты");
       for (const f of ["СуммаНачальныйОстаток", "СуммаОборот", "СуммаКонечныйОстаток"]) {
@@ -3233,16 +3298,48 @@ class ContractRunner {
     // бухгалтерских конфигурациях, и на ЗУП пять кейсов падали «объект не
     // найден» (дефект фикстуры, не сервера). Берётся первый план счетов, а без
     // планов счетов — первый справочник: Код и Наименование есть у обоих видов.
+    // Сид-источник подбирается ПО СОСТАВУ (ТЗ-2 R-1/R-3), а не по порядку.
+    //
+    // «Первый по списку» ошибался на ЗУП дважды подряд и по-разному: сперва это был
+    // служебный MCP_Маскирование (все пять кейсов блокировал mixed_script), а после
+    // его исключения — Справочник.…ПрисоединенныеФайлы, у которого нет ни Кода, ни
+    // Наименования, и те же пять кейсов падали уже pre-flight'ом. Запрос сида
+    // использует оба поля, поэтому и требовать надо оба — у живого объекта.
+    // Второе требование к сид-объекту — он не должен быть ПЕРЕПОЛНЕН примерами.
+    // limit у get_query_examples ограничен двадцатью (схема, maximum: 20), выдача
+    // упорядочена по популярности, поэтому у объекта, где уже накоплено 20 скелетов
+    // с бо́льшим uses, свежезасеянный (uses=1) в выдачу не попадает никогда. На BUH
+    // маркерный скелет присутствовал от прошлых прогонов и держался в топе, на ZUP
+    // был новым — отсюда три «провала», не имеющие отношения к серверу.
+    const МАКСИМУМ_ПРИМЕРОВ = 20;
+    const подходитДляСида = async (item) => {
+      const structure = await rawTool(this.client, "get_metadata_structure", {
+        type: item.full_name,
+        include_standard_attributes: true,
+        include_tabular_sections: false,
+      });
+      if (structure?.ok !== true) return false;
+      const meta = structure.metadata ?? {};
+      const имена = new Set([
+        ...(meta.standard_attributes ?? []).map((a) => a?.name),
+        ...(meta.attributes ?? []).map((a) => a?.name),
+      ]);
+      if (!имена.has("Код") || !имена.has("Наименование")) return false;
+      const примеры = await rawTool(this.client, "get_query_examples", {
+        object: item.full_name,
+        days_back: 7,
+        limit: МАКСИМУМ_ПРИМЕРОВ,
+      });
+      if (примеры?.ok !== true) return true; // накопитель выключен — переполнения нет
+      return (примеры.examples ?? []).length < МАКСИМУМ_ПРИМЕРОВ;
+    };
     let seedSource = "";
     for (const kind of ["ПланСчетов", "Справочник"]) {
-      const found = await rawTool(this.client, "list_metadata_objects", {
-        kinds: [kind],
-        limit: 1,
-        include_details: false,
-      });
-      const item = (found?.objects ?? []).find((o) => o?.full_name);
+      const item = await findFirstMetadataObject(this.client, [kind], подходитДляСида);
       if (item) { seedSource = item.full_name; break; }
     }
+    this.context.fixturesUsed = this.context.fixturesUsed ?? {};
+    this.context.fixturesUsed.queryExamplesSeed = seedSource || "<не найден>";
     // Маркеры уникальны для прогона; suffix identifier-safe (только цифры).
     const ts = new Date().toISOString().replace(/[^0-9]/g, "").slice(0, 14);
     const aliasName = `МАРКЕРАЛИАС${ts}`;
@@ -3308,16 +3405,33 @@ class ContractRunner {
     });
 
     // Кейс 3: дедупликация — повтор идентичного сида растит uses, не число examples.
+    //
+    // Рост проверяется С ОЖИДАНИЕМ, а не мгновенно: накопитель примеров обновляется
+    // ОТЛОЖЕННО. Замер 13.08 на ZUP по одному и тому же скелету: до сида uses=5,
+    // контрольное повторное чтение без сида — 5 (значит само чтение не считается
+    // использованием), сразу после сида — всё ещё 5, через 3 с — 6, через 10 с — 6.
+    // Прежняя проверка требовала мгновенного роста и проигрывала эту гонку: на BUH
+    // выигрывала, на ZUP нет. Контракт синхронной видимости не обещает, поэтому
+    // ждать — правильнее, чем утверждать мгновенность.
     await this.test("query_examples.dedup_increments_uses", async () => {
       if (!enabled) return { skipped: "query_examples disabled" };
-      const before = findMarkerGroup(await okTool(this.client, "get_query_examples",
+      const прочитатьГруппу = async () => findMarkerGroup(await okTool(this.client, "get_query_examples",
         { object: seedSource, days_back: 7, limit: 20 }));
+      const before = await прочитатьГруппу();
       assert(before, "marker group must exist before re-seed");
       await okTool(this.client, "run_1c_query", seedArgs);
-      const after = findMarkerGroup(await okTool(this.client, "get_query_examples",
-        { object: seedSource, days_back: 7, limit: 20 }));
+
+      const ОЖИДАНИЕ_МС = 8000;
+      const ШАГ_МС = 1000;
+      let after = null;
+      for (let ждём = 0; ждём <= ОЖИДАНИЕ_МС; ждём += ШАГ_МС) {
+        after = await прочитатьГруппу();
+        if (after && after.uses > before.uses) break;
+        await new Promise((s) => setTimeout(s, ШАГ_МС));
+      }
       assert(after, "marker group must exist after re-seed");
-      assert(after.uses > before.uses, `uses must grow (before=${before.uses}, after=${after.uses})`);
+      assert(after.uses > before.uses,
+        `uses must grow within ${ОЖИДАНИЕ_МС} ms (before=${before.uses}, after=${after.uses})`);
       return { before: before.uses, after: after.uses };
     });
 
@@ -3416,6 +3530,8 @@ class ContractRunner {
       assertion_failures: byClass("assertion"),
       transport_failures: byClass("transport"),
       fixture_missing_failures: byClass("fixture_missing"),
+      fixture_unsuitable_failures: byClass("fixture_unsuitable"),
+      fixtures: this.context.fixturesUsed ?? {},
       transport_retries_recovered: this.client.recovered.length,
       transport_retries_attempted: this.client.transportRetries,
       recovered_calls: this.client.recovered,
@@ -3425,13 +3541,23 @@ class ContractRunner {
     console.log(`Summary: ${passed} passed, ${failed} failed, ${this.tests.length} total`);
     console.log(`Failures by class: assertion ${summary.assertion_failures}`
       + `, transport ${summary.transport_failures}`
-      + `, fixture_missing ${summary.fixture_missing_failures}`);
+      + `, fixture_missing ${summary.fixture_missing_failures}`
+      + `, fixture_unsuitable ${summary.fixture_unsuitable_failures}`);
+    // Какие фикстуры выбраны на этом контуре — печатается всегда (ТЗ-2 приёмка):
+    // иначе следующий сдвиг состава конфигурации снова придётся ловить вручную.
+    const выбранныеФикстуры = Object.entries(summary.fixtures);
+    if (выбранныеФикстуры.length > 0) {
+      console.log(`Fixtures: ${выбранныеФикстуры.map(([k, v]) => `${k}=${v}`).join(", ")}`);
+    }
     if (summary.transport_retries_recovered > 0) {
       console.log(`Transport retries recovered: ${summary.transport_retries_recovered}`
         + ` (attempted ${summary.transport_retries_attempted})`);
     }
-    if (summary.transport_failures + summary.fixture_missing_failures > 0 && summary.assertion_failures === 0) {
-      console.log("ВНИМАНИЕ: провалы только транспортные — прогон недостоверен, но регресса контракта не показал.");
+    const неДефектыСервера = summary.transport_failures + summary.fixture_missing_failures
+      + summary.fixture_unsuitable_failures;
+    if (неДефектыСервера > 0 && summary.assertion_failures === 0) {
+      console.log("ВНИМАНИЕ: провалы только транспортные либо по фикстурам —"
+        + " прогон недостоверен, но регресса контракта не показал.");
     }
     if (failed > 0) {
       console.log("Failures:");
@@ -3443,37 +3569,41 @@ class ContractRunner {
   }
 }
 
-async function findAccountingRegister(client) {
-  const result = await okTool(client, "list_metadata_objects", {
-    kinds: ["РегистрБухгалтерии"],
-    limit: 10,
-    include_details: false,
-  });
-  const items = (result.objects ?? []).filter((o) => o?.full_name);
-  if (!items.length) return null;
-  const toRegister = (item) => {
-    const [, nameFromFullName = ""] = item.full_name.split(".");
-    const name = item.name || nameFromFullName;
-    return name ? { fullName: item.full_name, name } : null;
-  };
-  // Первый регистр по алфавиту не универсален: в ERP это КорректировкиНалоговойБазы,
-  // у которого ресурса Сумма нет, — и все денежные тесты падали «Поле не найдено
-  // СуммаОстаток» (14 ложных провалов, дефект фикстуры, не сервера). Предпочитаем
-  // регистр, чьи ВТ публикуют СуммаОстаток; состав берём из живого
-  // get_metadata_structure, а не из имён конкретной конфигурации.
-  for (const item of items.slice(0, 5)) {
-    const structure = await rawTool(client, "get_metadata_structure", {
-      type: item.full_name,
+// Подбор регистра бухгалтерии по СОСТАВУ (ТЗ-2 R-3).
+//
+// Прежний критерий — «первый, у кого в Остатках есть СуммаОстаток» — слабее того,
+// что требуют кейсы: на ERP он давал «Международный», у которого нет ПР-ресурсов,
+// и три кейса падали на СуммаПРОборотДт. Теперь требования кейса передаются явно,
+// а состав берётся из живого get_metadata_structure.
+//
+// Возвращаемый объект несёт и сам состав (виртуальныеТаблицы, суффиксы) — ожидания
+// строятся из него, а не из захардкоженных имён ресурсов.
+async function findAccountingRegister(client, требования = {}, context = null) {
+  const выбран = await подобратьРегистрБухгалтерии({
+    списокОбъектов: async () => {
+      const result = await okTool(client, "list_metadata_objects", {
+        kinds: ["РегистрБухгалтерии"],
+        limit: 20,
+        include_details: false,
+      });
+      return result.objects ?? [];
+    },
+    структураОбъекта: (fullName) => rawTool(client, "get_metadata_structure", {
+      type: fullName,
       include_virtual_tables: true,
-    });
-    const vts = structure?.metadata?.register_schema?.virtual_tables || [];
-    const balance = vts.find((v) => v.name === "Остатки")?.common_fields || [];
-    if (balance.includes("СуммаОстаток")) {
-      const register = toRegister(item);
-      if (register) return register;
-    }
+    }),
+    требуемыеПоляОстатков: требования.поляОстатков ?? ["СуммаОстаток"],
+    требуемыеСуффиксы: требования.суффиксы ?? [],
+    // Регистр с парой Дт/Кт предпочтительнее: его требуют кейсы парности и
+    // pre-flight-отказа. Если такого нет — берётся любой подходящий, а зависимые
+    // кейсы уходят в skipped с причиной.
+    предпочестьПарныйСуффикс: true,
+  });
+  if (выбран && context) {
+    context.fixturesUsed = context.fixturesUsed ?? {};
+    context.fixturesUsed.accountingRegister = выбран.fullName;
   }
-  return toRegister(items[0]);
+  return выбран;
 }
 
 async function findAccumulationRegister(client) {
@@ -3504,6 +3634,10 @@ async function findFirstMetadataObject(client, kinds, predicate, pageLimit = 50)
     });
     for (const item of result.objects || []) {
       if (!item?.full_name) continue;
+      // Служебные объекты самого MCP фикстурой быть не могут (ТЗ-2 R-1): латиница
+      // сортируется раньше кириллицы, поэтому MCP_Маскирование всегда первый в
+      // discovery и забирал фикстуру — отсюда кластер #145.
+      if (служебныйОбъект(item.full_name)) continue;
       const accepted = await predicate(item);
       if (accepted) {
         const [, nameFromFullName = ""] = item.full_name.split(".");
@@ -3637,6 +3771,16 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+// Провал по НЕПРИГОДНОЙ ФИКСТУРЕ, а не по дефекту сервера (ТЗ-2 R-6).
+// Кейс объявляет это сам — класс не выводится из текста сообщения, иначе он снова
+// стал бы угадыванием по форме, ровно тем, против чего заведён инвариант A.
+function assertFixture(condition, message) {
+  if (condition) return;
+  const error = new Error(`фикстура непригодна: ${message}`);
+  error.fixtureIssue = true;
+  throw error;
+}
+
 function assertAuthContext(result, toolName) {
   if (!result || typeof result !== "object" || !("ok" in result)) return;
   const ctx = result.auth_context;
@@ -3727,8 +3871,15 @@ function causeChain(error) {
 // fixture_missing — следствие транспортного обрыва на discovery: кейс не смог получить
 // фикстуру и упал с текстом «fixture ... is missing». По сообщению такой провал не
 // отличить от настоящего дефекта, поэтому класс выделен отдельно.
+//
+// fixture_unsuitable — фикстура получена, но не годится для этого кейса: состав
+// выбранного объекта не покрывает то, что кейс проверяет. Раньше такие провалы
+// попадали в assertion и выглядели дефектом сервера — на разбор 7/17/11 ложных
+// провалов уходило основное время приёмки (ТЗ-2 R-6). Кейс объявляет это сам,
+// через assertFixture: класс не угадывается по тексту сообщения.
 function classifyFailure(error) {
   if (McpHttpClient.isTransportFailure(error)) return "transport";
+  if (error?.fixtureIssue === true) return "fixture_unsuitable";
   if (/fixture .* is missing|no .* fixture/i.test(String(error?.message || ""))) return "fixture_missing";
   return "assertion";
 }
