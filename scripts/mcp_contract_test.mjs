@@ -1441,6 +1441,45 @@ class ContractRunner {
       return { plan, calculationTypes: result.calculation_types.length, total: result.total_calculation_types };
     });
 
+    // R-4: гейт против рецидива «правила рубят запросы самого сервера».
+    //
+    // Класс рецидивный: PR #68 (28.07) закрывал ровно это, и через две недели
+    // дефект вернулся в другом инструменте — потому что проверки на него не было.
+    // Кейс намеренно строгий: паспорт не пользовательский запрос, а инструмент
+    // сервера, и его собственные запросы обязаны проходить собственную валидацию
+    // без исключений в рантайме. Предупреждение по иной, законной причине — повод
+    // разобрать причину, а не ослабить кейс.
+    //
+    // Проверяется НЕ ТОЛЬКО тишина: пустой warnings достигается и фильтрацией
+    // регистров, то есть дефект можно «починить», спрятав данные. Поэтому кейс
+    // требует ещё и доказательства, что регистры действительно перебирались.
+    await this.test("tool.get_database_passport_no_self_rejection", async () => {
+      const result = await okTool(this.client, "get_database_passport", {
+        include_organizations: true,
+        include_period: true,
+        include_closed_periods: true,
+        include_accumulation_registers: true,
+        include_information_registers: true,
+        include_calculation_registers: true,
+      });
+      const warnings = Array.isArray(result.warnings) ? result.warnings : [];
+      if (warnings.length > 0) {
+        // Коды правил из текста предупреждений — по ним видно, что именно
+        // зарубило внутренний запрос.
+        const коды = [...new Set(warnings.flatMap((w) => [...String(w).matchAll(/[a-z][a-z0-9_]{8,}/g)].map((m) => m[0])))]
+          .filter((c) => c.includes("_"))
+          .slice(0, 6);
+        assert(false, `passport rejected by own validation: warnings=${warnings.length}`
+          + (коды.length ? `, коды: ${коды.join(", ")}` : "")
+          + ` | первое: ${String(warnings[0]).slice(0, 160)}`);
+      }
+      // Защита от «починки сокрытием»: регистры обязаны быть перебраны, а не
+      // отфильтрованы до пустого множества.
+      const инфо = result.information_registers;
+      assert(инфо && typeof инфо.checked === "number" && инфо.checked > 0,
+        "information_registers.checked must be > 0 — иначе тишина в warnings достигнута пропуском регистров");
+    });
+
     await this.test("tool.get_database_passport", async () => {
       const result = await okTool(this.client, "get_database_passport", {
         include_organizations: true,
