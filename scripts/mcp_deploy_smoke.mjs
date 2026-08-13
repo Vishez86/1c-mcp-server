@@ -339,7 +339,7 @@ const MODULE_MARKERS = [
     // Свежесть ЭТОГО модуля доказывает не маркер, а явная сверка ревизии выше
     // (privacy.engine_revision == РевизияPrivacyДвижка рабочего дерева): ревизия
     // живёт именно здесь, поэтому проверка сильнее любого поведенческого признака.
-    since: "2d7b8d3",
+    since: "fb3ca5c",
     what: "privacy по типам опубликован: секции type_aliases/type_field_masks и config_warnings",
     async run(options) {
       // Ключи секций отдаёт MCP_Config через MCP_Tools, поэтому маркер ловит
