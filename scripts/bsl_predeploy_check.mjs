@@ -2,42 +2,46 @@
 // Предполётные статические проверки BSL-модуля перед публикацией.
 // НЕ заменяет компилятор 1С: ловит только то, что видно из текста модуля.
 //
-// Использование: node scripts/bsl_predeploy_check.mjs <модуль.bsl>
+// Использование: node scripts/bsl_predeploy_check.mjs <модуль.bsl> [...] | --all
 // Код возврата: 0 — замечаний нет, 1 — есть.
 
 import { readFileSync } from "node:fs";
+import { scanBsl, targetsFromArgv } from "./bsl_lines.mjs";
 
-const path = process.argv[2];
-if (!path) {
-  console.error("Usage: node scripts/bsl_predeploy_check.mjs <файл.bsl>");
+const { files, all } = targetsFromArgv(process.argv.slice(2));
+if (files.length === 0) {
+  console.error("Usage: node scripts/bsl_predeploy_check.mjs <файл.bsl> [...] | --all");
   process.exit(2);
 }
 
-const src = readFileSync(path, "utf8");
-const lines = src.split(/\r?\n/);
-
-// Построчно снять содержимое строковых литералов и комментарии.
-// В языке 1С строка не переносится на следующую строку без явной склейки,
-// поэтому построчный разбор безопаснее сквозного.
-// Кавычки СОХРАНЯЮТСЯ: иначе вызов Ф("текст") выглядит как Ф() и проверка
-// арности даёт ложное срабатывание. Удвоенная кавычка внутри литерала
-// переключает флаг дважды, то есть состояние не ломает.
-const cleanLines = lines.map((l) => {
-  let out = "";
-  let q = false;
-  for (const ch of l) {
-    if (ch === '"') { q = !q; out += '"'; continue; }
-    out += q ? " " : ch;
-  }
-  return out.replace(/\/\/.*$/, "");
-});
-const clean = cleanLines.join("\n");
-
-let fail = 0;
-function report(ok, name, detail) {
-  if (!ok) fail = 1;
-  console.log(`  ${ok ? "✔" : "✘"} ${name}${detail ? " — " + detail : ""}`);
+let exitCode = 0;
+for (const path of files) {
+  // Имя файла печатает сам checkFile — и только когда есть что показать.
+  if (files.length > 1 && !all) console.log(`\n${path}`);
+  if (checkFile(path, all)) exitCode = 1;
 }
+if (all) {
+  console.log(exitCode === 0
+    ? `\n  ✔ предполётные проверки пройдены на всех файлах: ${files.length}`
+    : `\n  ✘ есть провалы (проверено файлов: ${files.length})`);
+}
+process.exit(exitCode);
+
+function checkFile(path, quietWhenClean) {
+  const src = readFileSync(path, "utf8");
+  // Разбор литералов и комментариев — общий модуль bsl_lines.mjs (ТЗ-1 R-2):
+  // прежняя построчная копия сбрасывала флаг «внутри строки» на каждой строке
+  // и потому не понимала многострочный литерал с продолжением через «|».
+  // Кавычки СОХРАНЯЮТСЯ: иначе вызов Ф("текст") выглядит как Ф() и проверка
+  // арности даёт ложное срабатывание.
+  const { rawLines: lines, cleanLines, clean, unclosed } = scanBsl(src);
+
+  let fail = 0;
+  const messages = [];
+  function report(ok, name, detail) {
+    if (!ok) fail = 1;
+    messages.push(`  ${ok ? "✔" : "✘"} ${name}${detail ? " — " + detail : ""}`);
+  }
 
 const WORD = "\\p{L}\\p{N}_";
 // \b в JS основан на ASCII: после кириллического слова границы нет и условие
@@ -155,13 +159,14 @@ for (const d of byName.values()) {
 report(badArity.length === 0, "число аргументов совпадает с объявлениями",
   [...new Set(badArity)].join("; "));
 
-// ── E. Незакрытые кавычки в пределах строки ─────────────────────────────────
-const oddQuotes = [];
-lines.forEach((l, i) => {
-  if (((l.match(/"/g) || []).length) % 2 !== 0) oddQuotes.push(i + 1);
-});
-report(oddQuotes.length === 0, "кавычки закрыты в пределах строки",
-  oddQuotes.length ? `строки ${oddQuotes.slice(0, 8).join(", ")}` : "");
+// ── E. Литералы закрыты по правилам языка ───────────────────────────────────
+// Было: чётность кавычек В ПРЕДЕЛАХ СТРОКИ. Правило не знало ни многострочных
+// литералов (продолжение через «|»), ни кавычек внутри комментариев, и на
+// MCP_LegalSources давало шесть ложных провалов подряд (ТЗ-1 R-3).
+// Стало: литерал либо закрыт на своей строке, либо продолжен строкой с «|»;
+// незакрытый к концу файла остаётся провалом — ради него правило и заведено.
+report(unclosed.length === 0, "строковые литералы закрыты",
+  unclosed.length ? `не закрыт литерал, открытый в строках ${unclosed.slice(0, 8).join(", ")}` : "");
 
 // ── E2. Кавычка, экранированная обратным слэшем ─────────────────────────────
 // В языке 1С обратный слэш не экранирует ничего: в литерале "текст [\"20\"]."
@@ -235,5 +240,12 @@ for (const name of SYSTEM_GLOBALS) {
 report(assignedSystem.length === 0,
   "нет присваивания системным именам платформы", assignedSystem.join(", "));
 
-console.log(`\n  ${path}: строк ${lines.length}, объявлений ${decls.length}`);
-process.exit(fail);
+  // В сплошном прогоне печатаем только провалы: иначе 20 модулей × 9 проверок
+  // тонут в шуме, а ворота обязаны быть бинарными.
+  if (fail || !quietWhenClean) {
+    if (quietWhenClean) console.log(`\n${path}`);
+    for (const line of messages) console.log(line);
+    console.log(`\n  ${path}: строк ${lines.length}, объявлений ${decls.length}`);
+  }
+  return fail;
+}
