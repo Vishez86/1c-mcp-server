@@ -257,7 +257,15 @@ const MODULE_MARKERS = [
     // 074c1e0 — correlation_id в успешном ответе: связка «ответ → запись аудита»
     // перестала быть привилегией упавших вызовов. Проверяется ниже вторым
     // условием этого же маркера, поэтому since двигается вместе с модулем (#92).
-    since: "c5f48ba",
+    //
+    // since=2e66706: правка добавила экспортную пробу ПоддерживаетЗамерСтадийИмпл.
+    // Своего наблюдаемого признака у неё НЕТ ПО КОНСТРУКЦИИ — на полном комплекте
+    // поведение тождественно прежнему, проба различима только при рассинхроне с
+    // MCP_Query. Свежесть этой волны публикации доказывает маркер MCP_HTTPService
+    // (ранний отказ несёт stages), а совместность комплекта — правило манифеста:
+    // модули публикуются атомарно. Двигать since без такой оговорки нельзя —
+    // иначе маркер утверждал бы то, чего не проверяет.
+    since: "2e66706",
     what: "stage при отказе виден клиенту; correlation_id есть в успешном ответе",
     async run(options, fixtures) {
       if (!fixtures.tabularSection) return { status: "skip", note: "нет справочника с табличной частью" };
@@ -290,7 +298,11 @@ const MODULE_MARKERS = [
     module: "MCP_Query",
     // 9d2a227 — таймер запроса переведён на миллисекунды; маркер миллисекунд
     // отдельный (MCP_Audit), здесь двигается только доказательство свежести файла.
-    since: "c5f48ba",
+    //
+    // since=2e66706: правка сделала вставку служебного ключа _perf условной —
+    // ключ кладётся, только если снять его есть кому. На полном комплекте это
+    // ничего не меняет и потому не наблюдаемо; обоснование то же, что у MCP_Tools.
+    since: "2e66706",
     what: "объявленное исключение // СТАНДАРТ-ИСКЛЮЧЕНИЕ признаётся",
     async run(options, fixtures) {
       if (!fixtures.register) return { status: "skip", note: "в базе нет регистра бухгалтерии" };
@@ -620,12 +632,82 @@ const MODULE_MARKERS = [
         return { status: "fail", note: "в записи нет response_chars — опубликован старый"
           + " MCP_HTTPService либо MCP_Audit" };
       }
+      // ВТОРАЯ ПОЛОВИНА МАРКЕРА — та, что доказывает публикацию ИМЕННО этой правки.
+      //
+      // Всё выше проверяет стадии транспорта, а они появились ревизией раньше и на
+      // полном комплекте видны и БЕЗ этой правки: такой маркер зелен на старом
+      // MCP_HTTPService и потому свежести не доказывает (#92 в чистом виде).
+      // Наблюдаемое отличие правки — ранние отказы POST теперь несут накопленные
+      // стадии: до неё запись protocol_version_rejected приходила без stages.
+      // Запрос шлём БЕЗ заголовка версии протокола — это и есть ранний отказ.
+      const отказ = await запросСНеподдерживаемойВерсией(options);
+      if (отказ.status < 400) {
+        return { status: "fail", note: `запрос с неподдерживаемой версией протокола не отклонён (HTTP ${отказ.status})` };
+      }
+      await new Promise((s) => setTimeout(s, 1500));
+      const журналОтказов = await callTool(options, "get_audit_log",
+        { minutes_back: 10, include_http: true, limit: 200, outcome: "protocol_version_rejected" });
+      const отказныеЗаписи = (журналОтказов?.events ?? [])
+        .filter((e) => e.kind === "http_request" && e.outcome === "protocol_version_rejected");
+      if (отказныеЗаписи.length === 0) {
+        return { status: "fail", note: "запись protocol_version_rejected не найдена в журнале" };
+      }
+      const свежийОтказ = отказныеЗаписи[0];
+      if (!свежийОтказ.stages || свежийОтказ.stages.http_guard === undefined) {
+        return { status: "fail", note: "ранний отказ POST не несёт stages.http_guard —"
+          + " опубликован MCP_HTTPService ДО правки фолбэка HTTP-аудита" };
+      }
+
       return { status: "pass", note: `rpc_handle=${stages.rpc_handle} мс,`
         + ` стадий транспорта: ${Object.keys(stages).length},`
-        + ` request/response chars: ${запись.request_chars}/${запись.response_chars}` };
+        + ` request/response chars: ${запись.request_chars}/${запись.response_chars};`
+        + ` ранний отказ несёт http_guard=${свежийОтказ.stages.http_guard} мс` };
     },
   },
 ];
+
+// Запрос к /rpc с ЗАВЕДОМО НЕПОДДЕРЖИВАЕМОЙ версией протокола — воспроизводит
+// ранний отказ protocol_version_rejected.
+//
+// Именно неподдерживаемая версия, а НЕ отсутствие заголовка: по коду
+// ВерсияПротоколаРазрешена пустой заголовок разрешён (Возврат Истина), и запрос
+// без него проходит штатно — первая редакция этого маркера ошибалась именно тут.
+//
+// Отдельная функция, а не флаг у rpc(): rpc() обязан всегда слать корректные
+// заголовки, иначе его случайное переиспользование ломало бы прочие маркеры.
+function запросСНеподдерживаемойВерсией(options) {
+  const target = new URL(options.url);
+  const payload = JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} });
+  const headers = {
+    "content-type": "application/json",
+    accept: "application/json",
+    "mcp-protocol-version": "1999-01-01",
+    "content-length": Buffer.byteLength(payload),
+  };
+  if (options.basic) {
+    headers.authorization = `Basic ${Buffer.from(options.basic, "utf8").toString("base64")}`;
+  }
+  return new Promise((resolve, reject) => {
+    const req = httpsRequest({
+      hostname: target.hostname,
+      port: target.port || (target.protocol === "http:" ? 80 : 443),
+      path: target.pathname + target.search,
+      method: "POST",
+      headers,
+      rejectUnauthorized: false,
+      timeout: options.timeoutMs,
+    }, (res) => {
+      let text = "";
+      res.setEncoding("utf8");
+      res.on("data", (chunk) => (text += chunk));
+      res.on("end", () => resolve({ status: res.statusCode, text }));
+    });
+    req.on("timeout", () => req.destroy(new Error(`timeout ${options.timeoutMs} ms`)));
+    req.on("error", reject);
+    req.write(payload);
+    req.end();
+  });
+}
 
 // #92, часть 1: ЯВНАЯ сверка ревизии. Ожидаемое значение берётся не из константы
 // скрипта, а из рабочего дерева — `РевизияPrivacyДвижка` в MCP_Config.bsl. Тогда
@@ -677,6 +759,7 @@ async function проверитьРевизию(options) {
 function последнийКоммитМодуля(module, явныйПуть = "") {
   const пути = явныйПуть ? [явныйПуть] : [
     `src/CommonModules/${module}.bsl`,
+    `src/HTTPServices/${module}.bsl`,
     `src/DataProcessors/${module}/ObjectModule.bsl`,
   ];
   for (const путь of пути) {
