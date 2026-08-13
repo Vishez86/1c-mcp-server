@@ -367,7 +367,7 @@ const MODULE_MARKERS = [
     // дорого. Публикацию волны доказывает маркер MCP_Query (текст правила по виду
     // регистра), совместность комплекта — правило манифеста; сам паспорт проверяет
     // кейс контракт-теста get_database_passport_no_self_rejection.
-    since: "84152ff",
+    since: "5100493",
     what: "карта счетов отвечает",
     async run(options, fixtures) {
       if (!fixtures.chart) return { status: "skip", note: "в базе нет плана счетов" };
