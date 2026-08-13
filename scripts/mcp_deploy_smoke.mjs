@@ -254,12 +254,11 @@ const MODULE_MARKERS = [
   },
   {
     module: "MCP_Tools",
-    // 9d2a227 — аудит длительностей и записи access_denied/unknown_tool. Само
-    // поведение маркера (stage) правка не затрагивает, но `since` обязан двигаться
-    // вместе с файлом модуля, иначе зелёный маркер молча перестаёт доказывать
-    // публикацию последней правки (#92).
-    since: "9d2a227",
-    what: "stage при отказе до выполнения виден клиенту",
+    // 074c1e0 — correlation_id в успешном ответе: связка «ответ → запись аудита»
+    // перестала быть привилегией упавших вызовов. Проверяется ниже вторым
+    // условием этого же маркера, поэтому since двигается вместе с модулем (#92).
+    since: "074c1e0",
+    what: "stage при отказе виден клиенту; correlation_id есть в успешном ответе",
     async run(options, fixtures) {
       if (!fixtures.tabularSection) return { status: "skip", note: "нет справочника с табличной частью" };
       const r = await callTool(options, "run_1c_query", {
@@ -272,9 +271,19 @@ const MODULE_MARKERS = [
       // одного лишь error.details.stage не проходила никогда: гейт возвращал FAIL на
       // корректном контуре и сообщал о неполной публикации, которой не было.
       const stage = r?.stage ?? r?.error?.stage ?? r?.error?.details?.stage;
-      return stage
-        ? { status: "pass", note: `stage=${stage}` }
-        : { status: "fail", note: `stage отсутствует и на верхнем уровне, и в error (ключи: ${Object.keys(r ?? {}).join(", ") || "нет"})` };
+      if (!stage) {
+        return { status: "fail", note: `stage отсутствует и на верхнем уровне, и в error (ключи: ${Object.keys(r ?? {}).join(", ") || "нет"})` };
+      }
+      // Вторая половина маркера: успешный ответ несёт id своей записи аудита.
+      // Без него get_audit_log не может точечно выбрать запись своего же вызова.
+      const okCall = await callTool(options, "get_current_user_context", {});
+      if (okCall?.ok !== true) {
+        return { status: "fail", note: "get_current_user_context не ответил ok=true для проверки correlation_id" };
+      }
+      if (typeof okCall.correlation_id !== "string" || okCall.correlation_id.length === 0) {
+        return { status: "fail", note: "в успешном ответе нет correlation_id — опубликован MCP_Tools до правки" };
+      }
+      return { status: "pass", note: `stage=${stage}, correlation_id есть` };
     },
   },
   {
@@ -415,7 +424,7 @@ const MODULE_MARKERS = [
   },
   {
     module: "MCP_Audit",
-    since: "ff68c4e",
+    since: "2eea2fa",
     what: "duration_ms измеряется в миллисекундах, а не в секундах",
     async run(options, fixtures) {
       if (!fixtures.catalog) return { status: "skip", note: "нет справочника для замера" };
@@ -459,7 +468,7 @@ const MODULE_MARKERS = [
   },
   {
     module: "MCP_Audit",
-    since: "ff68c4e",
+    since: "2eea2fa",
     what: "тайминги аудита читаются наружу: tool get_audit_log",
     async run(options) {
       // Маркер парный по конструкции: имя события собирается из реестра
@@ -482,7 +491,20 @@ const MODULE_MARKERS = [
       if (утечка) {
         return { status: "fail", note: "событие аудита отдаёт аргументы или текст ошибки — маска обойдена" };
       }
-      return { status: "pass", note: `events=${r.events.length}, scanned=${r.scanned_events}` };
+      // Правка 2eea2fa: outcome действует и на HTTP-слой. До неё outcome:"error"
+      // возвращал все успешные MCP.http_request — имя события исхода не кодирует,
+      // и фильтр применялся только к событиям инструментов.
+      const ошибки = await callTool(options, "get_audit_log",
+        { minutes_back: 60, outcome: "error", include_http: true, limit: 100 });
+      if (ошибки?.ok !== true) {
+        return { status: "fail", note: `outcome:"error" вернул ${ошибки?.error_code ?? "не ok"}` };
+      }
+      const штатные = (ошибки.events ?? []).filter((e) => e.kind === "http_request"
+        && ["success", "notification", "method_not_allowed"].includes(e.outcome));
+      if (штатные.length > 0) {
+        return { status: "fail", note: `outcome:"error" отдал ${штатные.length} штатных HTTP-записей — опубликован MCP_Audit до правки фильтра` };
+      }
+      return { status: "pass", note: `events=${r.events.length}, scanned=${r.scanned_events}, фильтр исхода на HTTP держит` };
     },
   },
 ];
