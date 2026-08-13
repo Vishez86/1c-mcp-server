@@ -26,6 +26,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { СЛУЖЕБНЫЙ_ПРЕФИКС } from "./mcp_fixtures.mjs";
 
 const DEFAULT_URL = "https://laba-1c.astondevs.ru/BUH_KORP/hs/mcp/rpc";
 const SMOKE_QUERY = "ВЫБРАТЬ ПЕРВЫЕ 1 Счет.Код ИЗ ПланСчетов.Хозрасчетный КАК Счет";
@@ -163,16 +164,9 @@ const callTool = async (options, name, args) =>
 // Фикстуры для маркеров подбираются на живой базе: ни одного захардкоженного имени
 // метаданных, иначе гейт годился бы только для одной конфигурации.
 //
-// Служебные объекты самого MCP-сервера (MCP_Маскирование, MCP_ПравовыеИсточники и
-// т.п.) фикстурами быть НЕ МОГУТ. Их имена смешанного алфавита — латинское «MCP_»
-// плюс кириллица, — и правило антиомоглифа `temporary_table_identifier_mixed_script`
-// блокирует ЛЮБОЙ запрос к ним, ещё до проверки полей. Латиница сортируется раньше
-// кириллицы, поэтому такой объект оказывается первым в discovery и забирает
-// фикстуру: маркер предвалидации полей получал mixed_script вместо field_not_found
-// и гейт сообщал о неполной публикации, которой не было. (Само ложное срабатывание
-// правила на РАЗРЕШИВШЕМСЯ имени объекта конфигурации — отдельный дефект движка
-// запросов, вне рамок privacy-каталога.)
-const СЛУЖЕБНЫЙ_ПРЕФИКС = /(^|\.)MCP_/u;
+// Правило исключения служебных объектов MCP переехало в scripts/mcp_fixtures.mjs:
+// оно было написано здесь, а в контракт-тесте отсутствовало — одна и та же ловушка
+// закрыта в одном месте и открыта в другом. Теперь источник один (ТЗ-2 R-1).
 
 async function discoverFixtures(options) {
   const fixtures = { catalog: null, tabularOwner: null, tabularSection: null, register: null, chart: null };

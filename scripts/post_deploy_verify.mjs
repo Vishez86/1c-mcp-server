@@ -22,6 +22,7 @@
 
 import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
+import { служебныйОбъект } from "./mcp_fixtures.mjs";
 
 const URL_MCP = process.env.MCP_URL || "https://laba-1c.astondevs.ru/BUH_KORP/hs/mcp/rpc";
 const BASIC = process.env.MCP_BASIC || "";
@@ -74,9 +75,32 @@ const fixtures = { catalog: null, accountingRegister: null, refAttribute: null, 
 
 async function discover() {
   // Регистр бухгалтерии: поле называется register (не full_name/name).
+  //
+  // Берётся НЕ первый из паспорта, а первый, чьи Остатки публикуют поля, которыми
+  // пользуются контрольные кейсы (ТЗ-2 R-5). Прежний «первый» на ERP давал
+  // КорректировкиНалоговойБазы — у него нет ресурса Сумма, и кейс правила
+  // vt_filter_in_external_where фильтровал по СуммаОстатокДт, которого в его ВТ не
+  // существует. Проверка не могла отличить работающее правило от сломанного и
+  // годами стояла с пометкой AWAITING-DEPLOY «ложное срабатывание» (#147).
   const passport = await callTool("get_database_passport", {});
   const registers = passport.data?.accounting_registers ?? [];
-  if (registers.length) fixtures.accountingRegister = registers[0].register ?? null;
+  const ОБЯЗАТЕЛЬНЫЕ_ПОЛЯ_ОСТАТКОВ = ["Субконто1", "СуммаОстатокДт"];
+  for (const item of registers.slice(0, 8)) {
+    const имя = item.register;
+    if (!имя || служебныйОбъект(имя)) continue;
+    const структура = await callTool("get_metadata_structure", {
+      type: имя.includes(".") ? имя : `РегистрБухгалтерии.${имя}`,
+      include_virtual_tables: true,
+    });
+    const остатки = (структура.data?.metadata?.register_schema?.virtual_tables ?? [])
+      .find((v) => v?.name === "Остатки")?.common_fields ?? [];
+    if (!fixtures.accountingRegister) fixtures.accountingRegister = имя; // запас
+    if (ОБЯЗАТЕЛЬНЫЕ_ПОЛЯ_ОСТАТКОВ.every((f) => остатки.includes(f))) {
+      fixtures.accountingRegister = имя;
+      fixtures.accountingRegisterFields = остатки;
+      break;
+    }
+  }
 
   // Фильтр видов метаданных называется kinds. Незнакомый аргумент сервер молча
   // игнорирует и отдаёт первые объекты подряд, поэтому ошибка в имени параметра
@@ -85,6 +109,10 @@ async function discover() {
   for (const item of catalogs.data?.objects ?? []) {
     const fullName = item.full_name;
     if (!fullName || item.supports_query === false) continue;
+    // Служебные объекты MCP фикстурой быть не могут (ТЗ-2 R-1): латиница
+    // сортируется раньше кириллицы, поэтому MCP_Маскирование идёт первым в
+    // discovery, а любой запрос к нему блокирует правило mixed_script.
+    if (служебныйОбъект(fullName)) continue;
     const structure = await callTool("get_metadata_structure", {
       type: fullName,
       include_standard_attributes: true,
