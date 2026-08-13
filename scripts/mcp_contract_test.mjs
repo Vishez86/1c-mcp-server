@@ -1441,6 +1441,38 @@ class ContractRunner {
       return { plan, calculationTypes: result.calculation_types.length, total: result.total_calculation_types };
     });
 
+    // Тяжёлые секции обязаны отклоняться ВМЕСТЕ и работать ПООТДЕЛЬНОСТИ.
+    //
+    // Без стража клиент, запросивший всё сразу, получал не ошибку, а HTML-страницу
+    // «504 Gateway Time-out» от nginx: структурированного отказа MCP-клиент не
+    // видит вовсе, correlation_id нет, вызов в журнале оборван. Инвариант «сбой
+    // отличим от нормы» нарушается в самой неудобной форме.
+    await this.test("tool.get_database_passport_heavy_sections_split", async () => {
+      const отказ = await rawTool(this.client, "get_database_passport", {
+        include_information_registers: true,
+        include_accumulation_registers: true,
+      });
+      assert(отказ.ok === false, "комбинация тяжёлых секций обязана отклоняться");
+      const детали = отказ.error?.details ?? отказ.details ?? {};
+      assert(детали.reason === "heavy_sections_combined",
+        `ожидался reason=heavy_sections_combined, получено: ${JSON.stringify(детали).slice(0, 200)}`);
+      assert(Array.isArray(детали.split_into_separate_calls) && детали.split_into_separate_calls.length === 2,
+        "отказ обязан называть, какие флаги разнести по вызовам");
+      // Каждая секция по отдельности обязана работать: страж не должен
+      // превращаться в запрет самой возможности их получить.
+      // Лимиты малые намеренно: кейс проверяет РАЗДЕЛИМОСТЬ секций, а не полноту
+      // перебора. С умолчаниями (50 и 100 регистров) два вызова стоят больше
+      // минуты и упираются в таймаут клиента контракт-теста.
+      const свед = await okTool(this.client, "get_database_passport",
+        { include_information_registers: true, information_register_limit: 3 });
+      assert(свед.information_registers && typeof свед.information_registers.checked === "number",
+        "регистры сведений отдельным вызовом обязаны возвращаться");
+      const нак = await okTool(this.client, "get_database_passport",
+        { include_accumulation_registers: true, accumulation_register_limit: 3 });
+      assert(нак.accumulation_registers && typeof нак.accumulation_registers.checked === "number",
+        "регистры накопления отдельным вызовом обязаны возвращаться");
+    });
+
     // R-4: гейт против рецидива «правила рубят запросы самого сервера».
     //
     // Класс рецидивный: PR #68 (28.07) закрывал ровно это, и через две недели
@@ -1454,24 +1486,43 @@ class ContractRunner {
     // регистров, то есть дефект можно «починить», спрятав данные. Поэтому кейс
     // требует ещё и доказательства, что регистры действительно перебирались.
     await this.test("tool.get_database_passport_no_self_rejection", async () => {
-      const result = await okTool(this.client, "get_database_passport", {
+      // Три куска, как предписывает описание инструмента: основная часть, затем
+      // регистры сведений, затем регистры накопления. Предупреждения собираются
+      // со ВСЕХ трёх — дефект мог бы спрятаться в любом.
+      const части = [];
+      части.push(await okTool(this.client, "get_database_passport", {
         include_organizations: true,
         include_period: true,
         include_closed_periods: true,
-        include_accumulation_registers: true,
-        include_information_registers: true,
         include_calculation_registers: true,
-      });
-      const warnings = Array.isArray(result.warnings) ? result.warnings : [];
-      if (warnings.length > 0) {
-        // Коды правил из текста предупреждений — по ним видно, что именно
-        // зарубило внутренний запрос.
-        const коды = [...new Set(warnings.flatMap((w) => [...String(w).matchAll(/[a-z][a-z0-9_]{8,}/g)].map((m) => m[0])))]
-          .filter((c) => c.includes("_"))
-          .slice(0, 6);
-        assert(false, `passport rejected by own validation: warnings=${warnings.length}`
+      }));
+      части.push(await okTool(this.client, "get_database_passport",
+        { include_information_registers: true, information_register_limit: 20 }));
+      части.push(await okTool(this.client, "get_database_passport",
+        { include_accumulation_registers: true, accumulation_register_limit: 20 }));
+      const result = части[1];
+      const warnings = части.flatMap((ч) => (Array.isArray(ч.warnings) ? ч.warnings : []));
+
+      // Ловится САМООТКАЗ, а не любое предупреждение.
+      //
+      // ТЗ требовало пустой warnings целиком, но замер 13.08 на ERP показал, что
+      // паспорт штатно сообщает и о законном: регистр вне allowlist («не
+      // разрешены»), усечение списка по лимиту. Эти причины к валидации сервера
+      // отношения не имеют и от конфигурации неотделимы — кейс, красный на них
+      // всегда, сигналом быть перестаёт (инвариант B применим и к самим воротам).
+      //
+      // Признак самоотказа надёжен по конструкции: предупреждение о нём проходит
+      // через КраткаяПричинаОтказаЗапроса и потому несёт код ошибки в квадратных
+      // скобках — «[query_validation_failed] …». Законные предупреждения скобок
+      // не содержат вовсе.
+      const самоотказы = warnings.filter((w) => /\[[a-z_]+\]/.test(String(w))
+        || /base_register_table_without_vt_check/.test(String(w)));
+      if (самоотказы.length > 0) {
+        const коды = [...new Set(самоотказы.flatMap((w) => [...String(w).matchAll(/\[([a-z_]+)\]|(base_register_table_without_vt_check)/g)]
+          .map((m) => m[1] || m[2])))].slice(0, 6);
+        assert(false, `passport rejected by own validation: самоотказов ${самоотказы.length}`
           + (коды.length ? `, коды: ${коды.join(", ")}` : "")
-          + ` | первое: ${String(warnings[0]).slice(0, 160)}`);
+          + ` | первое: ${String(самоотказы[0]).slice(0, 160)}`);
       }
       // Защита от «починки сокрытием»: регистры обязаны быть перебраны, а не
       // отфильтрованы до пустого множества.
@@ -1481,18 +1532,25 @@ class ContractRunner {
     });
 
     await this.test("tool.get_database_passport", async () => {
+      // Паспорт запрашивается ТРЕМЯ вызовами: перебор регистров сведений и
+      // накопления стоит десятки секунд каждый, вместе они превышают таймаут
+      // публикации, и ответ обрывается шлюзом без структурированной ошибки.
+      // Сервер такую комбинацию отклоняет — см. кейс heavy_sections_split.
       const result = await okTool(this.client, "get_database_passport", {
         include_organizations: true,
         include_period: true,
         include_closed_periods: true,
-        include_accumulation_registers: true,
         include_information_registers: true,
         include_calculation_registers: true,
         organization_limit: 5,
         accounting_register_limit: 2,
-        accumulation_register_limit: 5,
         information_register_limit: 5,
         calculation_register_limit: 5,
+        include_empty_registers: true,
+      });
+      const накопление = await okTool(this.client, "get_database_passport", {
+        include_accumulation_registers: true,
+        accumulation_register_limit: 5,
         include_empty_registers: true,
       });
       assert(result.configuration_agnostic === true, "passport must be configuration agnostic");
@@ -1510,18 +1568,19 @@ class ContractRunner {
           `passport period query rejected for ${register.register}: ${register.period_error}`);
       }
       assert(Array.isArray(result.closed_periods), "closed_periods must be an array");
-      assert(result.accumulation_registers && typeof result.accumulation_registers === "object", "accumulation_registers must be an object");
-      assert(result.accumulation_registers.cache_hit === false || result.accumulation_registers.cache_hit === true, "accumulation_registers.cache_hit must be boolean");
-      assert(typeof result.accumulation_registers.cache_age_seconds === "number", "accumulation_registers.cache_age_seconds must be a number");
-      assert(typeof result.accumulation_registers.checked === "number", "accumulation_registers.checked must be a number");
-      assert(Array.isArray(result.accumulation_registers.with_data), "accumulation_registers.with_data must be an array");
-      assert(Array.isArray(result.accumulation_registers.empty), "accumulation_registers.empty must be an array");
+      const acc = накопление.accumulation_registers;
+      assert(acc && typeof acc === "object", "accumulation_registers must be an object");
+      assert(acc.cache_hit === false || acc.cache_hit === true, "accumulation_registers.cache_hit must be boolean");
+      assert(typeof acc.cache_age_seconds === "number", "accumulation_registers.cache_age_seconds must be a number");
+      assert(typeof acc.checked === "number", "accumulation_registers.checked must be a number");
+      assert(Array.isArray(acc.with_data), "accumulation_registers.with_data must be an array");
+      assert(Array.isArray(acc.empty), "accumulation_registers.empty must be an array");
       assert(result.information_registers && typeof result.information_registers === "object", "information_registers must be an object");
       assert(result.calculation_registers && typeof result.calculation_registers === "object", "calculation_registers must be an object");
       return {
         organizations: result.organizations.length,
         accountingRegisters: result.accounting_registers.length,
-        accumulationChecked: result.accumulation_registers_checked,
+        accumulationChecked: acc.checked,
       };
     });
 
