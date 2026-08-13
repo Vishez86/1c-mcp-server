@@ -1453,7 +1453,10 @@ class ContractRunner {
         include_accumulation_registers: true,
       });
       assert(отказ.ok === false, "комбинация тяжёлых секций обязана отклоняться");
-      const детали = отказ.error?.details ?? отказ.details ?? {};
+      // Структурированные детали лежат под parsed_details: слой ошибок оборачивает
+      // разобранные детали в диагностический конверт вместе с raw_exception.
+      const конверт = отказ.error?.details ?? отказ.details ?? {};
+      const детали = конверт.parsed_details ?? конверт;
       assert(детали.reason === "heavy_sections_combined",
         `ожидался reason=heavy_sections_combined, получено: ${JSON.stringify(детали).slice(0, 200)}`);
       assert(Array.isArray(детали.split_into_separate_calls) && детали.split_into_separate_calls.length === 2,

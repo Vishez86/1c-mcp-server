@@ -276,7 +276,7 @@ const MODULE_MARKERS = [
     // (ранний отказ несёт stages), а совместность комплекта — правило манифеста:
     // модули публикуются атомарно. Двигать since без такой оговорки нельзя —
     // иначе маркер утверждал бы то, чего не проверяет.
-    since: "2e66706",
+    since: "5100493",
     what: "stage при отказе виден клиенту; correlation_id есть в успешном ответе",
     async run(options, fixtures) {
       if (!fixtures.tabularSection) return { status: "skip", note: "нет справочника с табличной частью" };
