@@ -287,8 +287,14 @@ const MODULE_MARKERS = [
     // этого маркера нет — он про stage и correlation_id, — но публикацию модуля
     // доказывает маркер MCP_Tools_Impl «паспорт пересобран»: незарегистрированный в
     // MCP_Tools тул вернул бы unknown_tool, то есть проверка тула проверяет и схему.
-    since: "fb5440b",
-    what: "stage при отказе виден клиенту; correlation_id есть в успешном ответе",
+    //
+    // since=df9be84: ревизия 2026-08-14.2 сменила контракт конверта — состав
+    // privacy.config_warnings заменён счётчиком. Признак свой и наблюдаемый прямо,
+    // проверяется третьим условием ниже. Коммит сам требовал маркера («контракт
+    // ответа изменился после публикации .14.1, поэтому маркер обязан различать
+    // сборки»), но маркер тогда не тронули — отсюда красный аудит свежести.
+    since: "df9be84",
+    what: "stage при отказе; correlation_id в успешном ответе; предупреждения политики счётчиком",
     async run(options, fixtures) {
       if (!fixtures.tabularSection) return { status: "skip", note: "нет справочника с табличной частью" };
       const r = await callTool(options, "run_1c_query", {
@@ -313,7 +319,23 @@ const MODULE_MARKERS = [
       if (typeof okCall.correlation_id !== "string" || okCall.correlation_id.length === 0) {
         return { status: "fail", note: "в успешном ответе нет correlation_id — опубликован MCP_Tools до правки" };
       }
-      return { status: "pass", note: `stage=${stage}, correlation_id есть` };
+      // Третья половина (df9be84): конверт отдаёт предупреждения политики счётчиком,
+      // а не составом. Признак парный по конструкции — мало увидеть счётчик, надо
+      // убедиться, что состав НЕ уехал наружу и что он доступен там, куда указывает
+      // сам ответ. Иначе «починка сокрытием» прошла бы за исправление.
+      const паспорт = await callTool(options, "get_database_passport", {});
+      const pv = паспорт?.privacy ?? {};
+      if (typeof pv.config_warnings_count !== "number") {
+        return { status: "fail", note: "в паспорте нет privacy.config_warnings_count — опубликован MCP_Tools до 2026-08-14.2" };
+      }
+      if (Array.isArray(pv.config_warnings)) {
+        return { status: "fail", note: `состав предупреждений политики всё ещё в ответе паспорта (${pv.config_warnings.length} строк) — правка .14.2 не опубликована` };
+      }
+      const состав = (okCall?.privacy?.config_warnings ?? []).length;
+      if (pv.config_warnings_count !== состав) {
+        return { status: "fail", note: `счётчик ${pv.config_warnings_count} не сходится с составом в get_current_user_context (${состав})` };
+      }
+      return { status: "pass", note: `stage=${stage}, correlation_id есть, предупреждений политики ${состав} счётчиком` };
     },
   },
   {
@@ -440,7 +462,10 @@ const MODULE_MARKERS = [
     // живёт именно здесь, поэтому проверка сильнее любого поведенческого признака.
     // since=fb5440b: ревизия поднята до 2026-08-14.1 волной паспорта; сверка ревизии
     // выше и есть доказательство свежести этого модуля.
-    since: "fb5440b",
+    // since=df9be84: ревизия поднята до 2026-08-14.2 (предупреждения политики
+    // счётчиком). Довод прежний и он сильнее поведенческого признака: ревизия живёт
+    // в этом модуле, значит сверка `код == контур` доказывает его свежесть точно.
+    since: "df9be84",
     what: "privacy по типам опубликован: секции type_aliases/type_field_masks и config_warnings",
     async run(options) {
       // Ключи секций отдаёт MCP_Config через MCP_Tools, поэтому маркер ловит
@@ -462,7 +487,9 @@ const MODULE_MARKERS = [
     module: "MCP_Маскирование",
     // since=fb5440b: сам справочник волной паспорта не менялся, но свежесть маркера
     // считается по пути MCP_Config.bsl (см. path ниже), а тот правлен ревизией.
-    since: "fb5440b",
+    // since=df9be84: по той же причине — ревизия .14.2 снова тронула MCP_Config.bsl.
+    // Справочник от этого не изменился; движется только отметка свежести пути.
+    since: "df9be84",
     // Справочник — объект метаданных, файла модуля у него нет: поведение маркера
     // (уход легаси-ключей, чтение политики) даёт MCP_Config, по нему и сверяется
     // свежесть.
