@@ -271,8 +271,8 @@ string, number, boolean, date, datetime, uuid, ref, enum, array, null
 
 Общее правило для LLM-клиента: не выдумывать методы, сущности, таблицы и поля.
 Все прикладные имена нужно получать через `list_metadata_objects`,
-`get_metadata_structure`, `get_accounting_accounts_map`, `get_database_passport`
-или из результата предыдущего tool-вызова.
+`get_metadata_structure`, `get_accounting_accounts_map`, `list_registers`
+или из результата предыдущего tool-вызова. Паспорт базы имён не отдаёт.
 
 Обязательно:
 
@@ -551,7 +551,7 @@ read-only синтаксис, безопасность имён, лимиты с
 | 18 | `get_accounting_entries` | Получить бухгалтерские проводки с универсальным join к субконто | P0 |
 | 19 | `get_inventory_balances_by_item` | Получить быстрые остатки товара по складам и организациям | P0 |
 | 20 | `get_calculation_types_map` | Получить карту видов расчёта плана видов расчёта | P0 |
-| 21 | `get_database_passport` | Получить паспорт фактических данных базы | P0 |
+| 21 | `get_database_passport` | Паспорт базы: название, версии и куда идти дальше | P0 |
 | 22 | `get_object_by_ref` | Получить объект по типу и UUID ссылки | P0 |
 | 23 | `find_object_by_id` | Найти объект по UUID без знания типа | P0 |
 | 24 | `search_objects` | Поиск объектов по строке, коду, номеру, ИНН, артикулу | P0 |
@@ -1438,7 +1438,7 @@ shortcut.
 - Tool не обращается к данным конкретной базы и не зависит от структуры конфигурации.
 - Примеры должны быть шаблонными: `<Источник>`, `<ИмяРегистра>`, `<Реквизит>`.
 - Тема `parameters` должна явно показывать, что строки/числа/булево можно передавать напрямую, а даты/ссылки/перечисления/массивы передаются через `QueryParameterValue`: `{"kind":"datetime","value":"..."}`, `{"kind":"ref","type":"<ПолныйТип>","uuid":"<UUID>"}`, `{"kind":"enum","type":"<Тип>","name":"<Имя>"}`, `{"kind":"array","value":[...]}`.
-- Тема `report-fast-path` должна направлять агента к минимальному discovery для отчетной аналитики: узкие `search_objects`/`list_metadata_objects`, `list_reports` с малым `limit`, специализированные карты (`get_accounting_accounts_map`, `get_calculation_types_map`), бухгалтерские shortcuts (`get_accounting_balances_by_subconto_age`, `compare_accounting_balances_by_subconto`) для aging/пересечений остатков и отказ от широкого `get_database_passport(force_refresh=true)` без необходимости.
+- Тема `report-fast-path` должна направлять агента к минимальному discovery для отчетной аналитики: узкие `search_objects`/`list_metadata_objects`, `list_reports` с малым `limit`, специализированные карты (`get_accounting_accounts_map`, `get_calculation_types_map`), бухгалтерские shortcuts (`get_accounting_balances_by_subconto_age`, `compare_accounting_balances_by_subconto`) для aging/пересечений остатков и понимание, что `get_database_passport` данных не отдаёт вовсе — за фактами данных идти запросом, а не паспортом.
 - Темы `subkonto` и `accounting-register-patterns` должны включать high-severity guidance с id `accounting-register-turnovers-fields`: `ЗНАЧЕНИЕ(ПланСчетов.<Имя>.*)` принимает только имена предопределённых элементов, конкретные счета передаются UUID-параметрами из `get_accounting_accounts_map`; для виртуальной таблицы `Обороты` использовать поля `СуммаОборотДт`/`СуммаОборотКт` и параметр `Субконто`, а `ОборотыДтКт` применять только для анализа корреспонденции.
 - Темы `virtual-tables`, `subkonto` и `accounting-register-patterns` должны включать high-severity guidance с id `accounting-balance-vs-turnover`: `Остатки` применяются для долга/задолженности/сальдо/остатка на дату, `Обороты` — только для движения за период, `ОстаткиИОбороты` — когда нужны начальное/конечное сальдо и обороты вместе. Для "на конец 2024" использовать дату остатка `ДАТАВРЕМЯ(2025, 1, 1)`.
 - Тема `payroll` должна включать high-severity guidance с id `payroll-salary-source-selection`: для зарплаты за период сначала предпочитать зарплатный отчёт/расчётные регистры ЗУП; если доступен только бухгалтерский регистр, начисленная зарплата по счёту 70 обычно берётся из кредитового оборота 70 (`СуммаОборотКт`) через виртуальную таблицу `Обороты`, а дебетовый оборот 70 нельзя называть начислением.
@@ -3650,8 +3650,9 @@ Discovery tool для отчётов: возвращает доступные О
   `has_custom_pre_compose=true`, добавить параметры из пустой структуры в
   `parameters` и выставить `report_parameter_source=custom_pre_compose_and_skd`.
 - Ссылочные параметры отчётов передаются в `run_1c_report` объектом
-  `{"type":"<ПолныйТип>","uuid":"<UUID>"}`. UUID организаций берётся из
-  `get_database_passport`, UUID счетов - из `get_accounting_accounts_map`.
+  `{"type":"<ПолныйТип>","uuid":"<UUID>"}`. UUID организаций берётся узким поиском
+  `search_objects` по `Справочник.Организации` (паспорт организаций не отдаёт),
+  UUID счетов - из `get_accounting_accounts_map`.
 
 ### Заметки по реализации 1С
 
@@ -4185,6 +4186,7 @@ Discovery tool для отчётов: возвращает доступные О
       "get_inventory_balances_by_item",
       "get_calculation_types_map",
       "get_database_passport",
+      "get_database_passport_full",
       "get_object_by_ref",
       "find_object_by_id",
       "search_objects",
