@@ -1531,11 +1531,9 @@ class ContractRunner {
       assert(ключи.length === ВИДЫ.length && ВИДЫ.every((в) => ключи.includes(в)),
         `metadata_counts обязан содержать ровно 11 видов в множественном числе; получено: ${ключи.join(", ")}`);
       for (const вид of ВИДЫ) {
-        const запись = счетчики[вид];
-        assert(запись && typeof запись.total === "number" && typeof запись.allowed === "number",
-          `${вид}: обязаны быть два числа — total и allowed`);
-        assert(запись.allowed <= запись.total,
-          `${вид}: allowed=${запись.allowed} не может превышать total=${запись.total}`);
+        const число = счетчики[вид];
+        assert(typeof число === "number" && Number.isInteger(число) && число >= 0,
+          `${вид}: обязано быть одно целое неотрицательное число, получено ${JSON.stringify(число)}`);
       }
 
       // Исключённые ветви названы явно: клиент обязан видеть, что перепись неполна
@@ -1556,21 +1554,23 @@ class ContractRunner {
       assert(имена === null,
         `перепись не должна содержать имён объектов; найдено: ${(имена ?? []).slice(0, 3).join(", ")}`);
 
-      // ПР-19: allowed — то же множество, что отдаёт list_metadata_objects, только
-      // посчитанное другим путём. Сверяется на виде с непустым составом.
+      // ПР-19 после решения 14.08: перепись считает объекты вида БЕЗ проверки прав, а
+      // list_metadata_objects отдаёт только разрешённые. Значит равенства требовать
+      // нельзя — только «не меньше». Равенство наблюдается там, где политика ничего не
+      // скрывает, и это факт контура, а не контракт.
       const списком = await okTool(this.client, "list_metadata_objects",
         { kinds: ["РегистрНакопления"], limit: 1 });
       assert(typeof списком.total_estimated === "number",
         "list_metadata_objects обязан вернуть total_estimated для сверки");
-      assert(списком.total_estimated === счетчики.РегистрыНакопления.allowed,
-        `allowed переписи (${счетчики.РегистрыНакопления.allowed}) обязан совпасть с`
-        + ` total_estimated у list_metadata_objects (${списком.total_estimated}):`
-        + " одно множество, посчитанное двумя путями");
+      assert(счетчики.РегистрыНакопления >= списком.total_estimated,
+        `перепись (${счетчики.РегистрыНакопления}) не может быть МЕНЬШЕ разрешённых`
+        + ` в list_metadata_objects (${списком.total_estimated}): она считает всё,`
+        + " а тот — только доступное");
 
       return {
         chars: сериализовано.length,
-        allowedTotal: ВИДЫ.reduce((s, в) => s + счетчики[в].allowed, 0),
-        totalTotal: ВИДЫ.reduce((s, в) => s + счетчики[в].total, 0),
+        objects: ВИДЫ.reduce((s, в) => s + счетчики[в], 0),
+        hiddenFromListing: счетчики.РегистрыНакопления - списком.total_estimated,
       };
     });
 
