@@ -38,6 +38,7 @@
 // Транспорт node:https: undici рвёт connect на жёстких 10 с через VPN, и это
 // выглядит как «упал контур». Сертификат контура самоподписанный.
 
+import { readFileSync } from "node:fs";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { request } from "node:https";
@@ -52,6 +53,24 @@ const CONTOURS = {
 // Ревизия сборки, на которой проба осмысленна. Несовпадение останавливает прогон:
 // «зелёная» матрица по старому коду на этом проекте случалась трижды, а #92
 // (smoke-gate не отличает версию модуля) до сих пор открыт.
+// Ожидаемая ревизия берётся из РАБОЧЕГО ДЕРЕВА — `РевизияPrivacyДвижка` в
+// MCP_Config.bsl, тем же способом, что и в mcp_deploy_smoke. Захардкоженный
+// дефолт здесь дважды уводил пробу в SKIP: 14.08 он отставал на четыре волны
+// (.10.4 при живых .14.4), а через несколько часов — на одну (.14.4 при .14.5),
+// и оба раза проба выглядела честной, не проверив ничего. Литерал в коде
+// синхронизировать вручную нельзя: ревизия поднимается каждой волной.
+function ревизияИзРабочегоДерева() {
+  try {
+    const path = new URL("../src/CommonModules/MCP_Config.bsl", import.meta.url);
+    const text = readFileSync(path, "utf8");
+    const block = text.split("Функция РевизияPrivacyДвижка()")[1];
+    const match = block ? block.match(/Возврат\s+"([^"]+)"/u) : null;
+    return match ? match[1] : "";
+  } catch {
+    return "";
+  }
+}
+
 const revFlag = process.argv.indexOf("--revision");
 const EXPECTED_REVISION =
   (revFlag > -1 ? process.argv[revFlag + 1] : "") ||
@@ -59,8 +78,7 @@ const EXPECTED_REVISION =
   // Дефолт равен ревизии САМОЙ СВЕЖЕЙ сборки: после волны 2 это .2. Прогон
   // приёмки P-0 на .2 — регресс волны 1, и он обязан идти без флагов. Для
   // повторного прогона на .1 передать --revision 2026-08-10.1.
-  // 14.08: поднят до .14.4 — дефолт отставал на четыре волны и уводил пробу в SKIP.
-  "2026-08-14.4";
+  ревизияИзРабочегоДерева();
 
 const ALL = process.argv.includes("--all");
 const jsonFlag = process.argv.indexOf("--json");
