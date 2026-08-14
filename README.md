@@ -470,25 +470,35 @@
 
 ### `get_database_passport`
 
-**Назначение:** диагностический паспорт фактических данных: активные организации, период данных, закрытые периоды, заполненность регистров.
+**Назначение:** мгновенная стартовая ориентация без обращения к данным: что это за конфигурация и куда идти дальше. Пересобран 14.08.2026 — данных не отдаёт вовсе.
 
-**Параметры:** `accounting_register`; флаги `include_organizations`, `include_period`, `include_closed_periods`, `include_accumulation_registers`, `include_information_registers`, `include_calculation_registers`, `include_empty_registers`, `force_refresh`; лимиты `organization_limit`, `accounting_register_limit`, `accumulation_register_limit`, `information_register_limit`, `calculation_register_limit`.
+**Параметры:** нет. Прежние пятнадцать (`accounting_register`, семь `include_*`, пять `*_limit`, `include_empty_registers`, `force_refresh`) управляли пробами данных; проб больше нет. Переданные ключи вызов не отклоняют, но перечисляются в `warnings`.
 
 **Пример:**
 
 ```json
-{
-  "include_organizations": true,
-  "include_period": true,
-  "include_accumulation_registers": false,
-  "include_information_registers": false,
-  "force_refresh": false
-}
+{}
 ```
 
-**Выходящая схема:** `generated_at`, `configuration_agnostic`, `read_only`, `cache_hit`, `cache_age_seconds`, `warnings[]`, опционально `organizations[]`, `data_period`, `accounting_registers[]`, `closed_periods[]`, `accumulation_registers`, `information_registers`, `calculation_registers` и detail-разделы.
+**Выходящая схема:** `configuration` (`name`, `synonym`, `version`, `platform_version`), `next_steps` (`metadata_scale`, `object_names`, `data_facts`), `data_facts_note`, `warnings[]`.
 
-**Ограничения:** потенциально самый тяжёлый discovery tool на больших БД, потому что проверяет множество регистров. Выключайте лишние `include_*` и не используйте `force_refresh` без необходимости. В универсальной поставке кэш явно помечается через `cache_hit/cache_age_seconds`.
+**Ограничения:** организаций, горизонта данных, закрытых периодов и заполненности регистров не возвращает — это спрашивается запросом `run_1c_query` по нужному объекту. Перечислений имён не содержит: состав объектов — `list_metadata_objects` и `list_registers`, масштаб конфигурации счётчиками — `get_database_passport_full`.
+
+### `get_database_passport_full`
+
+**Назначение:** перепись метаданных счётчиками — сколько в базе объектов каждого вида. Без имён объектов, без их полей и без единой пробы данных.
+
+**Параметры:** нет.
+
+**Пример:**
+
+```json
+{}
+```
+
+**Выходящая схема:** `configuration`, `metadata_counts` (11 видов в МНОЖЕСТВЕННОМ числе: `Константы`, `Справочники`, `Документы`, `Перечисления`, `Обработки`, `ПланыСчетов`, `ПланыВидовРасчета`, `РегистрыСведений`, `РегистрыНакопления`, `РегистрыБухгалтерии`, `РегистрыРасчета`), `excluded_kinds[]`, `unsupported_kinds[]`, `next_steps`, `warnings[]`.
+
+**Ограничения:** доступность объектов не проверяется — отвечает про размер конфигурации, а не про права, поэтому число может быть больше `total_estimated` у `list_metadata_objects` того же вида. Для аргумента `kinds` других инструментов вид переводится в единственное число; карта — в описании инструмента.
 
 ### `get_object_by_ref`
 
@@ -845,7 +855,7 @@ ping                 -- ping
 - tool `get_accounting_accounts_map` читает live-таблицу `ПланСчетов.<Имя>.ВидыСубконто` и возвращает `accounts[].subconto[]`, чтобы агент не угадывал позиции `Субконто1/2/3`;
 - tool `get_calculation_types_map` читает `ПланВидовРасчета.<Имя>` и возвращает реальные виды расчёта для ЗУП-подобных конфигураций;
 - для зарплатных запросов база знаний закрепляет порядок выбора источника: готовый зарплатный отчёт или расчётные регистры, затем бухгалтерский fallback по кредитовому обороту 70 через `Обороты`;
-- tool `get_database_passport` возвращает фактический срез данных: активные организации, горизонт записей, закрытые периоды при наличии регистра дат запрета и заполненность регистров накопления/сведений/расчёта; параметр `force_refresh` принудительно пересчитывает паспорт, а поля `cache_hit`/`cache_age_seconds` показывают состояние кэша или его отсутствие в универсальной read-only поставке;
+- tools `get_database_passport` и `get_database_passport_full` данных не проверяют вовсе: первый отдаёт название базы, версии и указатели дальнейших шагов, второй — счётчики объектов по 11 видам метаданных. Организации, горизонт данных, закрытые периоды и заполненность регистров спрашиваются запросом: паспорт не делает ни одного обращения к таблицам;
 - `validate_1c_query` и `run_1c_query` возвращают `query_guidance` opt-in через `include_guidance=true`; при ошибках выполнения диагностический guidance возвращается принудительно;
 - `run_1c_query` без дополнительного discovery добавляет компактный warning, если нулевой результат похож на неверно угаданную позицию бухгалтерского `Субконто1/2/3`;
 - resources `1c://knowledge/query/*` дают полную встроенную справку: syntax, functions, optimization, temporary-tables, compound-types, subconto, parameters, reports-vs-query, report-fast-path, payroll.
