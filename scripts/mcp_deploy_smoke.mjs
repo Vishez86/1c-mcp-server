@@ -198,8 +198,13 @@ async function discoverFixtures(options) {
     if (fixtures.catalog && fixtures.tabularSection) break;
   }
 
-  const passport = await callTool(options, "get_database_passport", {});
-  fixtures.register = (passport?.accounting_registers ?? [])[0]?.register ?? null;
+  // Регистр бухгалтерии берётся из перечисления метаданных, а НЕ из паспорта:
+  // с 14.08 паспорт состава регистров не отдаёт вовсе (секция accounting_registers
+  // удалена вместе с пробами данных). Перечисление здесь и дешевле — паспорт для
+  // этой фикстуры перебирал регистры запросами.
+  const accountingRegisters = await callTool(options, "list_metadata_objects",
+    { kinds: ["РегистрБухгалтерии"], limit: 5 });
+  fixtures.register = (accountingRegisters?.objects ?? [])[0]?.full_name ?? null;
 
   const charts = await callTool(options, "list_metadata_objects", { kinds: ["ПланСчетов"], limit: 5 });
   fixtures.chart = (charts?.objects ?? [])[0]?.full_name ?? null;
@@ -365,8 +370,14 @@ const MODULE_MARKERS = [
     // payload валидации в предупреждения. Своего дешёвого признака у правки нет —
     // проверка стоит полного вызова паспорта (около минуты), для смоук-гейта это
     // дорого. Публикацию волны доказывает маркер MCP_Query (текст правила по виду
-    // регистра), совместность комплекта — правило манифеста; сам паспорт проверяет
-    // кейс контракт-теста get_database_passport_no_self_rejection.
+    // регистра), совместность комплекта — правило манифеста.
+    //
+    // 14.08: оговорка выше исчерпана — у паспорта появился свой мгновенный маркер
+    // (см. «паспорт пересобран» ниже), потому что запросов к данным он больше не
+    // делает. Этот маркер остаётся на карте счетов: она к паспорту не относится и
+    // проверяет другую половину модуля. Кейс контракт-теста
+    // get_database_passport_no_self_rejection снят вместе с предметом — собственных
+    // запросов к данным у паспорта нет, значит нет и класса «сервер зарезал сам себя».
     since: "5100493",
     what: "карта счетов отвечает",
     async run(options, fixtures) {
@@ -375,6 +386,41 @@ const MODULE_MARKERS = [
       return r?.ok === true
         ? { status: "pass", note: `счетов в ответе: ${(r.accounts ?? []).length}` }
         : { status: "fail", note: `ok=${r?.ok}, ${r?.error_code ?? ""}` };
+    },
+  },
+  {
+    module: "MCP_Tools_Impl",
+    // Паспорт пересобран 14.08: два инструмента, ни один не обращается к данным.
+    // Прежняя правка паспорта своего дешёвого признака не имела — проверка стоила
+    // полного вызова около минуты, и маркер модуля держался на карте счетов. Теперь
+    // признак мгновенный и ПАРНЫЙ: новый тул объявлен в схеме (MCP_Tools) и отвечает
+    // новым составом (MCP_Tools_Impl). Со старой публикацией любая половина падает:
+    // unknown_tool на полном паспорте либо секции данных в сокращённом.
+    since: "5100493",
+    what: "паспорт пересобран: перепись метаданных отвечает, сокращённый без данных",
+    async run(options) {
+      const полный = await callTool(options, "get_database_passport_full", {});
+      const счетчики = полный?.metadata_counts;
+      if (!счетчики || typeof счетчики !== "object") {
+        return { status: "fail", note: `get_database_passport_full не отдал metadata_counts`
+          + ` (${полный?.error_code ?? полный?.error?.error_code ?? "нет кода"}) — модуль до пересборки паспорта` };
+      }
+      const видов = Object.keys(счетчики).length;
+      if (видов !== 11) {
+        return { status: "fail", note: `в metadata_counts ${видов} видов вместо 11` };
+      }
+      // Вторая половина: сокращённый данных больше не отдаёт. Проверяется отсутствие
+      // КЛЮЧЕЙ — пустой массив organizations означал бы, что секция жива.
+      const кратко = await callTool(options, "get_database_passport", {});
+      const данные = ["organizations", "data_period", "accounting_registers", "closed_periods"]
+        .filter((ключ) => кратко?.[ключ] !== undefined);
+      if (данные.length > 0) {
+        return { status: "fail", note: `сокращённый паспорт вернул данные: ${данные.join(", ")}`
+          + " — опубликован MCP_Tools_Impl до пересборки" };
+      }
+      const регистры = счетчики.РегистрыСведений?.allowed ?? "?";
+      return { status: "pass", note: `перепись: 11 видов, регистров сведений доступно ${регистры};`
+        + ` сокращённый без секций данных, символов ${JSON.stringify(кратко ?? {}).length}` };
     },
   },
   {

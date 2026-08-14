@@ -28,6 +28,7 @@ const EXPECTED_TOOLS = [
   "get_inventory_balances_by_item",
   "get_calculation_types_map",
   "get_database_passport",
+  "get_database_passport_full",
   "get_object_by_ref",
   "find_object_by_id",
   "search_objects",
@@ -1441,149 +1442,135 @@ class ContractRunner {
       return { plan, calculationTypes: result.calculation_types.length, total: result.total_calculation_types };
     });
 
-    // Тяжёлые секции обязаны отклоняться ВМЕСТЕ и работать ПООТДЕЛЬНОСТИ.
-    //
-    // Без стража клиент, запросивший всё сразу, получал не ошибку, а HTML-страницу
-    // «504 Gateway Time-out» от nginx: структурированного отказа MCP-клиент не
-    // видит вовсе, correlation_id нет, вызов в журнале оборван. Инвариант «сбой
-    // отличим от нормы» нарушается в самой неудобной форме.
-    await this.test("tool.get_database_passport_heavy_sections_split", async () => {
-      const отказ = await rawTool(this.client, "get_database_passport", {
-        include_information_registers: true,
-        include_accumulation_registers: true,
-      });
-      assert(отказ.ok === false, "комбинация тяжёлых секций обязана отклоняться");
-      // Структурированные детали лежат под parsed_details: слой ошибок оборачивает
-      // разобранные детали в диагностический конверт вместе с raw_exception.
-      const конверт = отказ.error?.details ?? отказ.details ?? {};
-      const детали = конверт.parsed_details ?? конверт;
-      assert(детали.reason === "heavy_sections_combined",
-        `ожидался reason=heavy_sections_combined, получено: ${JSON.stringify(детали).slice(0, 200)}`);
-      assert(Array.isArray(детали.split_into_separate_calls) && детали.split_into_separate_calls.length === 2,
-        "отказ обязан называть, какие флаги разнести по вызовам");
-      // Каждая секция по отдельности обязана работать: страж не должен
-      // превращаться в запрет самой возможности их получить.
-      // Лимиты малые намеренно: кейс проверяет РАЗДЕЛИМОСТЬ секций, а не полноту
-      // перебора. С умолчаниями (50 и 100 регистров) два вызова стоят больше
-      // минуты и упираются в таймаут клиента контракт-теста.
-      const свед = await okTool(this.client, "get_database_passport",
-        { include_information_registers: true, information_register_limit: 3 });
-      assert(свед.information_registers && typeof свед.information_registers.checked === "number",
-        "регистры сведений отдельным вызовом обязаны возвращаться");
-      const нак = await okTool(this.client, "get_database_passport",
-        { include_accumulation_registers: true, accumulation_register_limit: 3 });
-      assert(нак.accumulation_registers && typeof нак.accumulation_registers.checked === "number",
-        "регистры накопления отдельным вызовом обязаны возвращаться");
-    });
+    // Паспорт пересобран 14.08.2026: два инструмента, ни один не обращается к данным.
+    // Прежние три кейса (раздельность тяжёлых секций, отсутствие самоотказа, сам
+    // паспорт) сняты вместе с предметом: тяжёлых секций больше нет, собственных
+    // запросов к данным у паспорта нет вовсе — значит нет и класса «сервер зарезал
+    // сам себя» в этом инструменте. Взамен проверяется то, что заменило прежнее
+    // поведение, и главное — что данные не вернулись чёрным ходом.
+    const СЕКЦИИ_ДАННЫХ = ["organizations", "data_period", "accounting_registers",
+      "closed_periods", "accumulation_registers", "accumulation_registers_detail",
+      "accumulation_registers_checked", "information_registers", "calculation_registers"];
 
-    // R-4: гейт против рецидива «правила рубят запросы самого сервера».
-    //
-    // Класс рецидивный: PR #68 (28.07) закрывал ровно это, и через две недели
-    // дефект вернулся в другом инструменте — потому что проверки на него не было.
-    // Кейс намеренно строгий: паспорт не пользовательский запрос, а инструмент
-    // сервера, и его собственные запросы обязаны проходить собственную валидацию
-    // без исключений в рантайме. Предупреждение по иной, законной причине — повод
-    // разобрать причину, а не ослабить кейс.
-    //
-    // Проверяется НЕ ТОЛЬКО тишина: пустой warnings достигается и фильтрацией
-    // регистров, то есть дефект можно «починить», спрятав данные. Поэтому кейс
-    // требует ещё и доказательства, что регистры действительно перебирались.
-    await this.test("tool.get_database_passport_no_self_rejection", async () => {
-      // Три куска, как предписывает описание инструмента: основная часть, затем
-      // регистры сведений, затем регистры накопления. Предупреждения собираются
-      // со ВСЕХ трёх — дефект мог бы спрятаться в любом.
-      const части = [];
-      части.push(await okTool(this.client, "get_database_passport", {
-        include_organizations: true,
-        include_period: true,
-        include_closed_periods: true,
-        include_calculation_registers: true,
-      }));
-      части.push(await okTool(this.client, "get_database_passport",
-        { include_information_registers: true, information_register_limit: 20 }));
-      части.push(await okTool(this.client, "get_database_passport",
-        { include_accumulation_registers: true, accumulation_register_limit: 20 }));
-      const result = части[1];
-      const warnings = части.flatMap((ч) => (Array.isArray(ч.warnings) ? ч.warnings : []));
-
-      // Ловится САМООТКАЗ, а не любое предупреждение.
-      //
-      // ТЗ требовало пустой warnings целиком, но замер 13.08 на ERP показал, что
-      // паспорт штатно сообщает и о законном: регистр вне allowlist («не
-      // разрешены»), усечение списка по лимиту. Эти причины к валидации сервера
-      // отношения не имеют и от конфигурации неотделимы — кейс, красный на них
-      // всегда, сигналом быть перестаёт (инвариант B применим и к самим воротам).
-      //
-      // Признак самоотказа надёжен по конструкции: предупреждение о нём проходит
-      // через КраткаяПричинаОтказаЗапроса и потому несёт код ошибки в квадратных
-      // скобках — «[query_validation_failed] …». Законные предупреждения скобок
-      // не содержат вовсе.
-      const самоотказы = warnings.filter((w) => /\[[a-z_]+\]/.test(String(w))
-        || /base_register_table_without_vt_check/.test(String(w)));
-      if (самоотказы.length > 0) {
-        const коды = [...new Set(самоотказы.flatMap((w) => [...String(w).matchAll(/\[([a-z_]+)\]|(base_register_table_without_vt_check)/g)]
-          .map((m) => m[1] || m[2])))].slice(0, 6);
-        assert(false, `passport rejected by own validation: самоотказов ${самоотказы.length}`
-          + (коды.length ? `, коды: ${коды.join(", ")}` : "")
-          + ` | первое: ${String(самоотказы[0]).slice(0, 160)}`);
-      }
-      // Защита от «починки сокрытием»: регистры обязаны быть перебраны, а не
-      // отфильтрованы до пустого множества.
-      const инфо = result.information_registers;
-      assert(инфо && typeof инфо.checked === "number" && инфо.checked > 0,
-        "information_registers.checked must be > 0 — иначе тишина в warnings достигнута пропуском регистров");
-    });
-
+    // ПР-13, ПР-14: сокращённый не отдаёт данных и не содержит перечислений.
     await this.test("tool.get_database_passport", async () => {
-      // Паспорт запрашивается ТРЕМЯ вызовами: перебор регистров сведений и
-      // накопления стоит десятки секунд каждый, вместе они превышают таймаут
-      // публикации, и ответ обрывается шлюзом без структурированной ошибки.
-      // Сервер такую комбинацию отклоняет — см. кейс heavy_sections_split.
+      const result = await okTool(this.client, "get_database_passport", {});
+      const конфигурация = result.configuration;
+      assert(конфигурация && typeof конфигурация === "object", "configuration must be present");
+      for (const поле of ["name", "version", "platform_version"]) {
+        assert(typeof конфигурация[поле] === "string" && конфигурация[поле].length > 0,
+          `configuration.${поле} must be a non-empty string`);
+      }
+      // Данных нет ни в одном виде. Проверяется отсутствие КЛЮЧЕЙ, а не пустота
+      // значений: пустой массив organizations означал бы, что секция жива и
+      // однажды снова наполнится (§2.1 ТЗ — вариант В, секции нет вообще).
+      for (const ключ of СЕКЦИИ_ДАННЫХ) {
+        assert(result[ключ] === undefined,
+          `сокращённый паспорт не должен содержать ${ключ} — данные вернулись в ответ`);
+      }
+      // Перечислений и счётчиков в сокращённом нет: масштаб — отдельный инструмент.
+      assert(result.metadata_counts === undefined,
+        "metadata_counts живёт в get_database_passport_full, а не в сокращённом");
+      // Указатели ведут только на СУЩЕСТВУЮЩИЕ инструменты: probe_registers снят
+      // решением 14.08, ссылка на него была бы обещанием несуществующего маршрута.
+      const шаги = result.next_steps ?? {};
+      assert(шаги.metadata_scale === "get_database_passport_full",
+        "next_steps.metadata_scale must point at get_database_passport_full");
+      assert(шаги.data_facts === "run_1c_query",
+        `next_steps.data_facts must point at run_1c_query, получено: ${шаги.data_facts}`);
+      assert(!JSON.stringify(result).includes("probe_registers"),
+        "ответ не должен упоминать probe_registers — такого инструмента нет");
+      assert(Array.isArray(result.warnings), "warnings must be an array");
+      // ПР-13: потолок объявлен в СИМВОЛАХ. Ожидание — порядка 300, потолок 10 000.
+      const симв = JSON.stringify(result).length;
+      assert(симв <= 10000, `сокращённый паспорт превысил потолок 10 000 символов: ${симв}`);
+      return { chars: симв, configuration: конфигурация.name };
+    });
+
+    // ПР-23: старый контракт не работает молча «как раньше».
+    //
+    // Пятнадцать прежних аргументов управляли пробами данных. Проб нет, поэтому
+    // аргументы не принимаются — но вызов старого клиента не падает: он получает
+    // ответ нового контракта и НАЗВАННУЮ причину, почему секций нет. Проверяется
+    // именно это: ok=true, данных нет, и warnings называет проигнорированное.
+    await this.test("tool.get_database_passport_legacy_arguments_ignored", async () => {
       const result = await okTool(this.client, "get_database_passport", {
         include_organizations: true,
         include_period: true,
         include_closed_periods: true,
-        include_information_registers: true,
-        include_calculation_registers: true,
-        organization_limit: 5,
-        accounting_register_limit: 2,
-        information_register_limit: 5,
-        calculation_register_limit: 5,
-        include_empty_registers: true,
-      });
-      const накопление = await okTool(this.client, "get_database_passport", {
         include_accumulation_registers: true,
-        accumulation_register_limit: 5,
-        include_empty_registers: true,
+        include_information_registers: true,
+        organization_limit: 5,
+        force_refresh: true,
       });
-      assert(result.configuration_agnostic === true, "passport must be configuration agnostic");
-      assert(result.read_only === true, "passport must be read-only");
-      assert(result.cache_hit === false || result.cache_hit === true, "cache_hit must be boolean");
-      assert(typeof result.cache_age_seconds === "number", "cache_age_seconds must be a number");
-      assert(Array.isArray(result.organizations), "organizations must be an array");
-      assert(result.data_period && typeof result.data_period === "object", "data_period must be present");
-      assert(Array.isArray(result.accounting_registers), "accounting_registers must be an array");
-      // Внутренний запрос паспорта не должен отклоняться собственными правилами
-      // предвалидатора: period_error означает, что сервер зарезал сам себя, и период
-      // данных молча приходит пустым (регресс от base_register_table_without_vt_check).
-      for (const register of result.accounting_registers) {
-        assert(register.period_error === undefined,
-          `passport period query rejected for ${register.register}: ${register.period_error}`);
+      for (const ключ of СЕКЦИИ_ДАННЫХ) {
+        assert(result[ключ] === undefined,
+          `старый аргумент вернул секцию ${ключ} — контракт не переписан, а сохранён`);
       }
-      assert(Array.isArray(result.closed_periods), "closed_periods must be an array");
-      const acc = накопление.accumulation_registers;
-      assert(acc && typeof acc === "object", "accumulation_registers must be an object");
-      assert(acc.cache_hit === false || acc.cache_hit === true, "accumulation_registers.cache_hit must be boolean");
-      assert(typeof acc.cache_age_seconds === "number", "accumulation_registers.cache_age_seconds must be a number");
-      assert(typeof acc.checked === "number", "accumulation_registers.checked must be a number");
-      assert(Array.isArray(acc.with_data), "accumulation_registers.with_data must be an array");
-      assert(Array.isArray(acc.empty), "accumulation_registers.empty must be an array");
-      assert(result.information_registers && typeof result.information_registers === "object", "information_registers must be an object");
-      assert(result.calculation_registers && typeof result.calculation_registers === "object", "calculation_registers must be an object");
+      const warnings = Array.isArray(result.warnings) ? result.warnings : [];
+      const названо = warnings.some((w) => String(w).includes("include_organizations"));
+      assert(названо,
+        `warnings обязан назвать проигнорированные аргументы, получено: ${JSON.stringify(warnings).slice(0, 200)}`);
+      // Комбинация тяжёлых секций больше не отклоняется — отклонять нечего:
+      // перебора регистров нет, и вызов остаётся мгновенным.
+      return { warnings: warnings.length };
+    });
+
+    // ПР-15, ПР-19, ПР-20: перепись метаданных.
+    await this.test("tool.get_database_passport_full", async () => {
+      const ВИДЫ = ["Константы", "Справочники", "Документы", "Перечисления", "Обработки",
+        "ПланыСчетов", "ПланыВидовРасчета", "РегистрыСведений", "РегистрыНакопления",
+        "РегистрыБухгалтерии", "РегистрыРасчета"];
+      const result = await okTool(this.client, "get_database_passport_full", {});
+      assert(result.configuration && typeof result.configuration.name === "string",
+        "перепись обязана называть базу: без имени она не отвечает «что это за конфигурация»");
+
+      const счетчики = result.metadata_counts;
+      assert(счетчики && typeof счетчики === "object", "metadata_counts must be present");
+      const ключи = Object.keys(счетчики);
+      assert(ключи.length === ВИДЫ.length && ВИДЫ.every((в) => ключи.includes(в)),
+        `metadata_counts обязан содержать ровно 11 видов в множественном числе; получено: ${ключи.join(", ")}`);
+      for (const вид of ВИДЫ) {
+        const запись = счетчики[вид];
+        assert(запись && typeof запись.total === "number" && typeof запись.allowed === "number",
+          `${вид}: обязаны быть два числа — total и allowed`);
+        assert(запись.allowed <= запись.total,
+          `${вид}: allowed=${запись.allowed} не может превышать total=${запись.total}`);
+      }
+
+      // Исключённые ветви названы явно: клиент обязан видеть, что перепись неполна
+      // ПО РЕШЕНИЮ, а не по сбою. Список без знаменателя читается как полный.
+      const исключены = result.excluded_kinds;
+      assert(Array.isArray(исключены) && исключены.includes("Отчеты") && исключены.includes("Задачи"),
+        `excluded_kinds обязан называть исключённые ветви; получено: ${JSON.stringify(исключены)}`);
+      // Поле обязательно даже пустым: ложный ноль в счётчиках запрещён, и клиент
+      // не должен различать «не посчитали» и «объектов нет» по одному нулю.
+      assert(Array.isArray(result.unsupported_kinds),
+        "unsupported_kinds обязан присутствовать как массив, даже пустой");
+
+      // Имён объектов нет НИГДЕ. Дешёвый и надёжный признак: в ответе не должно
+      // быть ни одной строки с точкой вида «Справочник.Имя» — так выглядит любое
+      // полное имя объекта метаданных.
+      const сериализовано = JSON.stringify(result);
+      const имена = сериализовано.match(/"(Справочник|Документ|РегистрСведений|РегистрНакопления|РегистрБухгалтерии|РегистрРасчета|Константа|Перечисление|Обработка|ПланСчетов|ПланВидовРасчета)\.[^"]+"/g);
+      assert(имена === null,
+        `перепись не должна содержать имён объектов; найдено: ${(имена ?? []).slice(0, 3).join(", ")}`);
+
+      // ПР-19: allowed — то же множество, что отдаёт list_metadata_objects, только
+      // посчитанное другим путём. Сверяется на виде с непустым составом.
+      const списком = await okTool(this.client, "list_metadata_objects",
+        { kinds: ["РегистрНакопления"], limit: 1 });
+      assert(typeof списком.total_estimated === "number",
+        "list_metadata_objects обязан вернуть total_estimated для сверки");
+      assert(списком.total_estimated === счетчики.РегистрыНакопления.allowed,
+        `allowed переписи (${счетчики.РегистрыНакопления.allowed}) обязан совпасть с`
+        + ` total_estimated у list_metadata_objects (${списком.total_estimated}):`
+        + " одно множество, посчитанное двумя путями");
+
       return {
-        organizations: result.organizations.length,
-        accountingRegisters: result.accounting_registers.length,
-        accumulationChecked: acc.checked,
+        chars: сериализовано.length,
+        allowedTotal: ВИДЫ.reduce((s, в) => s + счетчики[в].allowed, 0),
+        totalTotal: ВИДЫ.reduce((s, в) => s + счетчики[в].total, 0),
       };
     });
 

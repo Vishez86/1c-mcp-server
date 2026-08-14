@@ -43,4 +43,5 @@
 | TC-027 | `get_accounting_balances_by_subconto_age` | [TC-027-get_accounting_balances_by_subconto_age.md](TC-027-get_accounting_balances_by_subconto_age.md) |
 | TC-028 | `compare_accounting_balances_by_subconto` | [TC-028-compare_accounting_balances_by_subconto.md](TC-028-compare_accounting_balances_by_subconto.md) |
 | TC-029 | `list_legal_sources`, `get_legal_source_guide` | [TC-029-legal_sources.md](TC-029-legal_sources.md) |
+| TC-030 | `get_database_passport_full` | [TC-030-get_database_passport_full.md](TC-030-get_database_passport_full.md) |
 
