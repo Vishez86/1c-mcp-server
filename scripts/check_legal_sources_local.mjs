@@ -118,7 +118,11 @@ const readmeTable = [...readme.matchAll(/^\|\s*\d+\s*\|\s*`([a-z0-9_]+)`\s*\|/gm
 const setEq = (a, b) => a.length === b.length && [...new Set(a)].every((x) => b.includes(x));
 const diff = (a, b) => [...new Set([...a.filter((x) => !b.includes(x)), ...b.filter((x) => !a.includes(x))])].join(",");
 
-ok(definedNames.length === 37, `37 определений тулов в MCP_Tools.bsl`, `получено ${definedNames.length}`);
+// Число считает ОПРЕДЕЛЕНИЯ в репозитории, а не то, что отдаёт живой tools/list:
+// пока волна не опубликована, контур законно отстаёт на новые тулы. Константа
+// отставала (стояло 37 при 38 определениях) и проверка падала — выправлено 14.08
+// вместе с добавлением get_database_passport_full.
+ok(definedNames.length === 39, `39 определений тулов в MCP_Tools.bsl`, `получено ${definedNames.length}`);
 ok(setEq(definedNames, listCalls.map((c) => definedNames.find((n) => n === c) || c)), "СписокTools вызывает все определения", diff(definedNames, listCalls));
 ok(setEq(definedNames, dispatchNames), "dispatcher покрывает все тулы", diff(definedNames, dispatchNames));
 ok(setEq(definedNames, expectedTools), "EXPECTED_TOOLS соответствует коду", diff(definedNames, expectedTools));

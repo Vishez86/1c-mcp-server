@@ -1,0 +1,221 @@
+{
+ "замер": "2026-08-14T10:10:09.472Z",
+ "url": "https://laba-1c.astondevs.ru/ERP_DEMO/hs/mcp/rpc",
+ "вызовы": {
+  "tools_list": {
+   "всего": 39,
+   "есть_full": true,
+   "есть_probe_registers": false
+  },
+  "схема_сокращённого": {
+   "аргументов": 0
+  },
+  "сокращённый": {
+   "мс": 304,
+   "симв": 1684,
+   "байт": 2325,
+   "ответ": {
+    "configuration": {
+     "name": "УправлениеПредприятием",
+     "synonym": "1С:ERP Управление предприятием 2",
+     "version": "2.5.27.70",
+     "platform_version": "8.3.27.2130"
+    },
+    "next_steps": {
+     "metadata_scale": "get_database_passport_full",
+     "object_names": [
+      "list_metadata_objects",
+      "list_registers"
+     ],
+     "data_facts": "run_1c_query"
+    },
+    "data_facts_note": "Паспорт не обращается к данным. Горизонт, заполненность регистров и организации спрашиваются запросом run_1c_query по нужному объекту.",
+    "warnings": [],
+    "ok": true,
+    "correlation_id": "bc8487de-3b5f-48be-9885-5382633facd1",
+    "auth_context": {
+     "identity_key": "WEB@УправлениеПредприятием#2.5.27.70",
+     "user_name": "WEB",
+     "cache_policy": {
+      "cacheable": false,
+      "revalidate_each_call": true
+     }
+    },
+    "privacy": {
+     "enabled": true,
+     "masked_fields": [],
+     "string_mask": "XXXXXXX",
+     "date_mask": "1900-01-01T00:00:00",
+     "type_aliases": {
+      "enabled": false,
+      "entries": [],
+      "resolution": "open_navigation_url_in_1c"
+     },
+     "type_field_masks": {
+      "enabled": true,
+      "entries": [
+       {
+        "type": "Справочник.ФизическиеЛица",
+        "fields": [
+         "ИмяПредопределенныхДанных",
+         "Наименование"
+        ]
+       }
+      ]
+     },
+     "config_errors": [],
+     "engine_revision": "2026-08-14.2",
+     "guidance": "Активны privacy-маски полей по типам — эти поля недоступны LLM-клиентам только у указанных типов, у остальных объектов те же поля возвращаются как есть: Справочник.ФизическиеЛица: ИмяПредопределенныхДанных, Наименование. Строки заменяются на XXXXXXX, даты — на 1900-01-01T00:00:00. Числа и булево не закрываются: значение возвращается как есть. Просьба не искать обходных формулировок запроса: подмена сделана по разбору текста, поэтому обход не столько раскрывает данные, сколько портит ответ — вместо названия придёт маска.",
+     "config_warnings_count": 6,
+     "config_warnings_source": "get_current_user_context"
+    }
+   }
+  },
+  "сокращённый_старые_аргументы": {
+   "мс": 257,
+   "симв": 2049,
+   "байт": 2862,
+   "ответ": {
+    "configuration": {
+     "name": "УправлениеПредприятием",
+     "synonym": "1С:ERP Управление предприятием 2",
+     "version": "2.5.27.70",
+     "platform_version": "8.3.27.2130"
+    },
+    "next_steps": {
+     "metadata_scale": "get_database_passport_full",
+     "object_names": [
+      "list_metadata_objects",
+      "list_registers"
+     ],
+     "data_facts": "run_1c_query"
+    },
+    "data_facts_note": "Паспорт не обращается к данным. Горизонт, заполненность регистров и организации спрашиваются запросом run_1c_query по нужному объекту.",
+    "warnings": [
+     "Аргументы паспорта не принимаются и проигнорированы: force_refresh, include_accumulation_registers, include_period, include_organizations. Паспорт не обращается к данным: горизонт, заполненность регистров и организации спрашиваются запросом run_1c_query, состав объектов — list_metadata_objects и list_registers, масштаб конфигурации — get_database_passport_full."
+    ],
+    "ok": true,
+    "correlation_id": "ed9b49e9-b867-40e1-8a58-a904c98fffab",
+    "auth_context": {
+     "identity_key": "WEB@УправлениеПредприятием#2.5.27.70",
+     "user_name": "WEB",
+     "cache_policy": {
+      "cacheable": false,
+      "revalidate_each_call": true
+     }
+    },
+    "privacy": {
+     "enabled": true,
+     "masked_fields": [],
+     "string_mask": "XXXXXXX",
+     "date_mask": "1900-01-01T00:00:00",
+     "type_aliases": {
+      "enabled": false,
+      "entries": [],
+      "resolution": "open_navigation_url_in_1c"
+     },
+     "type_field_masks": {
+      "enabled": true,
+      "entries": [
+       {
+        "type": "Справочник.ФизическиеЛица",
+        "fields": [
+         "ИмяПредопределенныхДанных",
+         "Наименование"
+        ]
+       }
+      ]
+     },
+     "config_errors": [],
+     "engine_revision": "2026-08-14.2",
+     "guidance": "Активны privacy-маски полей по типам — эти поля недоступны LLM-клиентам только у указанных типов, у остальных объектов те же поля возвращаются как есть: Справочник.ФизическиеЛица: ИмяПредопределенныхДанных, Наименование. Строки заменяются на XXXXXXX, даты — на 1900-01-01T00:00:00. Числа и булево не закрываются: значение возвращается как есть. Просьба не искать обходных формулировок запроса: подмена сделана по разбору текста, поэтому обход не столько раскрывает данные, сколько портит ответ — вместо названия придёт маска.",
+     "config_warnings_count": 6,
+     "config_warnings_source": "get_current_user_context"
+    }
+   }
+  },
+  "перепись": {
+   "мс": 267,
+   "симв": 1932,
+   "байт": 2714,
+   "ответ": {
+    "configuration": {
+     "name": "УправлениеПредприятием",
+     "synonym": "1С:ERP Управление предприятием 2",
+     "version": "2.5.27.70",
+     "platform_version": "8.3.27.2130"
+    },
+    "metadata_counts": {
+     "Константы": 1248,
+     "Справочники": 1147,
+     "Документы": 747,
+     "Перечисления": 1668,
+     "Обработки": 557,
+     "ПланыСчетов": 2,
+     "ПланыВидовРасчета": 2,
+     "РегистрыСведений": 1694,
+     "РегистрыНакопления": 224,
+     "РегистрыБухгалтерии": 4,
+     "РегистрыРасчета": 2
+    },
+    "excluded_kinds": [
+     "Отчеты",
+     "ЖурналыДокументов",
+     "ПланыВидовХарактеристик",
+     "ПланыОбмена",
+     "БизнесПроцессы",
+     "Задачи",
+     "ВнешниеИсточникиДанных"
+    ],
+    "unsupported_kinds": [],
+    "next_steps": {
+     "configuration_summary": "get_database_passport",
+     "object_names": [
+      "list_metadata_objects",
+      "list_registers"
+     ],
+     "data_facts": "run_1c_query"
+    },
+    "warnings": [],
+    "ok": true,
+    "correlation_id": "43f80892-74f2-4415-a16c-a5a3b5e99dff",
+    "auth_context": {
+     "identity_key": "WEB@УправлениеПредприятием#2.5.27.70",
+     "user_name": "WEB",
+     "cache_policy": {
+      "cacheable": false,
+      "revalidate_each_call": true
+     }
+    },
+    "privacy": {
+     "enabled": true,
+     "masked_fields": [],
+     "string_mask": "XXXXXXX",
+     "date_mask": "1900-01-01T00:00:00",
+     "type_aliases": {
+      "enabled": false,
+      "entries": [],
+      "resolution": "open_navigation_url_in_1c"
+     },
+     "type_field_masks": {
+      "enabled": true,
+      "entries": [
+       {
+        "type": "Справочник.ФизическиеЛица",
+        "fields": [
+         "ИмяПредопределенныхДанных",
+         "Наименование"
+        ]
+       }
+      ]
+     },
+     "config_errors": [],
+     "engine_revision": "2026-08-14.2",
+     "guidance": "Активны privacy-маски полей по типам — эти поля недоступны LLM-клиентам только у указанных типов, у остальных объектов те же поля возвращаются как есть: Справочник.ФизическиеЛица: ИмяПредопределенныхДанных, Наименование. Строки заменяются на XXXXXXX, даты — на 1900-01-01T00:00:00. Числа и булево не закрываются: значение возвращается как есть. Просьба не искать обходных формулировок запроса: подмена сделана по разбору текста, поэтому обход не столько раскрывает данные, сколько портит ответ — вместо названия придёт маска.",
+     "config_warnings_count": 6,
+     "config_warnings_source": "get_current_user_context"
+    }
+   }
+  }
+ }
+}

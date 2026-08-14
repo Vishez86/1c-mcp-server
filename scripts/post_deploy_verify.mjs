@@ -82,8 +82,11 @@ async function discover() {
   // vt_filter_in_external_where фильтровал по СуммаОстатокДт, которого в его ВТ не
   // существует. Проверка не могла отличить работающее правило от сломанного и
   // годами стояла с пометкой AWAITING-DEPLOY «ложное срабатывание» (#147).
-  const passport = await callTool("get_database_passport", {});
-  const registers = passport.data?.accounting_registers ?? [];
+  // Состав регистров — из перечисления метаданных, а не из паспорта: с 14.08
+  // паспорт секции accounting_registers не отдаёт (удалена вместе с пробами данных).
+  const списокРегистров = await callTool("list_metadata_objects",
+    { kinds: ["РегистрБухгалтерии"], limit: 20 });
+  const registers = (списокРегистров.data?.objects ?? []).map((o) => ({ register: o.full_name }));
   const ОБЯЗАТЕЛЬНЫЕ_ПОЛЯ_ОСТАТКОВ = ["Субконто1", "СуммаОстатокДт"];
   for (const item of registers.slice(0, 8)) {
     const имя = item.register;
@@ -384,10 +387,18 @@ function buildCases() {
     need: register, awaitingDeploy: true, tool: "get_accounting_entries",
     toolArgs: { period_from: "2025-01-01", period_to: "2025-01-31", limit: 1 },
   });
+  // Кейс «период данных регистра без period_error» снят 14.08 вместе с предметом:
+  // паспорт периода не считает и запросов к данным не делает, поэтому класс
+  // «сервер зарезал сам себя собственным правилом» в этом инструменте невозможен.
+  // Взамен проверяется новый контракт: сокращённый паспорт данных не отдаёт.
+  // Флаг awaitingDeploy снят 14.08 после публикации волны 2026-08-14.2 на ВСЕХ трёх
+  // контурах (проверено: 39 инструментов, оба паспорта, секций данных ноль). Пока
+  // флаг стоял, кейс не мог покраснеть — а проверка, которая не краснеет, сигналом
+  // не является; это отмечено дефектом оснастки в приёмке ERP 14.08.
   add({
-    pr: "прогон", rule: "get_database_passport", kind: "период данных регистра без period_error",
-    need: true, awaitingDeploy: true, tool: "get_database_passport", toolArgs: {},
-    passportPeriodOk: true,
+    pr: "прогон", rule: "get_database_passport", kind: "сокращённый паспорт без данных",
+    need: true, tool: "get_database_passport", toolArgs: {},
+    passportNoDataOk: true,
   });
 
   // ---------------- #65 / issue #60
@@ -510,11 +521,19 @@ async function runCase(entry) {
   if (entry.tool) {
     const call = await callTool(entry.tool, entry.toolArgs ?? {});
     const data = call.data ?? {};
-    if (entry.passportPeriodOk) {
-      const broken = (data.accounting_registers ?? []).filter((item) => item.period_error !== undefined);
-      return broken.length
-        ? { ...entry, status: "FAIL", note: `period_error у ${broken.map((r) => r.register).join(", ")}` }
-        : { ...entry, status: "PASS", note: `регистров: ${(data.accounting_registers ?? []).length}, period_error нет` };
+    if (entry.passportNoDataOk) {
+      // Проверяется отсутствие КЛЮЧЕЙ, а не пустота значений: пустой массив
+      // organizations означал бы, что секция жива и однажды наполнится снова.
+      const секции = ["organizations", "data_period", "accounting_registers", "closed_periods",
+        "accumulation_registers", "information_registers", "calculation_registers"];
+      const вернулись = секции.filter((ключ) => data[ключ] !== undefined);
+      if (вернулись.length) {
+        return { ...entry, status: "FAIL", note: `паспорт вернул данные: ${вернулись.join(", ")}` };
+      }
+      const имя = data.configuration?.name ?? "";
+      return имя
+        ? { ...entry, status: "PASS", note: `данных нет, конфигурация: ${имя}, символов: ${JSON.stringify(data).length}` }
+        : { ...entry, status: "FAIL", note: "нет configuration.name — паспорт не назвал базу" };
     }
     const failed = call.ok === false || data.ok === false;
     return failed

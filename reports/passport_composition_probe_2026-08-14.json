@@ -1,0 +1,385 @@
+{
+  "замер": "2026-08-14, ревизия движка на контурах 2026-08-13.4, база отсчёта — ветка fix/passport-own-rule (6b0a522)",
+  "транспорт": "прямой JSON-RPC через node:https, заголовок MCP-Protocol-Version: 2025-11-25",
+  "знаменатели_list_metadata_objects_total_estimated": {
+    "BUH": {
+      "РегистрБухгалтерии": 1,
+      "РегистрНакопления": 107,
+      "РегистрСведений": 1316,
+      "РегистрРасчета": 0,
+      "Справочник": 725,
+      "Документ": 445,
+      "ПланСчетов": 1,
+      "ПланВидовРасчета": 3
+    },
+    "ZUP": {
+      "РегистрБухгалтерии": 0,
+      "РегистрНакопления": 74,
+      "РегистрСведений": 1230,
+      "РегистрРасчета": 2,
+      "Справочник": 776,
+      "Документ": 376,
+      "ПланСчетов": 0,
+      "ПланВидовРасчета": 2
+    },
+    "ERP": {
+      "РегистрБухгалтерии": 4,
+      "РегистрНакопления": 224,
+      "РегистрСведений": 1694,
+      "РегистрРасчета": 2,
+      "Справочник": 1147,
+      "Документ": 747,
+      "ПланСчетов": 2,
+      "ПланВидовРасчета": 2
+    }
+  },
+  "кэш_два_прогона_подряд_BUH_накопление": [
+    {
+      "прогон": 1,
+      "ms": 24864,
+      "cache_hit_top": false,
+      "cache_hit_section": false,
+      "checked": 100,
+      "with_data": 30,
+      "empty": 70,
+      "detail": 30
+    },
+    {
+      "прогон": 2,
+      "ms": 24973,
+      "cache_hit_top": false,
+      "cache_hit_section": false,
+      "checked": 100,
+      "with_data": 30,
+      "empty": 70,
+      "detail": 30
+    }
+  ],
+  "поле_периода_РегистрРасчета_Начисления_ZUP": {
+    "стандартные_реквизиты": [
+      "ПериодРегистрации",
+      "ПериодДействия",
+      "ПериодДействияНачало",
+      "ПериодДействияКонец",
+      "БазовыйПериодНачало",
+      "БазовыйПериодКонец"
+    ],
+    "поля_Период_нет": true,
+    "следствие": "СтруктураСодержитПоле(...,\"Период\") = Ложь -> has_period_field false, даты null"
+  },
+  "вызовы": {
+    "BUH": {
+      "light": {
+        "ms": 6594,
+        "http": 200,
+        "wire_bytes": 8427,
+        "payload_bytes": 7494,
+        "envelope_bytes": 3917,
+        "envelope_pct": 52,
+        "warnings": [],
+        "sections": {
+          "generated_at": 20,
+          "configuration_agnostic": 4,
+          "read_only": 4,
+          "cache_hit": 5,
+          "cache_age_seconds": 1,
+          "warnings": 2,
+          "organizations": 2443,
+          "data_period": 176,
+          "accounting_registers": 284,
+          "closed_periods": 419,
+          "ok": 4,
+          "correlation_id": 38,
+          "auth_context": 167,
+          "privacy": 3700
+        },
+        "data_period": {
+          "first_entry": "2023-12-31T12:00:00",
+          "last_entry": "2026-07-24T11:46:21",
+          "total_entries": 30844,
+          "source_register": "РегистрБухгалтерии.Хозрасчетный"
+        },
+        "accounting_registers": [
+          {
+            "register": "РегистрБухгалтерии.Хозрасчетный",
+            "first": "2023-12-31T12:00:00",
+            "last": "2026-07-24T11:46:21",
+            "total": 30844
+          }
+        ],
+        "organizations_count": 5
+      },
+      "both_heavy": {
+        "ms": 227,
+        "http": 200,
+        "ok": false,
+        "error_code": "invalid_arguments",
+        "error_message": "Секции регистров сведений и регистров накопления запрашиваются раздельно: вместе они не укладываются в таймаут публикации, и ответ обрывается шлюзом без структурированной ошибки.",
+        "keys": [
+          "ok",
+          "message",
+          "auth_context",
+          "stage",
+          "error",
+          "privacy"
+        ]
+      },
+      "total_РегистрСведений": {
+        "total": null,
+        "keys": [
+          "next_cursor",
+          "total_estimated"
+        ],
+        "ms": 5226
+      },
+      "total_РегистрНакопления": {
+        "total": null,
+        "keys": [
+          "next_cursor",
+          "total_estimated"
+        ],
+        "ms": 718
+      },
+      "total_РегистрРасчета": {
+        "total": null,
+        "keys": [
+          "next_cursor",
+          "total_estimated"
+        ],
+        "ms": 512
+      },
+      "total_РегистрБухгалтерии": {
+        "total": null,
+        "keys": [
+          "next_cursor",
+          "total_estimated"
+        ],
+        "ms": 447
+      },
+      "accumulation": {
+        "ms": 28190,
+        "http": 200,
+        "wire_bytes": 16412,
+        "payload_bytes": 14929,
+        "envelope_bytes": 3917,
+        "envelope_pct": 26,
+        "warnings": [
+          "Список регистров накопления усечён accumulation_register_limit=100."
+        ],
+        "sections": {
+          "generated_at": 20,
+          "configuration_agnostic": 4,
+          "read_only": 4,
+          "cache_hit": 5,
+          "cache_age_seconds": 1,
+          "warnings": 102,
+          "accumulation_registers": 5376,
+          "accumulation_registers_detail": 5259,
+          "accumulation_registers_checked": 3,
+          "ok": 4,
+          "correlation_id": 38,
+          "auth_context": 167,
+          "privacy": 3700
+        },
+        "checked": 100,
+        "with_data": 30,
+        "empty": 70,
+        "detail_len": 30
+      }
+    },
+    "ZUP": {
+      "light": {
+        "ms": 5923,
+        "http": 200,
+        "wire_bytes": 6926,
+        "payload_bytes": 6532,
+        "envelope_bytes": 6013,
+        "envelope_pct": 92,
+        "warnings": [
+          "Пропущен РегистрСведений.РазделыДатЗапретаИзмененияОбъектовБЗК: не найдено поле даты запрета."
+        ],
+        "sections": {
+          "generated_at": 20,
+          "configuration_agnostic": 4,
+          "read_only": 4,
+          "cache_hit": 5,
+          "cache_age_seconds": 1,
+          "warnings": 181,
+          "organizations": 2,
+          "data_period": 79,
+          "accounting_registers": 2,
+          "closed_periods": 2,
+          "ok": 4,
+          "correlation_id": 38,
+          "auth_context": 180,
+          "privacy": 5783
+        },
+        "data_period": {
+          "first_entry": null,
+          "last_entry": null,
+          "total_entries": 0,
+          "source_register": null
+        },
+        "accounting_registers": [],
+        "organizations_count": 0
+      },
+      "both_heavy": {
+        "ms": 281,
+        "http": 200,
+        "ok": false,
+        "error_code": "invalid_arguments",
+        "error_message": "Секции регистров сведений и регистров накопления запрашиваются раздельно: вместе они не укладываются в таймаут публикации, и ответ обрывается шлюзом без структурированной ошибки.",
+        "keys": [
+          "ok",
+          "message",
+          "auth_context",
+          "stage",
+          "error",
+          "privacy"
+        ]
+      },
+      "total_РегистрСведений": {
+        "total": null,
+        "keys": [
+          "next_cursor",
+          "total_estimated"
+        ],
+        "ms": 4704
+      },
+      "total_РегистрНакопления": {
+        "total": null,
+        "keys": [
+          "next_cursor",
+          "total_estimated"
+        ],
+        "ms": 591
+      },
+      "total_РегистрРасчета": {
+        "total": null,
+        "keys": [
+          "next_cursor",
+          "total_estimated"
+        ],
+        "ms": 435
+      },
+      "total_РегистрБухгалтерии": {
+        "total": null,
+        "keys": [
+          "next_cursor",
+          "total_estimated"
+        ],
+        "ms": 405
+      }
+    },
+    "ERP": {
+      "light": {
+        "ms": 15992,
+        "http": 200,
+        "wire_bytes": 15728,
+        "payload_bytes": 13920,
+        "envelope_bytes": 5294,
+        "envelope_pct": 38,
+        "warnings": [
+          "Организации из РегистрБухгалтерии.КорректировкиНалоговойБазы не разрешены; поле «Организация» найдено в метаданных.",
+          "Организации из РегистрБухгалтерии.МеждународныйБезКорреспонденции не разрешены; поле «Организация» найдено в метаданных."
+        ],
+        "sections": {
+          "generated_at": 20,
+          "configuration_agnostic": 4,
+          "read_only": 4,
+          "cache_hit": 5,
+          "cache_age_seconds": 1,
+          "warnings": 453,
+          "organizations": 6241,
+          "data_period": 204,
+          "accounting_registers": 1056,
+          "closed_periods": 419,
+          "ok": 4,
+          "correlation_id": 38,
+          "auth_context": 158,
+          "privacy": 5086
+        },
+        "data_period": {
+          "first_entry": "2025-07-23T00:00:00",
+          "last_entry": "2025-11-30T23:59:59",
+          "total_entries": 30314,
+          "source_register": "РегистрБухгалтерии.КорректировкиНалоговойБазы"
+        },
+        "accounting_registers": [
+          {
+            "register": "РегистрБухгалтерии.КорректировкиНалоговойБазы",
+            "first": "2025-07-23T00:00:00",
+            "last": "2025-11-30T23:59:59",
+            "total": 10
+          },
+          {
+            "register": "РегистрБухгалтерии.Международный",
+            "first": "2021-09-30T12:00:00",
+            "last": "2026-02-28T23:59:59",
+            "total": 10055
+          },
+          {
+            "register": "РегистрБухгалтерии.МеждународныйБезКорреспонденции",
+            "first": null,
+            "last": null,
+            "total": 0
+          },
+          {
+            "register": "РегистрБухгалтерии.Хозрасчетный",
+            "first": "2021-09-30T12:00:00",
+            "last": "2026-03-31T23:59:59",
+            "total": 20249
+          }
+        ],
+        "organizations_count": 14
+      },
+      "both_heavy": {
+        "ms": 250,
+        "http": 200,
+        "ok": false,
+        "error_code": "invalid_arguments",
+        "error_message": "Секции регистров сведений и регистров накопления запрашиваются раздельно: вместе они не укладываются в таймаут публикации, и ответ обрывается шлюзом без структурированной ошибки.",
+        "keys": [
+          "ok",
+          "message",
+          "auth_context",
+          "stage",
+          "error",
+          "privacy"
+        ]
+      },
+      "total_РегистрСведений": {
+        "total": null,
+        "keys": [
+          "next_cursor",
+          "total_estimated"
+        ],
+        "ms": 7103
+      },
+      "total_РегистрНакопления": {
+        "total": null,
+        "keys": [
+          "next_cursor",
+          "total_estimated"
+        ],
+        "ms": 1330
+      },
+      "total_РегистрРасчета": {
+        "total": null,
+        "keys": [
+          "next_cursor",
+          "total_estimated"
+        ],
+        "ms": 694
+      },
+      "total_РегистрБухгалтерии": {
+        "total": null,
+        "keys": [
+          "next_cursor",
+          "total_estimated"
+        ],
+        "ms": 759
+      }
+    }
+  }
+}
