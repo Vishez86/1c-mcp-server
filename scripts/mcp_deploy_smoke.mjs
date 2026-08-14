@@ -238,7 +238,10 @@ async function discoverFixtures(options) {
 const MODULE_MARKERS = [
   {
     module: "MCP_Metadata",
-    since: "cf08b07",
+    // since=14eb179: pre-flight не строит список полей для показа на успешном
+    // пути. Признака снаружи нет — вердикты те же, меняется цена; свежесть
+    // доказывают ревизия и падение стадии q_preflight_sources в профиле.
+    since: "14eb179",
     what: "предвалидация полей (field_not_found) и машинные признаки типа (is_reference/ref_types, T-3)",
     async run(options, fixtures) {
       if (!fixtures.catalog) return { status: "skip", note: "нет справочника с поддержкой ссылок" };
@@ -379,7 +382,9 @@ const MODULE_MARKERS = [
     // наружу и не отдавался. Свежесть комплекта доказывают ревизия 2026-08-14.3
     // (MCP_Config, явная сверка) и query_chars у маркера стадий; содержимое самих
     // записей проверяется просмотром ЖР изнутри 1С. Возможность маркера прежняя.
-    since: "7388bf4",
+    // since=14eb179: та же волна pre-flight — оракул существования отделён от
+    // списка для показа.
+    since: "14eb179",
     what: "объявленное исключение // СТАНДАРТ-ИСКЛЮЧЕНИЕ признаётся",
     async run(options, fixtures) {
       if (!fixtures.register) return { status: "skip", note: "в базе нет регистра бухгалтерии" };
