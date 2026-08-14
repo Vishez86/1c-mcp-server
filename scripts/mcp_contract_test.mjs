@@ -597,10 +597,18 @@ class ContractRunner {
       });
       assert(result.allowed_metadata_summary?.objects_count > 100, "objects_count is suspiciously low");
       assert(Array.isArray(result.mcp_server?.tools), "mcp_server.tools must be present");
+      // Обратная сторона сжатия предупреждений у паспортов: ЗДЕСЬ состав обязан
+      // остаться полным и пофамильно. Иначе перенос превращается в потерю сигнала о
+      // ПДн третьих лиц — то, против чего заведён ПР-10 ТЗ паспорта.
+      assert(Array.isArray(result.privacy?.config_warnings),
+        "get_current_user_context обязан отдавать config_warnings СОСТАВОМ: сюда ведёт указатель из паспорта");
+      assert(result.privacy.config_warnings_count === undefined,
+        "здесь состав, а не счётчик — счётчик уместен только там, где состав убран");
       return {
         user: result.user?.name,
         objects: result.allowed_metadata_summary.objects_count,
         tools: result.mcp_server.tools.length,
+        configWarnings: result.privacy.config_warnings.length,
       };
     });
 
@@ -1448,6 +1456,26 @@ class ContractRunner {
     // запросов к данным у паспорта нет вовсе — значит нет и класса «сервер зарезал
     // сам себя» в этом инструменте. Взамен проверяется то, что заменило прежнее
     // поведение, и главное — что данные не вернулись чёрным ходом.
+    // Сжатие предупреждений политики проверяется у ОБОИХ паспортов одинаково.
+    // Ключевое здесь — не «стало короче», а «состав не потерян»: пустой или
+    // отсутствующий указатель означал бы починку сокрытием, и предупреждения о ПДн
+    // третьих лиц исчезли бы, не оставив следа (ПР-10 ТЗ).
+    const проверитьСжатыеПредупреждения = (privacy, тул) => {
+      assert(privacy && typeof privacy === "object", `${тул}: блок privacy обязан присутствовать`);
+      assert(privacy.config_warnings === undefined,
+        `${тул}: полный состав config_warnings из ответа убран — обязан быть только счётчик`);
+      assert(typeof privacy.config_warnings_count === "number",
+        `${тул}: обязан быть config_warnings_count (число), получено ${JSON.stringify(privacy.config_warnings_count)}`);
+      assert(privacy.config_warnings_source === "get_current_user_context",
+        `${тул}: указатель на полный состав обязан вести в get_current_user_context`);
+      // config_errors не сжимается никогда: это «политику не удалось прочитать».
+      assert(Array.isArray(privacy.config_errors),
+        `${тул}: config_errors обязан остаться массивом целиком — это про безопасность`);
+      // Признак маскирования остаётся: по нему клиент отличает маску от данных.
+      assert(typeof privacy.enabled === "boolean" && typeof privacy.engine_revision === "string",
+        `${тул}: enabled и engine_revision обязаны остаться`);
+    };
+
     const СЕКЦИИ_ДАННЫХ = ["organizations", "data_period", "accounting_registers",
       "closed_periods", "accumulation_registers", "accumulation_registers_detail",
       "accumulation_registers_checked", "information_registers", "calculation_registers"];
@@ -1481,6 +1509,10 @@ class ContractRunner {
       assert(!JSON.stringify(result).includes("probe_registers"),
         "ответ не должен упоминать probe_registers — такого инструмента нет");
       assert(Array.isArray(result.warnings), "warnings must be an array");
+      // Предупреждения политики отдаются СЧЁТЧИКОМ, а не составом (решение 14.08):
+      // они адресованы администратору и стоили 789 токенов из 1 509. Проверяется и
+      // то, что состав не исчез молча — указатель обязан вести туда, где он полный.
+      проверитьСжатыеПредупреждения(result.privacy, "get_database_passport");
       // ПР-13: потолок объявлен в СИМВОЛАХ. Ожидание — порядка 300, потолок 10 000.
       const симв = JSON.stringify(result).length;
       assert(симв <= 10000, `сокращённый паспорт превысил потолок 10 000 символов: ${симв}`);
@@ -1545,6 +1577,8 @@ class ContractRunner {
       // не должен различать «не посчитали» и «объектов нет» по одному нулю.
       assert(Array.isArray(result.unsupported_kinds),
         "unsupported_kinds обязан присутствовать как массив, даже пустой");
+
+      проверитьСжатыеПредупреждения(result.privacy, "get_database_passport_full");
 
       // Имён объектов нет НИГДЕ. Дешёвый и надёжный признак: в ответе не должно
       // быть ни одной строки с точкой вида «Справочник.Имя» — так выглядит любое
