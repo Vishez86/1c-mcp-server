@@ -20,6 +20,7 @@
 // Транспорт node:https: undici рвёт connect на жёстких 10 с через VPN, что
 // выглядит как «упал контур». Сертификат контура самоподписанный.
 
+import { readFileSync } from "node:fs";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { request } from "node:https";
@@ -37,6 +38,24 @@ const CONTOURS = {
 // Значение переопределяется без правки файла: --revision <знач> или MCP_EXPECTED_REVISION.
 // Захардкоженная константа делала пробу непригодной на следующий же день после
 // деплоя — прогон вставал на разделе Р, и приёмку гоняли копией скрипта.
+// Ожидаемая ревизия берётся из РАБОЧЕГО ДЕРЕВА — `РевизияPrivacyДвижка` в
+// MCP_Config.bsl, тем же способом, что и в mcp_deploy_smoke. Захардкоженный
+// дефолт здесь дважды уводил пробу в SKIP: 14.08 он отставал на четыре волны
+// (.10.4 при живых .14.4), а через несколько часов — на одну (.14.4 при .14.5),
+// и оба раза проба выглядела честной, не проверив ничего. Литерал в коде
+// синхронизировать вручную нельзя: ревизия поднимается каждой волной.
+function ревизияИзРабочегоДерева() {
+  try {
+    const path = new URL("../src/CommonModules/MCP_Config.bsl", import.meta.url);
+    const text = readFileSync(path, "utf8");
+    const block = text.split("Функция РевизияPrivacyДвижка()")[1];
+    const match = block ? block.match(/Возврат\s+"([^"]+)"/u) : null;
+    return match ? match[1] : "";
+  } catch {
+    return "";
+  }
+}
+
 const revFlag = process.argv.indexOf("--revision");
 const EXPECTED_REVISION =
   (revFlag > -1 ? process.argv[revFlag + 1] : "") ||
@@ -45,9 +64,7 @@ const EXPECTED_REVISION =
   // ровно то, о чём предупреждает комментарий выше: раздел Р давал «ревизия не
   // совпала», остальные разделы уходили в SKIP, и проба выглядела честной, пропуская
   // при этом весь регресс. Волна 2 поднимает ревизию до .2 — поднимается и дефолт.
-  // 14.08: дефолт отставал на четыре волны (.10.4 при живых .14.4) — ровно тот
-  // случай, от которого предостерегает комментарий. Поднимать вместе с ревизией.
-  "2026-08-14.4";
+  ревизияИзРабочегоДерева();
 
 // Коды, которых в контракте больше нет. Появление любого — старая сборка.
 const REMOVED_CODES = ["privacy_denied_field", "privacy_denied_autoorder", "privacy_config_error"];
