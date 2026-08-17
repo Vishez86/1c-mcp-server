@@ -260,15 +260,36 @@ const MODULE_MARKERS = [
       const structure = await callTool(options, "get_metadata_structure", {
         type: fixtures.catalog, section: "attributes", limit: 20,
       });
-      const attributes = structure?.metadata?.attributes ?? [];
-      if (attributes.length === 0) {
-        return { status: "pass", note: `field_not_found ок; у ${fixtures.catalog} нет реквизитов для проверки T-3` };
-      }
-      const без = attributes.filter((item) => item?.is_reference === undefined || item?.ref_types === undefined);
-      return без.length === 0
-        ? { status: "pass", note: `field_not_found ок; is_reference/ref_types есть у всех ${attributes.length} реквизитов` }
-        : { status: "fail", note: `нет ключей is_reference/ref_types у ${без.length} из ${attributes.length} реквизитов`
+      // Реквизиты секции приходят в items верхнего уровня; чтение
+      // metadata.attributes было мёртвой ветвью — такого ключа в ответе нет,
+      // и проверка T-3 всегда уходила в ранний pass «нет реквизитов»,
+      // не проверив ничего (тот же класс, что #92: всегда зелёное — не сигнал).
+      const attributes = structure?.items ?? structure?.metadata?.attributes ?? [];
+      if (attributes.length > 0) {
+        const без = attributes.filter((item) => item?.is_reference === undefined || item?.ref_types === undefined);
+        if (без.length > 0) {
+          return { status: "fail", note: `нет ключей is_reference/ref_types у ${без.length} из ${attributes.length} реквизитов`
             + " — MCP_Metadata старее T-3 (cf08b07)" };
+        }
+      }
+      // #150 Д-2 (R-4, ревизия 2026-08-17.6): virtual_tables[].parameters несёт
+      // полный позиционный список из того же источника, что правило арности.
+      // На сборке ДО волны у Остатков бухрегистра публиковалась одна позиция.
+      if (fixtures.register) {
+        const схемаВТ = await callTool(options, "get_metadata_structure", {
+          type: fixtures.register, section: "virtual_tables", limit: 10,
+        });
+        const остатки = (схемаВТ?.items ?? []).find((vt) => vt?.name === "Остатки");
+        if (остатки) {
+          const позиций = Array.isArray(остатки.parameters) ? остатки.parameters.length : 0;
+          if (позиций < 4) {
+            return { status: "fail", note: `virtual_tables.Остатки.parameters несёт ${позиций} позиц. вместо 4 —`
+              + " опубликован MCP_Metadata ДО публикации сигнатур (#150 Д-2, ревизия 2026-08-17.6)" };
+          }
+        }
+      }
+      return { status: "pass", note: `field_not_found ок; is_reference/ref_types у ${attributes.length} реквизитов;`
+        + " сигнатуры ВТ публикуются полностью" };
     },
   },
   {
@@ -1049,13 +1070,62 @@ const MODULE_MARKERS = [
           + " опубликован MCP_HTTPService ДО правки фолбэка HTTP-аудита" };
       }
 
+      // GET /health (#148, ревизия 2026-08-17.6): осиротевший шаблон метаданных
+      // ожил обработчиком healthGET. До правки путь отвечал 500 «Обработчик
+      // запроса не найден» — тем же текстом, каким проявляется рассинхрон
+      // метаданных и кода, и ответ на любом маршруте переставал быть сигналом.
+      // 404 = шаблон удалён из метаданных: skip-примечание, а не fail — шаблон
+      // в .bsl не версионируется, и его отсутствие о свежести модуля не говорит.
+      let healthNote = "";
+      const health = await запросHealth(options);
+      if (health.status === 404) {
+        healthNote = "; /health: шаблона нет в метаданных (404), GET-проверка живости недоступна";
+      } else if (health.status !== 200) {
+        return { status: "fail", note: `GET /health ответил ${health.status || health.body} —`
+          + " опубликован MCP_HTTPService ДО healthGET (#148, ревизия 2026-08-17.6)"
+          + " либо поле «Обработчик» шаблона не совпадает с именем функции" };
+      } else {
+        let телоHealth = null;
+        // 1С пишет BOM в начало тела УстановитьТелоИзСтроки — срезать до разбора.
+        try { телоHealth = JSON.parse(health.body.replace(/^﻿/, "")); } catch { телоHealth = null; }
+        if (!телоHealth || typeof телоHealth.engine_revision !== "string") {
+          return { status: "fail", note: "GET /health ответил 200, но тело без engine_revision" };
+        }
+        healthNote = `; /health: ${телоHealth.status}, ревизия ${телоHealth.engine_revision}`;
+      }
+
       return { status: "pass", note: `rpc_handle=${stages.rpc_handle} мс,`
         + ` стадий транспорта: ${Object.keys(stages).length},`
         + ` request/response chars: ${запись.request_chars}/${запись.response_chars};`
-        + ` ранний отказ несёт http_guard=${свежийОтказ.stages.http_guard} мс` };
+        + ` ранний отказ несёт http_guard=${свежийОтказ.stages.http_guard} мс${healthNote}` };
     },
   },
 ];
+
+// GET /hs/mcp/health — живость публикации без авторизации и протокольного
+// заголовка (#148). Отдельная функция по той же причине, что и
+// запросСНеподдерживаемойВерсией: rpc() обязан всегда слать корректный POST.
+function запросHealth(options) {
+  const target = new URL(options.url.replace(/\/rpc\/?$/, "/health"));
+  return new Promise((resolveP) => {
+    const req = httpsRequest({
+      hostname: target.hostname,
+      port: target.port || 443,
+      path: target.pathname,
+      method: "GET",
+      rejectUnauthorized: false,
+      timeout: 30000,
+    }, (res) => {
+      let body = "";
+      res.setEncoding("utf8");
+      res.on("data", (chunk) => { body += chunk; });
+      res.on("end", () => resolveP({ status: res.statusCode, body }));
+    });
+    req.on("error", (e) => resolveP({ status: 0, body: String(e?.message ?? e) }));
+    req.on("timeout", () => { req.destroy(); resolveP({ status: 0, body: "timeout" }); });
+    req.end();
+  });
+}
 
 // Запрос к /rpc с ЗАВЕДОМО НЕПОДДЕРЖИВАЕМОЙ версией протокола — воспроизводит
 // ранний отказ protocol_version_rejected.

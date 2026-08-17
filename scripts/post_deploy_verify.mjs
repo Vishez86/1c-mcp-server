@@ -324,6 +324,26 @@ function buildCases() {
     forbidCode: "vt_filter_in_external_where",
   });
 
+  // ---------------- #150 Д-2: арность ДвиженияССубконто (замер 17.08 — 4 позиции)
+  // Правило арности распространено на ДвиженияССубконто ревизией 2026-08-17.6:
+  // прежде и 3, и 7 позиций давали valid=true, а платформа на 5+ отвечала
+  // «Неверные параметры». Контроль держит правило от пережёсткости на законных
+  // четырёх позициях.
+  add({
+    pr: "#150", rule: "vt_signature_too_many_positions", kind: "триггер: 5 позиций у ДвиженияССубконто",
+    need: register,
+    query: `ВЫБРАТЬ ПЕРВЫЕ 1 Данные.Регистратор КАК Регистратор `
+      + `ИЗ ${register}.ДвиженияССубконто(&Дата, &Дата, ИСТИНА, ИСТИНА, ИСТИНА) КАК Данные`,
+    expectCode: "vt_signature_too_many_positions",
+  });
+  add({
+    pr: "#150", rule: "vt_signature_too_many_positions", kind: "контроль: 4 позиции законны",
+    need: register,
+    query: `ВЫБРАТЬ ПЕРВЫЕ 1 Данные.Регистратор КАК Регистратор `
+      + `ИЗ ${register}.ДвиженияССубконто(&Дата, &Дата, ИСТИНА, ИСТИНА) КАК Данные`,
+    forbidCode: "vt_signature_too_many_positions",
+  });
+
   // ---------------- #63: base_register_table_without_vt_check + механизм исключений
   add({
     pr: "#63", rule: "base_register_table_without_vt_check", kind: "триггер: основная таблица регистра",
