@@ -839,10 +839,18 @@ const MODULE_MARKERS = [
       // потому что незнакомый аргумент сервер молча игнорирует. Ключ возвращается
       // и при пустом журнале, и без права на журнал — от прав признак не зависит.
       const точечный = await callTool(options, "get_audit_log",
-        { minutes_back: 5, limit: 1, event_names: ["MCP.tool.unhandled_exception"] });
+        { minutes_back: 5, limit: 1, event_names: ["MCP.tool.unhandled_exception", "MCP.QueryExample.skip"] });
       if (точечный?.ok !== true || точечный?.by_event === undefined) {
         return { status: "fail", note: "event_names не поддержан: в ответе нет by_event — "
           + "опубликованы MCP_Tools_Impl/MCP_Audit ДО #158 (ревизия 2026-08-17.3)" };
+      }
+      // Дофикс .17.4: каждый запрошенный элемент присутствует в by_event ровно
+      // один раз, ненайденный — с нулём. Сборка .17.3 отдавала пустой массив,
+      // и ноль был неотличим от «имя не искалось» — ровно дефект #158.
+      if (!Array.isArray(точечный.by_event) || точечный.by_event.length !== 2) {
+        return { status: "fail", note: `by_event не отдаёт запрошенные имена с нулями `
+          + `(элементов: ${Array.isArray(точечный.by_event) ? точечный.by_event.length : "не массив"} из 2) — `
+          + "опубликован MCP_Audit ДО дофикса .17.4" };
       }
       return { status: "pass", note: `events=${r.events.length}, scanned=${r.scanned_events}, фильтр исхода на HTTP держит, event_names поддержан` };
     },
