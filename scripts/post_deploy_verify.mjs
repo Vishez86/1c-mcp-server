@@ -179,13 +179,17 @@ function buildCases() {
     forbidCode: "style_yo_letter_forbidden",
   });
 
-  // ---------------- #63: temporary_table_identifier_mixed_script
+  // ---------------- #63 → #145: temporary_table_identifier_mixed_script
+  // Правило снято с сервера ревизией 2026-08-17.1 (#145, решение 13.08: класс
+  // «стиль» судит внешний чекер query_style_check.mjs — его самотест держит
+  // триггер гомоглифов). Кейс перевёрнут из expectCode в forbidCode и ловит
+  // ОТКАТ: сборка до снятия выдаёт mixed_script на гомоглифах, и кейс падает.
   add({
-    pr: "#63", rule: "temporary_table_identifier_mixed_script", kind: "триггер: гомоглифы (FR-77)",
+    pr: "#145", rule: "temporary_table_identifier_mixed_script", kind: "контроль: правило снято с сервера",
     need: catalog,
     query: `ВЫБРАТЬ Т.Ссылка КАК Ссылка ПОМЕСТИТЬ ${HOMOGLYPH} ИЗ ${catalog} КАК Т; `
       + `ВЫБРАТЬ ПЕРВЫЕ 1 ${HOMOGLYPH}.Ссылка ИЗ ${HOMOGLYPH} КАК ${HOMOGLYPH}`,
-    expectCode: "temporary_table_identifier_mixed_script",
+    forbidCode: "temporary_table_identifier_mixed_script",
   });
   add({
     pr: "#63", rule: "temporary_table_identifier_mixed_script", kind: "контроль: чистая кириллица",
