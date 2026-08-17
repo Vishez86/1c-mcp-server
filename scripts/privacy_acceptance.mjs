@@ -227,11 +227,19 @@ async function runEnforced() {
       "в живой политике нет ни одной записи — заполните privacy в MCP_ServerConfig");
     return;
   }
-  const closed = closedTypes[0];
+  // Тип для матрицы имён — тот, у которого закрыто ИМЯ (псевдоним типа либо
+  // имя-подобная пометка). Политика из одних полей-контактов (Контрагенты:
+  // телефоны, Значение) оставляет имя открытым ПО ЗАМЫСЛУ администратора —
+  // матрица подмены имени к ней неприменима и давала ложный FAIL всем составом
+  // (замер ERP 17.08: первым в политике шёл именно такой тип).
+  const NAME_LIKE = ["Наименование", "НаименованиеПолное", "Код", "Представление"];
+  const nameClosed = (t) => policy.aliasTypes.includes(t)
+    || (policy.maskFieldsByType.get(t) ?? []).some((f) => NAME_LIKE.includes(f));
+  const closed = closedTypes.find(nameClosed) ?? closedTypes[0];
   console.log(`\nЗакрытый тип для матрицы: ${closed}\n`);
 
   const nameField = (policy.maskFieldsByType.get(closed) ?? []).find((f) =>
-    ["Наименование", "НаименованиеПолное", "Код", "Представление"].includes(f),
+    NAME_LIKE.includes(f),
   ) || "Наименование";
 
   // Формы, которые прежний контракт отклонял. Теперь каждая обязана выполниться,
@@ -306,6 +314,64 @@ async function runEnforced() {
         !looksMasked(mixedRows[0].П, closed),
         "значение открытого типа подменено — ложное срабатывание");
     }
+  }
+
+  // ---- #177: помеченные поля табличных частей. Политика хранит плоские имена
+  // на типе-владельце, пометка закрывает одноимённые поля строк ТЧ. До ревизии
+  // 2026-08-17.8 гейт запроса отдавал их открытыми (прямой источник-ТЧ,
+  // соединение, разыменование через сегмент ТЧ) при закрытом presentation
+  // ссылки-владельца в той же строке. Имена ТЧ и полей не захардкожены: ТЧ
+  // ищется по живым метаданным как содержащая помеченное строковое поле.
+  const S5 = "§11.3 поля табличных частей (#177)";
+  const normName = (s) => String(s ?? "").toUpperCase();
+  let tpProbed = false;
+  for (const maskType of policy.maskTypes) {
+    const fields = policy.maskFieldsByType.get(maskType) ?? [];
+    if (!fields.length) continue;
+    const meta = await callTool("get_metadata_structure", {
+      type: maskType, section: "tabular_sections", include_tabular_sections: true,
+    });
+    const tp = (meta.data?.items ?? []).find((s) => (s.attributes ?? []).some(
+      (a) => (a.value_types ?? []).includes("Строка")
+        && fields.some((f) => normName(f) === normName(a.name)),
+    ));
+    if (!tp) continue;
+    tpProbed = true;
+    const attrs = tp.attributes ?? [];
+    const markedField = attrs.map((a) => a.name)
+      .find((n) => fields.some((f) => normName(f) === normName(n)));
+    const openField = attrs
+      .filter((a) => (a.value_types ?? []).includes("Строка"))
+      .map((a) => a.name)
+      .find((n) => !fields.some((f) => normName(f) === normName(n)));
+    const tpTable = `${maskType}.${tp.name}`;
+
+    const probes = [
+      [`прямой ТЧ-источник: ${tp.name}.${markedField}`,
+        `ВЫБРАТЬ ПЕРВЫЕ 20 Т.${markedField} КАК П ИЗ ${tpTable} КАК Т`, true],
+      [`разыменование через сегмент ТЧ: ${tp.name}.${markedField}`,
+        `ВЫБРАТЬ ПЕРВЫЕ 20 К.${tp.name}.${markedField} КАК П ИЗ ${maskType} КАК К`, true],
+    ];
+    if (openField) {
+      probes.push([`контроль: непомеченное поле ${tp.name}.${openField} открыто`,
+        `ВЫБРАТЬ ПЕРВЫЕ 20 Т.${openField} КАК П ИЗ ${tpTable} КАК Т`, false]);
+    }
+    for (const [name, query, expectMasked] of probes) {
+      const res = await callTool("run_1c_query", { query, limit: 20 });
+      const nonEmpty = (res.data?.rows ?? []).filter((r) => String(r.П ?? "") !== "");
+      if (!nonEmpty.length) {
+        record(S5, name, "SKIP", "нет непустых строк — нет фикстуры");
+        continue;
+      }
+      const masked = nonEmpty.filter((r) => looksMasked(r.П, maskType)).length;
+      check(S5, name,
+        expectMasked ? masked === nonEmpty.length : masked === 0,
+        `подменено ${masked} из ${nonEmpty.length} непустых`);
+    }
+  }
+  if (!tpProbed) {
+    record(S5, "поля табличных частей", "SKIP",
+      "в политике нет типа с помеченным строковым полем ТЧ");
   }
 
   // ---- остальные инструменты: поиск по имени в закрытом типе работает.
