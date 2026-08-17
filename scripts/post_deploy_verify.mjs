@@ -290,9 +290,13 @@ function buildCases() {
   });
 
   // ---------------- #63: vt_filter_in_external_where
+  // Флаги awaitingDeploy сняты 17.08 после приёмки ревизий 2026-08-17.3…7 на ВСЕХ
+  // трёх контурах (прогоны: ERP и BUH PASS=46, ZUP PASS=22/SKIP=24 без провалов).
+  // Пока флаг стоит, кейс не может покраснеть — а проверка, которая не краснеет,
+  // сигналом не является (тот же довод, что у паспорта ниже, дефект оснастки 14.08).
   add({
     pr: "#63", rule: "vt_filter_in_external_where", kind: "триггер: отбор по полю ВТ во внешнем ГДЕ",
-    need: register, awaitingDeploy: true,
+    need: register,
     query: `ВЫБРАТЬ ПЕРВЫЕ 1 Данные.Счет КАК Счет ИЗ ${register}.Остатки(&Дата, , , ) КАК Данные `
       + "ГДЕ Данные.Субконто1 <> НЕОПРЕДЕЛЕНО",
     expectCode: "vt_filter_in_external_where",
@@ -306,7 +310,7 @@ function buildCases() {
   });
   add({
     pr: "#63", rule: "vt_filter_in_external_where", kind: "контроль: отбор по РЕСУРСУ в ГДЕ законен",
-    need: register, awaitingDeploy: true,
+    need: register,
     query: `ВЫБРАТЬ ПЕРВЫЕ 1 Данные.Счет КАК Счет ИЗ ${register}.Остатки(&Дата, , , ) КАК Данные `
       + "ГДЕ Данные.СуммаОстатокДт <> 0",
     forbidCode: "vt_filter_in_external_where",
@@ -375,7 +379,7 @@ function buildCases() {
   });
   add({
     pr: "#63", rule: "base_register_table_without_vt_check", kind: "контроль: объявленное исключение с обоснованием",
-    need: register, awaitingDeploy: true,
+    need: register,
     query: "ВЫБРАТЬ ПЕРВЫЕ 1 Записи.Счет КАК Счет\n"
       + "ИЗ\n"
       + "// СТАНДАРТ-ИСКЛЮЧЕНИЕ: base_register_table_without_vt_check —\n"
@@ -430,7 +434,7 @@ function buildCases() {
   // ---------------- найдено при прогоне 28.07, фиксы в этом же PR
   add({
     pr: "прогон", rule: "explicit_limit_not_numeric", kind: "ПЕРВЫЕ N + числовая константа в выборке валидны",
-    need: catalog, awaitingDeploy: true,
+    need: catalog,
     query: `ВЫБРАТЬ ПЕРВЫЕ 1 1 КАК ЕстьДанные ИЗ ${catalog} КАК Т`,
     forbidCode: "explicit_limit_not_numeric",
   });
@@ -442,7 +446,7 @@ function buildCases() {
   });
   add({
     pr: "прогон", rule: "get_accounting_entries", kind: "инструмент сырых проводок работает",
-    need: register, awaitingDeploy: true, tool: "get_accounting_entries",
+    need: register, tool: "get_accounting_entries",
     toolArgs: { period_from: "2025-01-01", period_to: "2025-01-31", limit: 1 },
   });
   // Кейс «период данных регистра без period_error» снят 14.08 вместе с предметом:
