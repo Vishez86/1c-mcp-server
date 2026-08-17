@@ -463,6 +463,26 @@ function buildCases() {
     passportNoDataOk: true,
   });
 
+  // ---------------- снимок tools/list: диагноз устаревшей схемы у клиента
+  // Ревизия 2026-08-17.9, разбор жалобы 17.08 «схема паспорта несёт старые
+  // параметры, get_database_passport_full в списке нет»: живой tools/list на всех
+  // трёх был свежим, старую схему держал кеш клиента. Сервер дотягивается до
+  // такого клиента только warnings'ами ответа, поэтому вызов по именам удалённой
+  // пересборкой 14.08 схемы называет причину и лечение (переподключить клиента).
+  // Флаги awaitingDeploy снять после публикации 2026-08-17.9 на всех трёх.
+  add({
+    pr: "прогон", rule: "passport_stale_tools_list", kind: "триггер: имя из удалённой схемы → диагноз снимка tools/list",
+    need: true, awaitingDeploy: true, tool: "get_database_passport",
+    toolArgs: { include_information_registers: true },
+    passportStaleHint: "expected",
+  });
+  add({
+    pr: "прогон", rule: "passport_stale_tools_list", kind: "контроль: имя вне удалённой схемы диагноз не поднимает",
+    need: true, awaitingDeploy: true, tool: "get_database_passport",
+    toolArgs: { bogus_probe_flag: true },
+    passportStaleHint: "forbidden",
+  });
+
   // ---------------- #65 / issue #60
   add({
     pr: "#65", rule: "issue #60", kind: "составной ИНДЕКСИРОВАТЬ ПО валиден",
@@ -596,6 +616,23 @@ async function runCase(entry) {
       return имя
         ? { ...entry, status: "PASS", note: `данных нет, конфигурация: ${имя}, символов: ${JSON.stringify(data).length}` }
         : { ...entry, status: "FAIL", note: "нет configuration.name — паспорт не назвал базу" };
+    }
+    if (entry.passportStaleHint) {
+      const warnings = Array.isArray(data.warnings) ? data.warnings.map(String) : [];
+      // Базовый warning обязан называть переданные имена в ОБОИХ случаях: диагноз
+      // снимка — дополнение к нему, а не замена.
+      const названо = Object.keys(entry.toolArgs).every((имя) => warnings.some((w) => w.includes(имя)));
+      if (!названо) {
+        return { ...entry, status: "FAIL", note: `warnings не назвал переданные аргументы: ${JSON.stringify(warnings).slice(0, 160)}` };
+      }
+      const диагноз = warnings.some((w) => w.includes("tools/list") && w.includes("устаревш"));
+      if (entry.passportStaleHint === "expected" && !диагноз) {
+        return { ...entry, status: "FAIL", note: `нет диагноза устаревшего снимка tools/list: ${JSON.stringify(warnings).slice(0, 200)}` };
+      }
+      if (entry.passportStaleHint === "forbidden" && диагноз) {
+        return { ...entry, status: "FAIL", note: "диагноз снимка поднялся на имени вне удалённой схемы — отпечаток дырявый" };
+      }
+      return { ...entry, status: "PASS", note: `warnings: ${warnings.length}, диагноз снимка ${диагноз ? "есть" : "нет"} — как ожидалось` };
     }
     const failed = call.ok === false || data.ok === false;
     return failed
