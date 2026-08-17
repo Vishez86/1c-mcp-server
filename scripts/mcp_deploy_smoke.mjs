@@ -423,7 +423,35 @@ const MODULE_MARKERS = [
           + "опубликован MCP_Query ДО снятия правила с сервера (#145, ревизия 2026-08-17.1)" };
       }
 
-      // Третье условие: текст правила обязан говорить на языке ТОГО ЖЕ вида
+      // Третье условие (#147, ревизия 2026-08-17.3): неизвестное поле ВТ во
+      // внешнем ГДЕ больше не получает vt_filter_in_external_where — совет о
+      // переносе невыполним, диагноз за pre-flight (field_not_found). Контроль
+      // на существующем поле состава (Счет) держит само правило живым: без него
+      // проверка не отличала бы починку от снятия правила целиком.
+      if (fixtures.register) {
+        const неизвестное = await callTool(options, "validate_1c_query", {
+          query: `ВЫБРАТЬ ПЕРВЫЕ 1 Данные.Счет КАК Счет ИЗ ${fixtures.register}.Остатки(&Дата, , , ) КАК Данные `
+            + "ГДЕ Данные.НетТакогоПоляГейта <> 0",
+          strict: true,
+        });
+        const кодыНеизвестного = (неизвестное?.errors ?? []).map((item) => item.code);
+        if (кодыНеизвестного.includes("vt_filter_in_external_where")) {
+          return { status: "fail", note: "неизвестное поле ВТ всё ещё получает vt_filter_in_external_where — "
+            + "опубликован MCP_Query ДО #147 (ревизия 2026-08-17.3)" };
+        }
+        const существующее = await callTool(options, "validate_1c_query", {
+          query: `ВЫБРАТЬ ПЕРВЫЕ 1 Данные.Счет КАК Счет ИЗ ${fixtures.register}.Остатки(&Дата, , , ) КАК Данные `
+            + "ГДЕ Данные.Счет <> НЕОПРЕДЕЛЕНО",
+          strict: true,
+        });
+        const кодыСуществующего = (существующее?.errors ?? []).map((item) => item.code);
+        if (!кодыСуществующего.includes("vt_filter_in_external_where")) {
+          return { status: "fail", note: "правило vt_filter_in_external_where молчит на существующем поле состава — "
+            + "контроль #147 не прошёл, правило снято вместо починки" };
+        }
+      }
+
+      // Четвёртое условие: текст правила обязан говорить на языке ТОГО ЖЕ вида
       // регистра. Прежний текст был написан для бухгалтерии и приходил в том числе
       // на регистр сведений, где нет ни Обороты, ни ДвиженияССубконто, ни субконто.
       // Это и есть наблюдаемый признак публикации правки: сообщение адресное.
@@ -787,7 +815,18 @@ const MODULE_MARKERS = [
       if (штатные.length > 0) {
         return { status: "fail", note: `outcome:"error" отдал ${штатные.length} штатных HTTP-записей — опубликован MCP_Audit до правки фильтра` };
       }
-      return { status: "pass", note: `events=${r.events.length}, scanned=${r.scanned_events}, фильтр исхода на HTTP держит` };
+      // Точечный запрос имён событий (#158, ревизия 2026-08-17.3). Признак парный
+      // по конструкции: аргумент разбирает MCP_Tools_Impl, агрегат by_event кладёт
+      // MCP_Audit — старая половина любой из сторон означает ответ БЕЗ by_event,
+      // потому что незнакомый аргумент сервер молча игнорирует. Ключ возвращается
+      // и при пустом журнале, и без права на журнал — от прав признак не зависит.
+      const точечный = await callTool(options, "get_audit_log",
+        { minutes_back: 5, limit: 1, event_names: ["MCP.tool.unhandled_exception"] });
+      if (точечный?.ok !== true || точечный?.by_event === undefined) {
+        return { status: "fail", note: "event_names не поддержан: в ответе нет by_event — "
+          + "опубликованы MCP_Tools_Impl/MCP_Audit ДО #158 (ревизия 2026-08-17.3)" };
+      }
+      return { status: "pass", note: `events=${r.events.length}, scanned=${r.scanned_events}, фильтр исхода на HTTP держит, event_names поддержан` };
     },
   },
   {
