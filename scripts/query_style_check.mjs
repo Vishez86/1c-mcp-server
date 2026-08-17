@@ -413,12 +413,43 @@ function checkOuterJoinNullsInStatement(raw, code, baseOffset, findings) {
   }
   const inOn = (pos) => onRanges.some(([s, e]) => pos >= s && pos < e);
 
+  // #150 Д-5 (R-7): блоки ВЫБОР…КОНЕЦ с учётом вложенности. Вхождение поля в
+  // блоке, где ТО ЖЕ поле уже обёрнуто в ЕСТЬNULL, защищено конструкцией — в
+  // ветке ИНАЧЕ выражения «ВЫБОР КОГДА ЕСТЬNULL(КУ.Курс, 0) = 0 ТОГДА 0
+  // ИНАЧЕ Х / КУ.Курс КОНЕЦ» NULL исключён условием КОГДА. Критерий на уровне
+  // блока, а не ветки (симметрично серверу: ОбращениеЗащищеноВыборомСЕстьNull);
+  // защита чужого поля и защита в другом блоке не гасят. Словограницы
+  // обязательны: ВЫБОРКА и КОНЕЦПЕРИОДА — не операторы блока.
+  const caseBlocks = [];
+  {
+    const stack = [];
+    const kw = /(^|[^А-Яа-яЁёA-Za-z0-9_])(ВЫБОР|КОНЕЦ)(?=[^А-Яа-яЁёA-Za-z0-9_]|$)/gi;
+    let k;
+    while ((k = kw.exec(code)) !== null) {
+      const at = k.index + k[1].length;
+      if (k[2].toUpperCase() === "ВЫБОР") stack.push(at);
+      else if (stack.length > 0) caseBlocks.push([stack.pop(), at + k[2].length]);
+    }
+  }
+  const guardedByCase = (pos, key) => caseBlocks.some(([s, e]) => {
+    if (pos < s || pos >= e) return false;
+    const inner = /([А-Яа-яЁёA-Za-z0-9_]+\.[А-Яа-яЁёA-Za-z0-9_]+)/g;
+    const block = code.slice(s, e);
+    let g;
+    while ((g = inner.exec(block)) !== null) {
+      const abs = s + g.index;
+      if (abs !== pos && g[1].toUpperCase() === key && isGuarded(abs)) return true;
+    }
+    return false;
+  });
+
   const reported = new Set();
   const ref = /([А-Яа-яЁёA-Za-z0-9_]+)\.([А-Яа-яЁёA-Za-z0-9_]+)/g;
   let m;
   while ((m = ref.exec(code)) !== null) {
     if (!outer.has(m[1].toUpperCase())) continue;
     if (isGuarded(m.index) || inOn(m.index)) continue;
+    if (guardedByCase(m.index, m[0].toUpperCase())) continue;
     // Индикатор совпадения пары — исключение §4.4.
     if (/^\s+ЕСТЬ\s+(НЕ\s+)?NULL/i.test(code.slice(m.index + m[0].length))) continue;
 
@@ -506,6 +537,10 @@ const VT_SIGNATURES = {
     ОБОРОТЫ: { names: ["НачалоПериода", "КонецПериода", "Периодичность", "УсловиеСчета", "Субконто", "Условие", "УсловиеКорСчета", "КорСубконто"], accountPos: [3], condPos: 5 },
     ОСТАТКИИОБОРОТЫ: { names: ["НачалоПериода", "КонецПериода", "Периодичность", "МетодДополнения", "УсловиеСчета", "Субконто", "Условие"], accountPos: [4], condPos: 6 },
     ОБОРОТЫДТКТ: { names: ["НачалоПериода", "КонецПериода", "Периодичность", "УсловиеСчетаДт", "СубконтоДт", "УсловиеСчетаКт", "СубконтоКт", "Условие"], accountPos: [3, 5], condPos: 7 },
+    // Арность 4 замерена живьём (17.08.2026, #150 Д-2): пять позиций платформа
+    // отвергает. Имена позиций 3–4 не документированы — в names только даты,
+    // фактическую арность несёт count (тот же контракт, что на сервере).
+    ДВИЖЕНИЯССУБКОНТО: { count: 4, names: ["НачалоПериода", "КонецПериода"], accountPos: [], condPos: 3 },
   },
   РЕГИСТРНАКОПЛЕНИЯ: {
     ОСТАТКИ: { names: ["Период", "Условие"], accountPos: [], condPos: 1 },
@@ -564,13 +599,17 @@ function checkVtSignature(raw, code, findings) {
     // Полностью пустой вызов ВТ() — параметры не заданы, отдельная тема (не эта проверка).
     if (count === 0) continue;
 
-    if (count > sig.names.length) {
+    const arity = sig.count ?? sig.names.length;
+    if (count > arity) {
+      const undocumented = arity - sig.names.length;
       pushFinding(findings, {
         id: "vt_signature_too_many_positions",
         severity: "error",
         section: "§1",
-        message: `${m[1]}.<Имя>.${m[3]} принимает ${sig.names.length} позиц. ` +
-          `(${sig.names.join(", ")}), передано ${count}. Лишние аргументы дают ` +
+        message: `${m[1]}.<Имя>.${m[3]} принимает ${arity} позиц. ` +
+          `(${sig.names.join(", ")}${undocumented > 0
+            ? ` и ещё ${undocumented} — имена платформой не документированы` : ""}), ` +
+          `передано ${count}. Лишние аргументы дают ` +
           "«Неверные параметры». Внимание: одно и то же имя ВТ имеет разную сигнатуру " +
           "у разных видов регистра.",
         text: raw,
